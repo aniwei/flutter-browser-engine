@@ -1,7 +1,14 @@
 import { Path } from '@UI'
 
 export class CkPath extends ManagedSkiaObject<SkPath> implements Path {
-  CkPath() : _fillType = ui.PathFillType.nonZero;
+  static from (other: CkPath) {
+    const path = new CkPath()
+    path.fillType = other.fillType
+    
+  }
+
+  public fillType: PathFillType = nonZero
+
 
   CkPath.from(CkPath other)
       : _fillType = other.fillType,
