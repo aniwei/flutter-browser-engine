@@ -1,5 +1,6 @@
 import type { 
-  Canvas as SkCanvas
+  Canvas as SkCanvas,
+  Path as CkPath
 } from 'canvaskit-wasm'
 
 export class CkCanvas {
@@ -19,7 +20,7 @@ export class CkCanvas {
     this.skCanvas = skCanvas
   }
 
-  clear (color: Color): {
+  clear (color: Color) {
     this.skCanvas.clear(color)
   }
 
