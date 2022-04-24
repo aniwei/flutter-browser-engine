@@ -1,0 +1,38 @@
+{
+  "compilerOptions": {
+    "experimentalDecorators": true,
+    "emitDecoratorMetadata": true,
+    "emitDeclarationOnly": false,
+    "target": "ES2020",
+    "lib": ["dom", "ES2020"],
+    "types": ["@types/jest", "node"],
+    "allowJs": false,
+    "skipLibCheck": true,
+    "esModuleInterop": true,
+    "allowSyntheticDefaultImports": true,
+    "strict": true,
+    "forceConsistentCasingInFileNames": true,
+    "module": "commonjs",
+    "moduleResolution": "node",
+    "composite": true,
+    "resolveJsonModule": true,
+    "isolatedModules": true,
+    "noImplicitAny": false,
+    "noImplicitThis": true,
+    "noEmit": false,
+    "build": true,
+    "typeRoots": [".", "./node_modules/@types"],
+    "baseUrl": "./",
+    "rootDir": "./src",
+    "outDir": "dist",
+    "paths": {
+      "@UI": ["./src/UI"],
+      "@Engine": ["./src/Engine"],
+      "@Rendering": ["./src/Rendering"]
+    },
+    "plugins": [
+      { "transform": "typescript-transform-paths" },
+      { "transform": "typescript-transform-paths", "afterDeclarations": true }
+    ]
+  }
+}

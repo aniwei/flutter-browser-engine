@@ -1,0 +1,15 @@
+node_modules
+.DS_Store
+dist
+esm
+yarn-error.log
+package-lock.json
+yarn.lock
+.idea
+*.tsbuildinfo
+temp
+.next
+lerna-debug.log
+build
+
+target
