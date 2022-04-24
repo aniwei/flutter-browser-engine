@@ -2,7 +2,7 @@ import { EngineLayer } from '@UI'
 
 import type { ContainerLayer } from './ContainerLayer'
 
-export abstract class Layer extends EngineLayer {
+export class Layer extends EngineLayer {
   public parent: ContainerLayer | null = null
   public layers: ContainerLayer[] = []
 

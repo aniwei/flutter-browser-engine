@@ -5,61 +5,56 @@ import type {
   OffsetEngineLayer
 } from './EngineLayer'
 
-export abstract class SceneBuilder {
-  static SceneBuilder () {
-    const builder = new LayerSceneBuilder()
-    return builder
-  }
-
+export interface ISceneBuilder {
   pushOffset (
     dx: number,
     dy: number, {
     oldLayer,
-  }) {}
+  })
 
   pushTransform (
     matrix,
     oldLayer
-  ) {}
+  )
 
   pushClipRect (
     rect,
     clipBehavior
-  ) {}
+  )
 
   pushClipRRect (
     rrect,
     clipBehavior,
     oldLayer
-  ) {}
+  )
 
   pushClipPath (
     path,
     clipBehavior,
     oldLayer?
-  ) {}
+  )
 
   pushOpacity (
     alpha: number,
     offset,
     oldLayer?
-  ) {}
+  )
 
   pushColorFilter (
     filter,
     oldLayer
-  ) {}
+  )
 
   pushImageFilter (
     filter,
     oldLayer
-  ) {}
+  )
 
   pushBackdropFilter (
     filter,
     blendMode,
     oldLayer
-  ) {}
+  )
 
   pushPhysicalShape (
     path,
@@ -67,25 +62,25 @@ export abstract class SceneBuilder {
     color,
     shadowColor,
     clipBehavior
-  ) {}
+  )
 
   addRetained (
     retainedLayer: EngineLayer
-  ) {}
+  )
 
-  pop () {}
+  pop ()
 
   addPerformanceOverlay (
     enabledOptions,
     bounds
-  ) {}
+  )
 
   addPicture (
     offset,
     picture,
     isComplexHint,
     willChangeHint
-  ) {}
+  )
 
   addTexture (
     textureId: number,
@@ -94,28 +89,28 @@ export abstract class SceneBuilder {
     height,
     freeze,
     filterQuality
-  ) { }
+  )
 
   addPlatformView (
     viewId: number,
     offset,
     width,
     height
-  ) {}
+  )
 
   setRasterizerTracingThreshold (
     frameInterval
-  ) {}
+  )
 
   setCheckerboardRasterCacheImages (
     checkerboard
-  ) {}
+  )
 
   setCheckerboardOffscreenLayers (
     checkerboard
-  ) {}
+  )
 
-  build () {}
+  build ()
 
   setProperties (
     width,
@@ -125,5 +120,5 @@ export abstract class SceneBuilder {
     insetBottom,
     insetLeft,
     focusable  
-  ) {}
+  )
 }

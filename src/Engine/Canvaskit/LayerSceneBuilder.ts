@@ -1,7 +1,7 @@
-import { SceneBuilder } from '@UI';
+import { ISceneBuilder } from '@UI';
 
 
 
-export class LayerSceneBuilder extends SceneBuilder {
+export class LayerSceneBuilder implements ISceneBuilder {
 
 }

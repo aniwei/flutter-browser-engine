@@ -1,4 +1,4 @@
-export abstract class Scene {
+export class Scene {
   toImage (width: number, height:  number) {
 
   }

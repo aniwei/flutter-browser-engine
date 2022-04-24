@@ -26,13 +26,14 @@
     "rootDir": "./src",
     "outDir": "dist",
     "paths": {
-      "@UI": ["./src/UI"],
-      "@Engine": ["./src/Engine"],
-      "@Rendering": ["./src/Rendering"]
+      "@UI": ["./src/UI/index.ts"],
+      "@Engine": ["./src/Engine/index.ts"],
+      "@Rendering": ["./src/Rendering/index.ts"]
     },
     "plugins": [
       { "transform": "typescript-transform-paths" },
       { "transform": "typescript-transform-paths", "afterDeclarations": true }
     ]
-  }
+  },
+  "include": ["src/**/*.ts"],
 }
