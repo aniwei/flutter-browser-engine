@@ -122,3 +122,7 @@ export interface ISceneBuilder {
     focusable  
   )
 }
+
+export class SceneBuilder extends LayerSceneBuilder {
+  
+}
