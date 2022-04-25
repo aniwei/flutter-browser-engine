@@ -27,6 +27,7 @@
     "outDir": "dist",
     "paths": {
       "@UI": ["./src/UI/index.ts"],
+      "@Shared": ["./src/Shared/index.ts"],
       "@Engine": ["./src/Engine/index.ts"],
       "@Rendering": ["./src/Rendering/index.ts"]
     },

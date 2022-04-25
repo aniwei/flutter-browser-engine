@@ -1,6 +1,9 @@
+import { Rect } from './Rect'
 import { Offset } from './Offset'
+import { Radius } from './Radius'
 
 export class RRect {
+  static zero = new RRect()
   static fromLTRBXY (
     left: number, 
     top: number, 
@@ -9,7 +12,21 @@ export class RRect {
     radiusX: number,
     radiusY: number
   ) {
-
+    return new RRect(
+      left,
+      top,
+      right,
+      bottom,
+      radiusX,
+      radiusY,
+      radiusX,
+      radiusY,
+      radiusX,
+      radiusY,
+      radiusX,
+      radiusY,
+      radiusX === radiusY
+    )
   }
 
   static fromLTRBR (
@@ -17,7 +34,70 @@ export class RRect {
     top: number, 
     right: number, 
     bottom: number,
-    radius: number
+    radius: Radius
+  ) {
+    return new RRect(
+      top,
+      left,
+      right,
+      bottom,
+      radius.x,
+      radius.y,
+      radius.x,
+      radius.y,
+      radius.x,
+      radius.y,
+      radius.x,
+      radius.y,
+      radius.x === radius.y
+    )
+  }
+
+  static fromRectXY (
+    rect: Rect,
+    radiusX: number,
+    radiusY: number
+  ) {
+    return new RRect(
+      rect.top,
+      rect.left,
+      rect.right,
+      rect.bottom,
+      radiusX,
+      radiusY,
+      radiusX,
+      radiusY,
+      radiusX,
+      radiusY,
+      radiusX,
+      radiusY,
+      radiusX === radiusY
+    )
+  }
+
+  static fromRectAndRadius (
+    rect: Rect,
+    radius: Radius
+  ) {
+    return new RRect(
+      rect.top,
+      rect.left,
+      rect.right,
+      rect.bottom,
+      radius.x,
+      radius.y,
+      radius.x,
+      radius.y,
+      radius.x,
+      radius.y,
+      radius.x,
+      radius.y
+    )
+  }
+
+  // TODO
+  static fromRectAndCorners (
+    rect: Rect,
   ) {
 
   }
@@ -37,19 +117,19 @@ export class RRect {
   public uniformRadii: boolean
 
   public get tlRadius () {
-
+    return Radius.elliptical(this.tlRadiusX, this.tlRadiusY)
   }
 
   public get trRadius () {
-    
+    return Radius.elliptical(this.trRadiusX, this.trRadiusY)
   }
 
   public get blRadius () {
-
+    return Radius.elliptical(this.blRadiusX, this.blRadiusY)
   }
 
   public get brRadius () {
-
+    return Radius.elliptical(this.brRadiusX, this.brRadiusY)
   }
 
   public get width () {
@@ -61,19 +141,19 @@ export class RRect {
   }
 
   constructor (
-    left: number,
-    top: number,
-    right: number,
-    bottom: number,
-    tlRadiusX: number,
-    tlRadiusY: number,
-    trRadiusX: number,
-    trRadiusY: number,
-    brRadiusX: number,
-    brRadiusY: number,
-    blRadiusX: number,
-    blRadiusY: number,
-    uniformRadii: boolean
+    left: number = 0,
+    top: number = 0,
+    right: number = 0,
+    bottom: number = 0,
+    tlRadiusX: number = 0,
+    tlRadiusY: number = 0,
+    trRadiusX: number = 0,
+    trRadiusY: number = 0,
+    brRadiusX: number = 0,
+    brRadiusY: number = 0,
+    blRadiusX: number = 0,
+    blRadiusY: number = 0,
+    uniformRadii: boolean = false
   ) {
     this.left = left 
     this.top = top 
@@ -120,9 +200,31 @@ export class RRect {
         this.left,
         this.right,
         this.bottom,
-        this.tlRadiusX * scalue
+        this.tlRadiusX * scale,
+        this.tlRadiusX * scale,
+        this.tlRadiusX * scale,
+        this.tlRadiusX * scale,
+        this.tlRadiusX * scale,
+        this.tlRadiusX * scale,
+        this.tlRadiusX * scale,
+        this.tlRadiusX * scale
       )
     }
+
+    return new RRect (
+      this.top,
+      this.left,
+      this.right,
+      this.bottom,
+      this.tlRadiusX,
+      this.tlRadiusX,
+      this.tlRadiusX,
+      this.tlRadiusX,
+      this.tlRadiusX,
+      this.tlRadiusX,
+      this.tlRadiusX,
+      this.tlRadiusX
+    )
   }
 
   contains (point: Offset) {
@@ -142,38 +244,48 @@ export class RRect {
     let radiusX: number
     let radiusY: number
     
-    if (point.dx < this.left + scaled.tlRadiusX &&
-        point.dy < top + scaled.tlRadiusY) {
-      x = point.dx - left - scaled.tlRadiusX;
-      y = point.dy - top - scaled.tlRadiusY;
-      radiusX = scaled.tlRadiusX;
-      radiusY = scaled.tlRadiusY;
-    } else if (point.dx > right - scaled.trRadiusX &&
-        point.dy < top + scaled.trRadiusY) {
-      x = point.dx - right + scaled.trRadiusX;
-      y = point.dy - top - scaled.trRadiusY;
-      radiusX = scaled.trRadiusX;
-      radiusY = scaled.trRadiusY;
-    } else if (point.dx > right - scaled.brRadiusX &&
-        point.dy > bottom - scaled.brRadiusY) {
-      x = point.dx - right + scaled.brRadiusX;
-      y = point.dy - bottom + scaled.brRadiusY;
-      radiusX = scaled.brRadiusX;
-      radiusY = scaled.brRadiusY;
-    } else if (point.dx < left + scaled.blRadiusX &&
-        point.dy > bottom - scaled.blRadiusY) {
-      x = point.dx - left - scaled.blRadiusX;
-      y = point.dy - bottom + scaled.blRadiusY;
-      radiusX = scaled.blRadiusX;
-      radiusY = scaled.blRadiusY;
+    if (
+      point.dx < this.left + scaled.tlRadiusX &&
+      point.dy < this.top + scaled.tlRadiusY
+    ) {
+      x = point.dx - this.left - scaled.tlRadiusX
+      y = point.dy - this.top - scaled.tlRadiusY
+      radiusX = scaled.tlRadiusX
+      radiusY = scaled.tlRadiusY
+    } else if (
+      point.dx > this.right - scaled.trRadiusX &&
+      point.dy < this.top + scaled.trRadiusY
+    ) {
+      x = point.dx - this.right + scaled.trRadiusX
+      y = point.dy - this.top - scaled.trRadiusY
+      radiusX = scaled.trRadiusX
+      radiusY = scaled.trRadiusY
+    } else if (
+      point.dx > this.right - scaled.brRadiusX &&
+      point.dy > this.bottom - scaled.brRadiusY
+    ) {
+      x = point.dx - this.right + scaled.brRadiusX
+      y = point.dy - this.bottom + scaled.brRadiusY
+      radiusX = scaled.brRadiusX
+      radiusY = scaled.brRadiusY
+    } else if (
+      point.dx < this.left + scaled.blRadiusX &&
+      point.dy > this.bottom - scaled.blRadiusY
+    ) {
+      x = point.dx - this.left - scaled.blRadiusX
+      y = point.dy - this.bottom + scaled.blRadiusY
+      radiusX = scaled.blRadiusX
+      radiusY = scaled.blRadiusY
     } else {
-      return true; // inside and not within the rounded corner area
+      return true
     }
 
-    x = x / radiusX;
-    y = y / radiusY;
-    // check if the point is outside the unit circle
-    if (x * x + y * y > 1.0) return false;
+    x = x / radiusX
+    y = y / radiusY
+    
+    if (x * x + y * y > 1.0) {
+      return false
+    }
 
     return true
   }
