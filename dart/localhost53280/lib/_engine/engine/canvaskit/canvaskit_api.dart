@@ -11,9 +11,6 @@ part of dart._engine;
 
 // ignore_for_file: public_member_api_docs
 
-
-
-
 /// Entrypoint into the CanvasKit API.
 late CanvasKit canvasKit;
 

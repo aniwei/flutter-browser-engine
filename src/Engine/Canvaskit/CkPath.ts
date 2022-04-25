@@ -1,16 +1,16 @@
-import { Path } from '@UI'
+import { IPath } from '@UI'
 import { Path as SkPath } from 'canvaskit-wasm'
 import { ManagedSkiaObject } from './ManagedSkiaObject'
 
-export class CkPath extends ManagedSkiaObject<SkPath> implements Path {
-  static from (other: CkPath) {
-    const path = new CkPath()
-    path.fillType = other.fillType
+export class CkPath extends ManagedSkiaObject<SkPath> implements IPath {
+  static from (path: CkPath) {
+    const newPath = new CkPath(path.skiaObject.copy())
+    newPath.fillType = path.fillType
     
   }
 
   static fromSkPath (skPath: SkPath, fillType) {
-    const path = new CkPath()
+    const path = new CkPath(skPath)
     path.fillType = fillType
   }
 

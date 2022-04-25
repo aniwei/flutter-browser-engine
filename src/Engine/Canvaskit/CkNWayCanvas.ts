@@ -1,3 +1,4 @@
+import { Rect, RRect } from '@UI';
 import { CkCanvas } from './CkCanvas'
 
 export class CkNWayCanvas {

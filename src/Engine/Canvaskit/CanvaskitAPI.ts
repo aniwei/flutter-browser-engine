@@ -1,5 +1,83 @@
-import { Rect, RRect } from '@UI'
-import { PictureRecorder } from 'canvaskit-wasm'
+import { Offset, OffsetEngineLayer, Rect, RRect } from '@UI'
+import { FillType } from 'canvaskit-wasm'
+
+const _skMatrixIndexToMatrix4Index = [
+  0, 4, 12, 
+  1, 5, 13,
+  3, 7, 15,
+]
+
+const _kDefaultSkColorStops = [
+  0, 1
+]
+
+const _skFillTypes = [
+  // TODO
+  0
+]
+
+export function toSkFillType (fillType) {
+  return _skFillTypes[fillType.index]
+}
+
+export function toSkM44FromFloat32 (matrix: number[]): number[] {
+  const skMM44: number[] = []
+  for (let r = 0; r < 4; r++) {
+    for (let c = 0; c < 4; c++) {
+      skMM44[c * 4 + r] = matrix[r * 4 + c]
+    }
+  }
+
+  return skMM44
+}
+
+export function toSkMatrixFromFloat32 (matrix: number[]) {
+  const skMatrix: number[] = []
+  for (let i = 0; i < 9; ++i) {
+    const matrix4Index = _skMatrixIndexToMatrix4Index[i]
+    if (matrix4Index < matrix.length) {
+      skMatrix[i] = matrix[matrix4Index]
+    } else {
+      skMatrix[i] = 0.0
+    }
+  }
+  return skMatrix;
+}
+
+export function toSkMatrixFromFloat64 (matrix: number[]) {
+  const skMatrix: number[] =[]
+  for (let i = 0; i < 9; ++i) {
+    const matrix4Index = _skMatrixIndexToMatrix4Index[i]
+    if (matrix4Index < matrix.length) {
+      skMatrix[i] = matrix[matrix4Index]
+    } else {
+      skMatrix[i] = 0.0
+    }
+  }
+  return skMatrix
+}
+
+export function toSkPoint(offset: Offset) {
+  const point: number[] = []
+  point[0] = offset.dx
+  point[1] = offset.dy
+  return point
+}
+
+export function toSkColorStops (colorStops?: number[]) {
+  if (typeof colorStops === 'undefined') {
+    return _kDefaultSkColorStops
+  }
+
+  const len = colorStops.length
+  const skColorStops: number[] = []
+
+  for (let i = 0; i < len; i++) {
+    skColorStops[i] = colorStops[i]
+  }
+
+  return skColorStops
+}
 
 export function toSkRect (rect: Rect): number[] {
   const skRect: number[] = []
@@ -42,6 +120,13 @@ export function toOuterSkRect (rrect: RRect): number[] {
   return skRect
 }
 
-export class SkPictureRecorder {
-  
+
+export enum SkTextAlignEnum {
+  Left,
+  Right,
+  Center,
+  Justify,
+  Start,
+  End
 }
+
