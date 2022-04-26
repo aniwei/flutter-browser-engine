@@ -1,5 +1,7 @@
-import { LayerSceneBuilder } from 'src/Engine/Canvaskit'
-import {
+import { LayerSceneBuilder } from '@Engine'
+
+import type { int, bool, double, Float64List } from '@Types'
+import type {
   BackdropFilterEngineLayer,
   ClipPathEngineLayer,
   ClipRectEngineLayer,
@@ -13,8 +15,10 @@ import {
   ShaderMaskEngineLayer,
   TransformEngineLayer
 } from './EngineLayer'
-
-import type { int, bool, double, Float64List } from '@Types'
+import type { Clip, Color, FilterQuality, Shader } from '../Painting'
+import type { Offset, Rect } from '../Geometry'
+import type { Path } from '../Path'
+import { Picture } from '../Canvas'
 
 export interface IScene {
   toImage (width: number, height: number)

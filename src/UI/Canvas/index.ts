@@ -31,4 +31,5 @@ export enum PathOperation {
 
 
 export * from './Canvas'
+export * from './Picture'
 export * from './Vertices'
