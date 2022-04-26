@@ -1,9 +1,9 @@
-import { int } from '@Types';
+import { int, bool } from '@Types';
 
 export abstract class Image {
-  public width: int
-  public height: int
-
+  abstract width: int
+  abstract height: int
+  abstract debugDisposed: bool
   abstract toByteData ()
   abstract dispose ()
 
@@ -15,7 +15,17 @@ export abstract class Image {
     return this === image
   }
 
+  debugGetOpenHandleStackTraces (): StackTrace[] | null {
+    return null
+  }
+
+  toBytedata (
+    
+  ): Promise<ByteData | null> {
+
+  }
+
   toString () {
-    return `[${this.width}\u00D7${height}]`
+    return `[${this.width}\u00D7${this.height}]`
   }
 }

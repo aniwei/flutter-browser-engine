@@ -1,22 +1,33 @@
+import { invariant } from 'ts-invariant'
+import { Uint8List, int, bool } from '@Types'
+
 export class ImmutableBuffer {
-  ImmutableBuffer._(this.length);
-  static Future<ImmutableBuffer> fromUint8List(Uint8List list) async {
-    final ImmutableBuffer instance = ImmutableBuffer._(list.length);
-    instance._list = list;
-    return instance;
+  static async fromUint8List (list: Uint8List) {
+    const instance = new ImmutableBuffer(list.length)
+    instance.list = list
+    
+    return instance
   }
 
-  Uint8List? _list;
-  final int length;
+  public list: Uint8List | null = null
+  public length: int
 
-  bool get debugDisposed {
-    late bool disposed;
-    assert(() {
-      disposed = _list == null;
-      return true;
-    }());
-    return disposed;
+  public get debugDisposed (): bool {
+    let disposed: bool
+
+    invariant((() => {
+      disposed = this.list == null;
+      return true
+    })())
+    
+    return disposed
   }
 
-  void dispose() => _list = null;
+  constructor (length: int) {
+    this.length = length
+  }
+
+  dispose (): void {
+    this.list = null
+  }
 }

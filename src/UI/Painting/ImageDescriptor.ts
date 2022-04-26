@@ -1,3 +1,6 @@
+import { PixelFormat } from '.'
+import { ImmutableBuffer } from './ImmutableBuffer'
+
 export class ImageDescriptor {
   ImageDescriptor._()
       : _width = null,
@@ -11,6 +14,16 @@ export class ImageDescriptor {
   }
 
   // Not async because there's no expensive work to do here.
+  static raw (
+    buffer: ImmutableBuffer,
+    width: int,
+    height: int,
+    rowBytes: int,
+    pixelFormat: PixelFormat
+  ) {
+
+  }
+  
   ImageDescriptor.raw(
     ImmutableBuffer buffer, {
     required int width,
@@ -24,11 +37,11 @@ export class ImageDescriptor {
     _data = buffer._list;
   }
 
-  Uint8List? _data;
-  final int? _width;
-  final int? _height;
-  final int? _rowBytes;
-  final PixelFormat? _format;
+  public data: Uint8List | null 
+  public width: int
+  public height: int
+  public rowBytes: int
+  public format: PixelFormat
 
   Never _throw(String parameter) {
     throw UnsupportedError(

@@ -1,12 +1,17 @@
+import { Float64List } from '@Types';
+import { TileMode } from 'canvaskit-wasm';
+import { FilterQuality } from '.';
+import { Image } from './Image'
+import { Shader } from './Shader'
+
 export class ImageShader extends Shader {
-  factory ImageShader(
-    Image image,
-    TileMode tmx,
-    TileMode tmy,
-    Float64List matrix4, {
-    FilterQuality? filterQuality,
-  }) =>
-      engine.useCanvasKit
-          ? engine.CkImageShader(image, tmx, tmy, matrix4, filterQuality)
-          : engine.EngineImageShader(image, tmx, tmy, matrix4, filterQuality);
+  static factory (
+    image: Image,
+    tmx: TileMode,
+    tmy: TileMode,
+    matrix4: Float64List,
+    filterQuality?: FilterQuality
+  ) {
+    // TODO
+  }
 }
