@@ -1,3 +1,7 @@
+export class ArgumentError extends Error {
+  
+}
+
 export class UnsupportedError extends Error {
 
   constructor (message?: string) {

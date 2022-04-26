@@ -1,22 +1,28 @@
+import type { bool, double } from '@Types'
+
 export class Radius {
   static zero = Radius.circular(0)
-  static circular (radius: number) {
+  static circular (radius: double) {
     return Radius.elliptical(radius, radius)
   }
 
-  static elliptical (x: number, y: number) {
+  static elliptical (x: double, y: double) {
     return new Radius(x, y)
   }
 
-  public x: number
-  public y: number
+  public x: double
+  public y: double
 
-  constructor (x: number, y: number) {
+  constructor (x: double, y: double) {
     this.x = x
     this.y = y
   }
 
-  minus (radius?: Radius) {
+  plus (radius: Radius): Radius {
+    return Radius.elliptical(this.x + radius.x, this.y + radius.y)
+  }
+
+  subtract (radius?: Radius): Radius {
     if (typeof radius === 'undefined') {
       return Radius.elliptical(-this.x, -this.y)
     }
@@ -24,15 +30,11 @@ export class Radius {
     return Radius.elliptical(this.x - radius.x, this.y - radius.y)
   }
 
-  plus (radius: Radius) {
-    return Radius.elliptical(this.x + radius.x, this.y + radius.y)
-  }
-
-  multiply (radius: Radius) {
+  multiply (radius: Radius): Radius {
     return Radius.elliptical(this.x * radius.x, this.y * radius.y)
   }
 
-  divide (radius: Radius) {
+  divide (radius: Radius): Radius {
     return Radius.elliptical(this.x / radius.x, this.y / radius.y)
   }
 
@@ -45,5 +47,11 @@ export class Radius {
       radius.x === this.x &&
       radius.y === this.y
     )
+  }
+
+  toString () {
+    return this.x === this.y ?
+      `Radius.circular(${this.x.toFixed(1)})` :
+      `Radius.elliptical(${this.x.toFixed(1)})`
   }
 }
