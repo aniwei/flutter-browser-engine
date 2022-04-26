@@ -1,10 +1,11 @@
-import { CkNWayCanvas } from './CkNWayCanvas'
+import { CkNWayCanvas } from '../CkNWayCanvas'
+import { RasterCache } from '../RasterCache'
 
 export class PaintContext {
   public internalNodesCanvas: CkNWayCanvas
-  public leafNodesCanvas
-  public rasterCache
-  public viewEmbedder
+  public leafNodesCanvas?: CvCanvas
+  public rasterCache?: RasterCache
+  public viewEmbedder?: HtmlViewEmbedder 
 
   constructor (
     internalNodesCanvas,

@@ -1,9 +1,10 @@
 import { ContainerLayer } from './ContainerLayer'
+import type { PaintContext } from './PaintContext'
 
 export class RootLayer extends ContainerLayer {
   paint (
-    paintContext
+    paintContext: PaintContext
   ): void {
-
+    this.paintChildren(paintContext)
   }
 }

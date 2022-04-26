@@ -1,5 +1,5 @@
 import { Offset } from '@UI'
-import { Layer } from './Layer'
+import { Layer } from './Layer/Layer'
 import { CkPicture } from './CkPicture'
 
 export class PictureLayer extends Layer {
