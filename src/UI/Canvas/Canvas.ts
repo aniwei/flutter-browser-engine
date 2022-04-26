@@ -1,31 +1,9 @@
-import { Offset } from './Offset';
-import { Rect } from './Rect';
-import { RRect } from './RRect';
-import { RSTransform } from './RSTransform';
+import { Offset } from '../Geometry/Offset';
+import { Rect } from '../Geometry/Rect';
+import { RRect } from '../Geometry/RRect';
+import { Paint } from '../Paint';
+import { RSTransform } from '../RSTransform';
 
-export enum PointMode {
-  points,
-  lines,
-  polygon,
-}
-
-export enum ClipOp {
-  difference,
-  intersect,
-}
-
-export enum PathFillType {
-  nonZero,
-  evenOdd,
-}
-
-export enum PathOperation {
-  difference,
-  intersect,
-  union,
-  xor,
-  reverseDifference,
-}
 
 export interface ICanvas {
   save ()
@@ -170,4 +148,16 @@ export interface ICanvas {
     elevation: number,
     transparentOccluder: boolean,
   );
+}
+
+export abstract class Canvas {
+  constructor (
+    recorder: PictureRecorder,
+    cullRect?: Rect
+  ) {
+
+  }
+
+  abstract save (): void
+  abstract saveLayer(bounds: Rect | null, paint: Paint): void
 }
