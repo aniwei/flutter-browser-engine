@@ -1,4 +1,5 @@
-import { int, bool } from '@Types';
+import type { int, bool } from '@Types';
+import type { ImageByteFormat } from '.';
 
 export abstract class Image {
   abstract width: int
@@ -6,6 +7,7 @@ export abstract class Image {
   abstract debugDisposed: bool
   abstract toByteData ()
   abstract dispose ()
+  abstract toBytedata (format: ImageByteFormat): Promise<ByteData | null> 
 
   clone () {
     return this
@@ -17,12 +19,6 @@ export abstract class Image {
 
   debugGetOpenHandleStackTraces (): StackTrace[] | null {
     return null
-  }
-
-  toBytedata (
-    
-  ): Promise<ByteData | null> {
-
   }
 
   toString () {
