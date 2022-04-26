@@ -4,6 +4,7 @@ import { RRect } from '../Geometry/RRect';
 import { Paint } from '../Paint';
 import { RSTransform } from '../RSTransform';
 
+import type { double, Float64List, int } from '@Types';
 
 export interface ICanvas {
   save ()
@@ -151,7 +152,7 @@ export interface ICanvas {
 }
 
 export abstract class Canvas {
-  constructor (
+  static factory (
     recorder: PictureRecorder,
     cullRect?: Rect
   ) {
@@ -160,4 +161,11 @@ export abstract class Canvas {
 
   abstract save (): void
   abstract saveLayer(bounds: Rect | null, paint: Paint): void
+  abstract restore (): void
+  abstract getSaveCount(): int
+  abstract translate (dx: double, dy: double): void
+  abstract scale (dx: double, dy?: double): void
+  abstract rotate (radians: double): void
+  abstract skew (sx: double, sy: double): void
+  abstract transform(matrix4: Float64List): void
 }
