@@ -1,5 +1,4 @@
 import path from 'path'
-import { invariant } from 'ts-invariant'
 import CanvasKitInit, { CanvasKitInitOptions, CanvasKit as ICanvasKit } from 'canvaskit-wasm'
 
 
