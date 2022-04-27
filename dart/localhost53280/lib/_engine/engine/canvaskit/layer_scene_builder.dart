@@ -6,6 +6,8 @@ part of dart._engine;
 
 
 
+import '../../../ui/ui.dart';
+
 class LayerScene implements ui.Scene {
   final LayerTree layerTree;
 

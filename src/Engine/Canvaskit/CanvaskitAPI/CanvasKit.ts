@@ -1,229 +1,396 @@
-import { double } from '@Types'
-import { 
-  CanvasKit as ICanvasKit,
-  ColorIntArray,
-  InputFlattenedPointArray,
-  TonalColorsInput as SkTonalColors,
-  VertexMode,
-} from 'canvaskit-wasm'
+import path from 'path'
+import { invariant } from 'ts-invariant'
+import CanvasKitInit, { CanvasKitInitOptions, CanvasKit as ICanvasKit } from 'canvaskit-wasm'
 
-import { initialization } from '../Initialization'
 
-export class CanvasKit implements ICanvasKit {
-  public get BlendMode () {
-    return initialization.useCanvasKit().BlendMode
-  }
-  public get PaintStyle () {
-    return initialization.useCanvasKit().PaintStyle
-  }
-  public get StrokeCap () {
-    return initialization.useCanvasKit().StrokeCap
-  }
-  public get StrokeJoin () {
-    return initialization.useCanvasKit().StrokeJoin
-  }
-  public get BlurStyle () {
-    return initialization.useCanvasKit().BlurStyle
-  }
-  public get TileMode () {
-    return initialization.useCanvasKit().TileMode
-  }
-  public get FilterMode () {
-    return initialization.useCanvasKit().FilterMode
-  }
-  public get MipmapMode () {
-    return initialization.useCanvasKit().MipmapMode
-  }
-  public get FillType () {
-    return initialization.useCanvasKit().FillType
-  }
-  public get AlphaType () {
-    return initialization.useCanvasKit().AlphaType
-  }
-  public get ColorType () {
-    return initialization.useCanvasKit().ColorType
-  }
-  public get PathOp () {
-    return initialization.useCanvasKit().PathOp
-  }
-  public get ClipOp () {
-    return initialization.useCanvasKit().ClipOp
-  }
-  public get PointMode () {
-    return initialization.useCanvasKit().PointMode
-  }
-  public get VertexMode () {
-    return initialization.useCanvasKit().VertexMode
-  }
-  public get RectHeightStyle () {
-    return initialization.useCanvasKit().RectHeightStyle
-  }
-  public get RectWidthStyle () {
-    return initialization.useCanvasKit().RectWidthStyle
-  }
-  public get Affinity () {
-    return initialization.useCanvasKit().Affinity
-  }
-  public get TextAlign () {
-    return initialization.useCanvasKit().TextAlign
-  }
-  public get TextHeightBehavior () {
-    return initialization.useCanvasKit().TextHeightBehavior
-  }
-  public get TextDirection () {
-    return initialization.useCanvasKit().TextDirection
-  }
-  public get FontWeight () {
-    return initialization.useCanvasKit().FontWeight
-  }
-  public get FontSlant () {
-    return initialization.useCanvasKit().FontSlant
-  }
-  public get Shader () {
-    return initialization.useCanvasKit().Shader
-  }
-  public get MaskFilter () {
-    return initialization.useCanvasKit().MaskFilter
-  }
-  public get ColorFilter () {
-    return initialization.useCanvasKit().ColorFilter
-  }
-  public get ImageFilter () {
-    return initialization.useCanvasKit().ImageFilter
-  }
-  public get Path () {
-    return initialization.useCanvasKit().Path
-  }
-  public get ParagraphBuilder () {
-    return initialization.useCanvasKit().ParagraphBuilder
+type CanvasKitInitFunction = {
+  (options: CanvasKitInitOptions): Promise<ICanvasKit>
+}
+
+export class CanvasKit {
+  static canvasKit: ICanvasKit
+  static CanvasKitInit () {
+    return (CanvasKitInit as unknown as CanvasKitInitFunction)({
+      locateFile: (uri: string) => {
+        return path.resolve(__dirname, uri)
+      }
+    }).then((canvasKit: ICanvasKit) => {
+      CanvasKit.canvasKit = canvasKit
+      return canvasKit
+    })
   }
 
-  public get NoDecoration () {
-    return initialization.useCanvasKit().NoDecoration
+  static get ImageData () {
+    return CanvasKit.canvasKit.ImageData
   }
-  public get UnderlineDecoration () {
-    return initialization.useCanvasKit().UnderlineDecoration
+  static get ParagraphStyle () {
+    return CanvasKit.canvasKit.ParagraphStyle
   }
-  public get OverlineDecoration () {
-    return initialization.useCanvasKit().OverlineDecoration
+  static get ContourMeasureIter () {
+    return CanvasKit.canvasKit.ContourMeasureIter
   }
-  public get LineThroughDecoration () {
-    return initialization.useCanvasKit().LineThroughDecoration
+  static get Font () {
+    return CanvasKit.canvasKit.Font
   }
-
-  public get DecorationStyle () {
-    return initialization.useCanvasKit().DecorationStyle
+  static get Paint () {
+    return CanvasKit.canvasKit.Paint
   }
-  public get TextBaseline () {
-    return initialization.useCanvasKit().TextBaseline
+  static get Path () {
+    return CanvasKit.canvasKit.Path
   }
-  public get PlaceholderAlignment () {
-    return initialization.useCanvasKit().PlaceholderAlignment
+  static get PictureRecorder () {
+    return CanvasKit.canvasKit.PictureRecorder
   }
-  public get FontMgr () {
-    return initialization.useCanvasKit().FontMgr
+  static get TextStyle () {
+    return CanvasKit.canvasKit.TextStyle
   }
-  public get TypefaceFontProvider () {
-    return initialization.useCanvasKit().TypefaceFontProvider
+  static get ParagraphBuilder () {
+    return CanvasKit.canvasKit.ParagraphBuilder
   }
-  public get Typeface () {
-    return initialization.useCanvasKit().Typeface
+  static get ColorFilter () {
+    return CanvasKit.canvasKit.ColorFilter
   }
-
-  public get ParagraphStyle () {
-    return initialization.useCanvasKit().ParagraphStyle
+  static get FontMgr () {
+    return CanvasKit.canvasKit.FontMgr
   }
-
-  public get TextStyle () {
-    return initialization.useCanvasKit().TextStyle
+  static get ImageFilter () {
+    return CanvasKit.canvasKit.ImageFilter
   }
-
-  public get MakeAnimatedImageFromEncoded () {
-    return initialization.useCanvasKit().MakeAnimatedImageFromEncoded
+  static get MaskFilter () {
+    return CanvasKit.canvasKit.MaskFilter
   }
-
-  public get computeTonalColors () {
-    return initialization.useCanvasKit().computeTonalColors
+  static get PathEffect () {
+    return CanvasKit.canvasKit.PathEffect
   }
-
-  public get MakeVertices () {
-    return initialization.useCanvasKit().MakeVertices
+  static get RuntimeEffect () {
+    return CanvasKit.canvasKit.RuntimeEffect
   }
-
-  public get MakeSurface () {
-    return initialization.useCanvasKit().MakeSurface
+  static get Shader () {
+    return CanvasKit.canvasKit.Shader
   }
-
-  public get GetWebGLContext () {
-    return initialization.useCanvasKit().GetWebGLContext
+  static get TextBlob () {
+    return CanvasKit.canvasKit.TextBlob
   }
-
-  public get MakeSWCanvasSurface () {
-    return initialization.useCanvasKit().MakeSWCanvasSurface
+  static get Typeface () {
+    return CanvasKit.canvasKit.Typeface
   }
-
-  public get MakeOnScreenGLSurface () {
-    return initialization.useCanvasKit().MakeOnScreenGLSurface
+  static get TypefaceFontProvider () {
+    return CanvasKit.canvasKit.TypefaceFontProvider
   }
-
-  public get MakeGrContext () {
-    return initialization.useCanvasKit().MakeGrContext
+  static get ColorMatrix () {
+    return CanvasKit.canvasKit.ColorMatrix
   }
-
-  public get MakeImage () {
-    return initialization.useCanvasKit().MakeImage
+  static get Matrix () {
+    return CanvasKit.canvasKit.Matrix
   }
-
-  public get MakeLazyImageFromTextureSource () {
-    return initialization.useCanvasKit().MakeLazyImageFromTextureSource
+  static get M44 () {
+    return CanvasKit.canvasKit.M44
   }
-
-  public get Color4f () {
-    return initialization.useCanvasKit().Color4f 
+  static get Vector () {
+    return CanvasKit.canvasKit.Vector
   }
-  public get ColorAsInt () {
-    return initialization.useCanvasKit().ColorAsInt 
+  static get AlphaType () {
+    return CanvasKit.canvasKit.AlphaType
   }
-  public get getColorComponents () {
-    return initialization.useCanvasKit().getColorComponents 
+  static get BlendMode () {
+    return CanvasKit.canvasKit.BlendMode
   }
-  public get parseColorString () {
-    return initialization.useCanvasKit().parseColorString 
+  static get BlurStyle () {
+    return CanvasKit.canvasKit.BlurStyle
   }
-  public get multiplyByAlpha () {
-    return initialization.useCanvasKit().multiplyByAlpha 
+  static get ClipOp () {
+    return CanvasKit.canvasKit.ClipOp
   }
-
-  public get Color () {
-    return initialization.useCanvasKit().Color
+  static get ColorType () {
+    return CanvasKit.canvasKit.ColorType
   }
-
-  public get LTRBRect () {
-    return initialization.useCanvasKit().LTRBRect
+  static get FillType () {
+    return CanvasKit.canvasKit.FillType
   }
-  public get XYWHRect () {
-    return initialization.useCanvasKit().XYWHRect
+  static get FilterMode () {
+    return CanvasKit.canvasKit.FilterMode
   }
-  public get LTRBiRect () {
-    return initialization.useCanvasKit().LTRBiRect
+  static get FontEdging () {
+    return CanvasKit.canvasKit.FontEdging
   }
-  public get XYWHiRect () {
-    return initialization.useCanvasKit().XYWHiRect
+  static get FontHinting () {
+    return CanvasKit.canvasKit.FontHinting
   }
-  public get RRectXY () {
-    return initialization.useCanvasKit().RRectXY
+  static get GlyphRunFlags () {
+    return CanvasKit.canvasKit.GlyphRunFlags
   }
-  public get getShadowLocalBounds () {
-    return initialization.useCanvasKit().getShadowLocalBounds
+  static get ImageFormat () {
+    return CanvasKit.canvasKit.ImageFormat
   }
-  public get Malloc () {
-    return initialization.useCanvasKit().Malloc
+  static get MipmapMode () {
+    return CanvasKit.canvasKit.MipmapMode
   }
-  public get MallocGlyphIDs () {
-    return initialization.useCanvasKit().MallocGlyphIDs
+  static get PaintStyle () {
+    return CanvasKit.canvasKit.PaintStyle
   }
-  public get Free () {
-    return initialization.useCanvasKit().Free
+  static get PathOp () {
+    return CanvasKit.canvasKit.PathOp
+  }
+  static get PointMode () {
+    return CanvasKit.canvasKit.PointMode
+  }
+  static get ColorSpace () {
+    return CanvasKit.canvasKit.ColorSpace
+  }
+  static get StrokeCap () {
+    return CanvasKit.canvasKit.StrokeCap
+  }
+  static get StrokeJoin () {
+    return CanvasKit.canvasKit.StrokeJoin
+  }
+  static get TileMode () {
+    return CanvasKit.canvasKit.TileMode
+  }
+  static get VertexMode () {
+    return CanvasKit.canvasKit.VertexMode
+  }
+  static get TRANSPARENT () {
+    return CanvasKit.canvasKit.TRANSPARENT
+  }
+  static get BLACK () {
+    return CanvasKit.canvasKit.BLACK
+  }
+  static get WHITE () {
+    return CanvasKit.canvasKit.WHITE
+  }
+  static get RED () {
+    return CanvasKit.canvasKit.RED
+  }
+  static get GREEN () {
+    return CanvasKit.canvasKit.GREEN
+  }
+  static get BLUE () {
+    return CanvasKit.canvasKit.BLUE
+  }
+  static get YELLOW () {
+    return CanvasKit.canvasKit.YELLOW
+  }
+  static get CYAN () {
+    return CanvasKit.canvasKit.CYAN
+  }
+  static get MAGENTA () {
+    return CanvasKit.canvasKit.MAGENTA
+  }
+  static get MOVE_VERB () {
+    return CanvasKit.canvasKit.MOVE_VERB
+  }
+  static get LINE_VERB () {
+    return CanvasKit.canvasKit.LINE_VERB
+  }
+  static get QUAD_VERB () {
+    return CanvasKit.canvasKit.QUAD_VERB
+  }
+  static get CONIC_VERB () {
+    return CanvasKit.canvasKit.CONIC_VERB
+  }
+  static get CUBIC_VERB () {
+    return CanvasKit.canvasKit.CUBIC_VERB
+  }
+  static get CLOSE_VERB () {
+    return CanvasKit.canvasKit.CLOSE_VERB
+  }
+  static get SaveLayerInitWithPrevious () {
+    return CanvasKit.canvasKit.SaveLayerInitWithPrevious
+  }
+  static get SaveLayerF16ColorType () {
+    return CanvasKit.canvasKit.SaveLayerF16ColorType
+  }
+  static get ShadowTransparentOccluder () {
+    return CanvasKit.canvasKit.ShadowTransparentOccluder
+  }
+  static get ShadowGeometricOnly () {
+    return CanvasKit.canvasKit.ShadowGeometricOnly
+  }
+  static get ShadowDirectionalLight () {
+    return CanvasKit.canvasKit.ShadowDirectionalLight
+  }
+  static get gpu () {
+    return CanvasKit.canvasKit.gpu
+  }
+  static get managed_skottie () {
+    return CanvasKit.canvasKit.managed_skottie
+  }
+  static get particles () {
+    return CanvasKit.canvasKit.particles
+  }
+  static get rt_effect () {
+    return CanvasKit.canvasKit.rt_effect
+  }
+  static get skottie () {
+    return CanvasKit.canvasKit.skottie
+  }
+  static get Affinity () {
+    return CanvasKit.canvasKit.Affinity
+  }
+  static get DecorationStyle () {
+    return CanvasKit.canvasKit.DecorationStyle
+  }
+  static get FontSlant () {
+    return CanvasKit.canvasKit.FontSlant
+  }
+  static get FontWeight () {
+    return CanvasKit.canvasKit.FontWeight
+  }
+  static get FontWidth () {
+    return CanvasKit.canvasKit.FontWidth
+  }
+  static get PlaceholderAlignment () {
+    return CanvasKit.canvasKit.PlaceholderAlignment
+  }
+  static get RectHeightStyle () {
+    return CanvasKit.canvasKit.RectHeightStyle
+  }
+  static get RectWidthStyle () {
+    return CanvasKit.canvasKit.RectWidthStyle
+  }
+  static get TextAlign () {
+    return CanvasKit.canvasKit.TextAlign
+  }
+  static get TextBaseline () {
+    return CanvasKit.canvasKit.TextBaseline
+  }
+  static get TextDirection () {
+    return CanvasKit.canvasKit.TextDirection
+  }
+  static get TextHeightBehavior () {
+    return CanvasKit.canvasKit.TextHeightBehavior
+  }
+  static get NoDecoration () {
+    return CanvasKit.canvasKit.NoDecoration
+  }
+  static get UnderlineDecoration () {
+    return CanvasKit.canvasKit.UnderlineDecoration
+  }
+  static get OverlineDecoration () {
+    return CanvasKit.canvasKit.OverlineDecoration
+  }
+  static get LineThroughDecoration () {
+    return CanvasKit.canvasKit.LineThroughDecoration
+  }
+  static get Color () {
+    return CanvasKit.canvasKit.Color
+  }
+  static get Color4f () {
+    return CanvasKit.canvasKit.Color4f
+  }
+  static get ColorAsInt () {
+    return CanvasKit.canvasKit.ColorAsInt
+  }
+  static get getColorComponents () {
+    return CanvasKit.canvasKit.getColorComponents
+  }
+  static get parseColorString () {
+    return CanvasKit.canvasKit.parseColorString
+  }
+  static get multiplyByAlpha () {
+    return CanvasKit.canvasKit.multiplyByAlpha
+  }
+  static get computeTonalColors () {
+    return CanvasKit.canvasKit.computeTonalColors
+  }
+  static get LTRBRect () {
+    return CanvasKit.canvasKit.LTRBRect
+  }
+  static get XYWHRect () {
+    return CanvasKit.canvasKit.XYWHRect
+  }
+  static get LTRBiRect () {
+    return CanvasKit.canvasKit.LTRBiRect
+  }
+  static get XYWHiRect () {
+    return CanvasKit.canvasKit.XYWHiRect
+  }
+  static get RRectXY () {
+    return CanvasKit.canvasKit.RRectXY
+  }
+  static get getShadowLocalBounds () {
+    return CanvasKit.canvasKit.getShadowLocalBounds
+  }
+  static get Malloc () {
+    return CanvasKit.canvasKit.Malloc
+  }
+  static get MallocGlyphIDs () {
+    return CanvasKit.canvasKit.MallocGlyphIDs
+  }
+  static get Free () {
+    return CanvasKit.canvasKit.Free
+  }
+  static get MakeCanvasSurface () {
+    return CanvasKit.canvasKit.MakeCanvasSurface
+  }
+  static get MakeRasterDirectSurface () {
+    return CanvasKit.canvasKit.MakeRasterDirectSurface
+  }
+  static get MakeSWCanvasSurface () {
+    return CanvasKit.canvasKit.MakeSWCanvasSurface
+  }
+  static get MakeWebGLCanvasSurface () {
+    return CanvasKit.canvasKit.MakeWebGLCanvasSurface
+  }
+  static get MakeSurface () {
+    return CanvasKit.canvasKit.MakeSurface
+  }
+  static get GetWebGLContext () {
+    return CanvasKit.canvasKit.GetWebGLContext
+  }
+  static get MakeGrContext () {
+    return CanvasKit.canvasKit.MakeGrContext
+  }
+  static get MakeOnScreenGLSurface () {
+    return CanvasKit.canvasKit.MakeOnScreenGLSurface
+  }
+  static get MakeRenderTarget () {
+    return CanvasKit.canvasKit.MakeRenderTarget
+  }
+  static get MakeLazyImageFromTextureSource () {
+    return CanvasKit.canvasKit.MakeLazyImageFromTextureSource
+  }
+  static get deleteContext () {
+    return CanvasKit.canvasKit.deleteContext
+  }
+  static get getDecodeCacheLimitBytes () {
+    return CanvasKit.canvasKit.getDecodeCacheLimitBytes
+  }
+  static get getDecodeCacheUsedBytes () {
+    return CanvasKit.canvasKit.getDecodeCacheUsedBytes
+  }
+  static get setDecodeCacheLimitBytes () {
+    return CanvasKit.canvasKit.setDecodeCacheLimitBytes
+  }
+  static get MakeAnimatedImageFromEncoded () {
+    return CanvasKit.canvasKit.MakeAnimatedImageFromEncoded
+  }
+  static get MakeCanvas () {
+    return CanvasKit.canvasKit.MakeCanvas
+  }
+  static get MakeImage () {
+    return CanvasKit.canvasKit.MakeImage
+  }
+  static get MakeImageFromEncoded () {
+    return CanvasKit.canvasKit.MakeImageFromEncoded
+  }
+  static get MakeImageFromCanvasImageSource () {
+    return CanvasKit.canvasKit.MakeImageFromCanvasImageSource
+  }
+  static get MakePicture () {
+    return CanvasKit.canvasKit.MakePicture
+  }
+  static get MakeVertices () {
+    return CanvasKit.canvasKit.MakeVertices
+  }
+  static get MakeAnimation () {
+    return CanvasKit.canvasKit.MakeAnimation
+  }
+  static get MakeManagedAnimation () {
+    return CanvasKit.canvasKit.MakeManagedAnimation
+  }
+  static get MakeParticles () {
+    return CanvasKit.canvasKit.MakeParticles
   }
 }
 
