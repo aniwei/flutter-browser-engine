@@ -177,6 +177,54 @@ export class CanvasKit implements ICanvasKit {
   public get MakeLazyImageFromTextureSource () {
     return initialization.useCanvasKit().MakeLazyImageFromTextureSource
   }
+
+  public get Color4f () {
+    return initialization.useCanvasKit().Color4f 
+  }
+  public get ColorAsInt () {
+    return initialization.useCanvasKit().ColorAsInt 
+  }
+  public get getColorComponents () {
+    return initialization.useCanvasKit().getColorComponents 
+  }
+  public get parseColorString () {
+    return initialization.useCanvasKit().parseColorString 
+  }
+  public get multiplyByAlpha () {
+    return initialization.useCanvasKit().multiplyByAlpha 
+  }
+
+  public get Color () {
+    return initialization.useCanvasKit().Color
+  }
+
+  public get LTRBRect () {
+    return initialization.useCanvasKit().LTRBRect
+  }
+  public get XYWHRect () {
+    return initialization.useCanvasKit().XYWHRect
+  }
+  public get LTRBiRect () {
+    return initialization.useCanvasKit().LTRBiRect
+  }
+  public get XYWHiRect () {
+    return initialization.useCanvasKit().XYWHiRect
+  }
+  public get RRectXY () {
+    return initialization.useCanvasKit().RRectXY
+  }
+  public get getShadowLocalBounds () {
+    return initialization.useCanvasKit().getShadowLocalBounds
+  }
+  public get Malloc () {
+    return initialization.useCanvasKit().Malloc
+  }
+  public get MallocGlyphIDs () {
+    return initialization.useCanvasKit().MallocGlyphIDs
+  }
+  public get Free () {
+    return initialization.useCanvasKit().Free
+  }
 }
 
 export type {
