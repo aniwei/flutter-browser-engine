@@ -1,5 +1,7 @@
 import { CkVertices } from '@Engine'
-import { Offset } from './Offset'
+import { Offset } from '../Geometry/Offset'
+import { Color } from '../Painting'
+import type { int } from '@Types'
 
 export enum VertexMode {
   triangles,
@@ -7,7 +9,7 @@ export enum VertexMode {
   triangleFan,
 }
 
-export class Vertices extends CkVertices {
+export class Vertices {
   static raw (
     mode: VertexMode,
     positions: number[],
@@ -24,14 +26,14 @@ export class Vertices extends CkVertices {
     )
   }
 
-  constructor (
+  static factory (
     mode: VertexMode,
     positions: Offset[],
-    textureCoordinates: Offset[],
-    colors: Color[],
-    indices: number[]
+    textureCoordinates: Offset[] | null,
+    colors: Color[] | null,
+    indices: int[] | null
   ) {
-    super(
+    return new CkVertices(
       mode,
       positions,
       textureCoordinates,

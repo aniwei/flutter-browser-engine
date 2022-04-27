@@ -1,6 +1,6 @@
-export class ArgumentError extends Error {
-  
-}
+export class ArgumentError extends Error {}
+
+export class StateError extends Error {}
 
 export class UnsupportedError extends Error {
 
