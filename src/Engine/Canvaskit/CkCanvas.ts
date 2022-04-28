@@ -1,7 +1,4 @@
-import type { 
-  Canvas as SkCanvas,
-  Path as CkPath
-} from 'canvaskit-wasm'
+import { Color } from '@UI'
 
 export class CkCanvas {
   static _kMitchellNetravali_B = 1.0 / 3.0

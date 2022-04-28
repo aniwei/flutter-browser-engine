@@ -392,14 +392,3 @@ export class CanvasKit {
     return CanvasKit.canvasKit.MakeParticles
   }
 }
-
-export type {
-  Surface as SkSurface,
-  Image as SkImage,
-  GrDirectContext as SkGrContext,
-  FontSlant as SkFontSlant,
-  FontBlock as SkFontBlock,
-  FontWeight as SkFontWeight,
-  Affinity as SkAffinity,
-
-} from 'canvaskit-wasm'

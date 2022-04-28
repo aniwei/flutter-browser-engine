@@ -1,12 +1,11 @@
-import { IPath } from '@UI'
-import { Path as SkPath } from 'canvaskit-wasm'
+import { IPath, Rect } from '@UI'
+import { SkPath, CanvasKit } from '../CanvasKitAPI'
 import { ManagedSkiaObject } from './ManagedSkiaObject'
 
 export class CkPath extends ManagedSkiaObject<SkPath> implements IPath {
   static from (path: CkPath) {
-    const newPath = new CkPath(path.skiaObject.copy())
+    const newPath = new CkPath()
     newPath.fillType = path.fillType
-    
   }
 
   static fromSkPath (skPath: SkPath, fillType) {
@@ -321,8 +320,8 @@ export class CkPath extends ManagedSkiaObject<SkPath> implements IPath {
   bool get isResurrectionExpensive => true;
 
 
-  SkPath createDefault() {
-    final SkPath path = SkPath();
+  createDefault (): SkPath {
+    const path: SkPath = new CanvasKit.Path()
     path.setFillType(toSkFillType(_fillType));
     return path;
   }

@@ -15,10 +15,11 @@ import type {
   ShaderMaskEngineLayer,
   TransformEngineLayer
 } from './EngineLayer'
-import type { Clip, Color, FilterQuality, Shader } from '../Painting'
+import type { BlendMode, Clip, Color, ColorFilter, FilterQuality, ImageFilter, Shader } from '../Painting'
 import type { Offset, Rect } from '../Geometry'
 import type { Path } from '../Path'
 import { Picture } from '../Canvas'
+import { RRect } from 'canvaskit-wasm'
 
 export interface IScene {
   toImage (width: number, height: number)
@@ -43,42 +44,42 @@ export interface ISceneBuilder {
   ): TransformEngineLayer
 
   pushClipRect (
-    rect,
-    clipBehavior,
+    rect: Rect,
+    clipBehavior: Clip,
     oldLayer: ClipRectEngineLayer | null,
   ): ClipRectEngineLayer
 
   pushClipRRect (
-    rrect,
-    clipBehavior,
+    rrect: RRect,
+    clipBehavior: Clip,
     oldLayer: ClipRRectEngineLayer | null
   ): ClipRRectEngineLayer
 
   pushClipPath (
-    path,
-    clipBehavior,
+    path: Path,
+    clipBehavior: Clip,
     oldLayer: ClipPathEngineLayer | null
   ): ClipPathEngineLayer
 
   pushOpacity (
     alpha: int,
-    offset,
+    offset: Offset,
     oldLayer: OpacityEngineLayer | null
   ): OpacityEngineLayer
 
   pushColorFilter (
-    filter,
+    filter: ColorFilter,
     oldLayer: ColorFilterEngineLayer | null
   ): ColorFilterEngineLayer
 
   pushImageFilter (
-    filter,
+    filter: ImageFilter,
     oldLayer: ImageFilterEngineLayer | null
   ): ImageFilterEngineLayer
 
   pushBackdropFilter (
-    filter,
-    blendMode,
+    filter: ImageFilter,
+    blendMode: BlendMode,
     oldLayer: BackdropFilterEngineLayer | null
   ): BackdropFilterEngineLayer
 
@@ -162,42 +163,42 @@ export abstract class SceneBuilder implements ISceneBuilder {
   ): TransformEngineLayer
 
   abstract pushClipRect (
-    rect,
-    clipBehavior,
+    rect: Rect,
+    clipBehavior: Clip,
     oldLayer: ClipRectEngineLayer | null,
   ): ClipRectEngineLayer
 
   abstract pushClipRRect (
-    rrect,
-    clipBehavior,
+    rrect: RRect,
+    clipBehavior: Clip,
     oldLayer: ClipRRectEngineLayer | null
   ): ClipRRectEngineLayer
 
   abstract pushClipPath (
-    path,
-    clipBehavior,
+    path: Path,
+    clipBehavior: Clip,
     oldLayer: ClipPathEngineLayer | null
   ): ClipPathEngineLayer
 
   abstract pushOpacity (
     alpha: int,
-    offset,
+    offset: Offset,
     oldLayer: OpacityEngineLayer | null
   ): OpacityEngineLayer
 
   abstract pushColorFilter (
-    filter,
+    filter: ColorFilter,
     oldLayer: ColorFilterEngineLayer | null
   ): ColorFilterEngineLayer
 
   abstract pushImageFilter (
-    filter,
+    filter: ImageFilter,
     oldLayer: ImageFilterEngineLayer | null
   ): ImageFilterEngineLayer
 
   abstract pushBackdropFilter (
-    filter,
-    blendMode,
+    filter: ImageFilter,
+    blendMode: BlendMode,
     oldLayer: BackdropFilterEngineLayer | null
   ): BackdropFilterEngineLayer
 

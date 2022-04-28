@@ -3,3 +3,5 @@ export type bool = boolean
 export type double = number
 export type Float64List = number[]
 export type Uint8List = number[]
+
+export class Float32List extends Float32Array {}

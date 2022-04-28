@@ -1,11 +1,17 @@
-import type { int } from '@Types'
+import { CanvasKitAPI } from '../CanvasKitAPI'
+
+import type { bool, int } from '@Types'
 import type { Color } from '@UI'
+import type { SkCanvas } from '../CanvasKitAPI'
+
+
+
 
 export class CkCanvas {
   static _kMitchellNetravali_B = 1.0 / 3.0
   static _kMitchellNetravali_C = 1.0 / 3.0
 
-  public skCanvas: SkCanvas 
+  public skCanvas: SkCanvas
   public get saveCount (): int {
     return this.skCanvas.getSaveCount()
   }
@@ -19,12 +25,12 @@ export class CkCanvas {
   }
 
   clear (color: Color): void {
-    this.skCanvas.clear(color)
+    this.skCanvas.clear(CanvasKitAPI.toSharedSkColor1(color))
   }
 
   clipPath (
     path: CkPath, 
-    doAntiAlias: boolean
+    doAntiAlias: bool
   ): void {
     this.skCanvas.clipPath(
       path.skiaObject,
