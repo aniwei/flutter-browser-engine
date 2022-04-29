@@ -40,6 +40,14 @@ export function scaleAlpha(
   return a.withAlpha(engine.clampInt(Math.round(a.alpha * factor), 0, 255))
 }
 
+export enum BlurStyle {
+  // These mirror SkBlurStyle and must be kept in sync.
+  normal,
+  solid,
+  outer,
+  inner,
+}
+
 export enum StrokeCap {
   butt,
   round,

@@ -1,6 +1,8 @@
 import fs from 'fs'
 import path from 'path'
-import { Skia } from '../src/Engine/CanvasKit/CanvasKitAPI'
+import jimp from 'jimp'
+import { Surface } from 'canvaskit-wasm';
+import { CanvasKitAPI } from '../src/Engine/CanvasKit/CanvasKitAPI'
 
 function starPath(CanvasKit, X=128, Y=128, R=116) {
   let p = new CanvasKit.Path();
@@ -13,8 +15,7 @@ function starPath(CanvasKit, X=128, Y=128, R=116) {
 }
 
 test(`CanvasKit`, async () => {
-  await Skia.SkiaInit(path.resolve(__dirname, 'canvaskit.wasm'))
-
+  const CanvasKit = await CanvasKitAPI.CanvasKitInit(path.resolve(__dirname, 'canvaskit.wasm'))
 
   let surface = CanvasKit.MakeSurface(300, 300) as Surface
 
@@ -48,11 +49,7 @@ test(`CanvasKit`, async () => {
   surface.flush();
 
   const img = surface.makeImageSnapshot();
-  if (!img) {
-    console.error('no snapshot');
-    return;
-  }
-  const pngBytes = img.encodeToBytes() as Uint8Array;
-  let b64encoded = Buffer.from(pngBytes).toString('base64');
-  debugger
+  const buffer = img.encodeToBytes()?.buffer as Buffer
+
+  (await jimp.read(buffer)).write(path.resolve(__dirname, 'test.png'))
 })

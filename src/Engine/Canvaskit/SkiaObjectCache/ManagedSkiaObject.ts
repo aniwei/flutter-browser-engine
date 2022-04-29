@@ -1,0 +1,42 @@
+import { SkiaObject } from './SkiaObject'
+import { SkiaObjects } from './SkiaObjects'
+
+export abstract class ManagedSkiaObject<T extends Object> extends SkiaObject<T> {
+  public rawSkiaObject: T | null = null
+  public get isResurrectionExpensive () {
+    return false
+  }
+  public get skiaObject (): T {
+    return this.rawSkiaObject ?? this.doResurrect()
+  }
+
+  constructor (instance: T | null) {
+    super()
+    const defaultObject = instance ?? this.createDefault()
+
+    this.rawSkiaObject = defaultObject
+    Collector.instance.register(this, defaultObject as SkDeletable);
+  }
+ 
+  doResurrect (): T  {
+    this.rawSkiaObject = this.resurrect()
+    if (this.isResurrectionExpensive) {
+      SkiaObjects.manageExpensive(this);
+    } else {
+      SkiaObjects.manageResurrectable(this);
+    }
+    return this.skiaObject
+  }
+
+  didDelete () {
+    if (this.rawSkiaObject === null) {
+      return
+    }
+
+    this.rawSkiaObject = null
+  }
+
+  
+  abstract createDefault (): T
+  abstract resurrect(): T
+}

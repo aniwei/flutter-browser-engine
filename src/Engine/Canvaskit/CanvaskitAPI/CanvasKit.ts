@@ -1,394 +1,197 @@
-import path from 'path'
-import CanvasKitInit, { CanvasKitInitOptions, CanvasKit as ICanvasKit, Paint } from 'canvaskit-wasm'
+import CanvasKitInit, { CanvasKitInitOptions, CanvasKit } from 'canvaskit-wasm'
 
+import type {
+  BlendMode, 
+  PaintingStyle,
+  StrokeCap, 
+  StrokeJoin,
+  BlurStyle
+} from '@UI'
+import type { 
+  SkBlendMode,
+  SkPaintStyle,
+  SkStrokeCap,
+  SkStrokeJoin,
+  SkBlurStyle
+} from '@Skia'
 
-type CanvasKitInitFunction = {
-  (options: CanvasKitInitOptions): Promise<ICanvasKit>
+type CanvasKitInitHandle = {
+  (options: CanvasKitInitOptions): Promise<CanvasKit>
 }
 
-export class CanvasKit {
-  static canvasKit: ICanvasKit
-  static CanvasKitInit (uri: string) {
-    return (CanvasKitInit as unknown as CanvasKitInitFunction)({
+type CanvasKitProxify<T> = {
+  [P in keyof T]: T[P]
+}
+
+export function Proxify<T> (CanvasKit: CanvasKit): CanvasKitProxify<T> {
+  
+
+  return new Proxy(<CanvasKitProxify<T>>(Object.create({
+    
+  })), {
+    get (CanvasKitAPI, key) {
+      if (key in CanvasKitAPI) {
+        return CanvasKitAPI[key]
+      }
+
+      return CanvasKit[key]
+    }
+  })
+}
+
+
+export class CanvasKitAPI {
+  static SkBlendMode: SkBlendMode[]
+  static SkPaintStyle: SkPaintStyle[]
+  static SkStrokeCap: SkStrokeCap[]
+  static SkStrokeJoin: SkStrokeJoin[]
+  static SkBlurStyle: SkBlurStyle[]
+  
+  static CanvasKit: CanvasKit
+
+  static CanvasKitInit (uri: string): Promise<CanvasKitProxify<CanvasKit>> {
+    return (CanvasKitInit as unknown as CanvasKitInitHandle)({
       locateFile: () => {
         return uri
       }
-    }).then((canvasKit: ICanvasKit) => {
-      CanvasKit.canvasKit = canvasKit
-      return canvasKit
+    }).then((CanvasKit: CanvasKit) => {
+      return Proxify<CanvasKit>(CanvasKit)
+    }).then(CanvasKit => {
+      CanvasKitAPI.CanvasKit = CanvasKit
+      CanvasKitAPI.SkBlendMode = [
+        CanvasKit.BlendMode.Clear,
+        CanvasKit.BlendMode.Src,
+        CanvasKit.BlendMode.Dst,
+        CanvasKit.BlendMode.SrcOver,
+        CanvasKit.BlendMode.DstOver,
+        CanvasKit.BlendMode.SrcIn,
+        CanvasKit.BlendMode.DstIn,
+        CanvasKit.BlendMode.SrcOut,
+        CanvasKit.BlendMode.DstOut,
+        CanvasKit.BlendMode.SrcATop,
+        CanvasKit.BlendMode.DstATop,
+        CanvasKit.BlendMode.Xor,
+        CanvasKit.BlendMode.Plus,
+        CanvasKit.BlendMode.Modulate,
+        CanvasKit.BlendMode.Screen,
+        CanvasKit.BlendMode.Overlay,
+        CanvasKit.BlendMode.Darken,
+        CanvasKit.BlendMode.Lighten,
+        CanvasKit.BlendMode.ColorDodge,
+        CanvasKit.BlendMode.ColorBurn,
+        CanvasKit.BlendMode.HardLight,
+        CanvasKit.BlendMode.SoftLight,
+        CanvasKit.BlendMode.Difference,
+        CanvasKit.BlendMode.Exclusion,
+        CanvasKit.BlendMode.Multiply,
+        CanvasKit.BlendMode.Hue,
+        CanvasKit.BlendMode.Saturation,
+        CanvasKit.BlendMode.Color,
+        CanvasKit.BlendMode.Luminosity,
+      ]
+      CanvasKitAPI.SkPaintStyle = [
+        CanvasKit.PaintStyle.Fill,
+        CanvasKit.PaintStyle.Stroke,
+      ]
+      CanvasKitAPI.SkStrokeCap = [
+        CanvasKit.StrokeCap.Butt,
+        CanvasKit.StrokeCap.Round,
+        CanvasKit.StrokeCap.Square,
+      ]
+      CanvasKitAPI.SkStrokeJoin = [
+        CanvasKit.StrokeJoin.Miter,
+        CanvasKit.StrokeJoin.Round,
+        CanvasKit.StrokeJoin.Bevel,
+      ]
+      CanvasKitAPI.SkBlurStyle = [
+        CanvasKit.BlurStyle.Normal,
+        CanvasKit.BlurStyle.Solid,
+        CanvasKit.BlurStyle.Outer,
+        CanvasKit.BlurStyle.Inner,
+      ]
+
+      return CanvasKit
     })
   }
 
-  static get ImageData () {
-    return CanvasKit.canvasKit.ImageData
+  static get SkParagraphStyle () {
+    return CanvasKitAPI.CanvasKit.ParagraphStyle
   }
-  static get ParagraphStyle () {
-    return CanvasKit.canvasKit.ParagraphStyle
+  static get SkContourMeasureIter () {
+    return CanvasKitAPI.CanvasKit.ContourMeasureIter
   }
-  static get ContourMeasureIter () {
-    return CanvasKit.canvasKit.ContourMeasureIter
+  static get SkFont () {
+    return CanvasKitAPI.CanvasKit.Font
   }
-  static get Font () {
-    return CanvasKit.canvasKit.Font
+  static get SkPaint () {
+    return CanvasKitAPI.CanvasKit.Paint
   }
-  static get Paint () {
-    return CanvasKit.canvasKit.Paint
+  static get SkPath () {
+    return CanvasKitAPI.CanvasKit.Path
   }
-  static get Path () {
-    return CanvasKit.canvasKit.Path
+  static get SkPictureRecorder () {
+    return CanvasKitAPI.CanvasKit.PictureRecorder
   }
-  static get PictureRecorder () {
-    return CanvasKit.canvasKit.PictureRecorder
+  static get SkTextStyle () {
+    return CanvasKitAPI.CanvasKit.TextStyle
   }
-  static get TextStyle () {
-    return CanvasKit.canvasKit.TextStyle
+  static get SkParagraphBuilder () {
+    return CanvasKitAPI.CanvasKit.ParagraphBuilder
   }
-  static get ParagraphBuilder () {
-    return CanvasKit.canvasKit.ParagraphBuilder
+  static get SkColorFilter () {
+    return CanvasKitAPI.CanvasKit.ColorFilter
   }
-  static get ColorFilter () {
-    return CanvasKit.canvasKit.ColorFilter
+  static get SkFontMgr () {
+    return CanvasKitAPI.CanvasKit.FontMgr
   }
-  static get FontMgr () {
-    return CanvasKit.canvasKit.FontMgr
+  static get SkImageFilter () {
+    return CanvasKitAPI.CanvasKit.ImageFilter
   }
-  static get ImageFilter () {
-    return CanvasKit.canvasKit.ImageFilter
+  static get SkMaskFilter () {
+    return CanvasKitAPI.CanvasKit.MaskFilter
   }
-  static get MaskFilter () {
-    return CanvasKit.canvasKit.MaskFilter
+  static get SkShader () {
+    return CanvasKitAPI.CanvasKit.Shader
+  }    
+  static get SkTypeface () {
+    return CanvasKitAPI.CanvasKit.Typeface
   }
-  static get PathEffect () {
-    return CanvasKit.canvasKit.PathEffect
+  static get SkAlphaType () {
+    return CanvasKitAPI.CanvasKit.AlphaType
   }
-  static get RuntimeEffect () {
-    return CanvasKit.canvasKit.RuntimeEffect
+  static get SkColorType () {
+    return CanvasKitAPI.CanvasKit.ColorType
   }
-  static get Shader () {
-    return CanvasKit.canvasKit.Shader
+  static get SkFillType () {
+    return CanvasKitAPI.CanvasKit.FillType
   }
-  static get TextBlob () {
-    return CanvasKit.canvasKit.TextBlob
+  static get SkFilterMode () {
+    return CanvasKitAPI.CanvasKit.FilterMode
   }
-  static get Typeface () {
-    return CanvasKit.canvasKit.Typeface
+  static get SkMipmapMode () {
+    return CanvasKitAPI.CanvasKit.MipmapMode
   }
-  static get TypefaceFontProvider () {
-    return CanvasKit.canvasKit.TypefaceFontProvider
+  static get SkPathOp () {
+    return CanvasKitAPI.CanvasKit.PathOp
   }
-  static get ColorMatrix () {
-    return CanvasKit.canvasKit.ColorMatrix
+
+  static toSkBlendMode = (blendMode: BlendMode) => {
+    return CanvasKitAPI.SkBlendMode[blendMode]
   }
-  static get Matrix () {
-    return CanvasKit.canvasKit.Matrix
+
+  static toSkPaintStyle (paintStyle: PaintingStyle) {
+    return CanvasKitAPI.SkPaintStyle[paintStyle]
   }
-  static get M44 () {
-    return CanvasKit.canvasKit.M44
+
+  static toSkStrokeCap (strokeCap: StrokeCap) {
+    return CanvasKitAPI.SkStrokeCap[strokeCap]
   }
-  static get Vector () {
-    return CanvasKit.canvasKit.Vector
+
+  static toSkStrokeJoin (strokeJoin: StrokeJoin) {
+    return CanvasKitAPI.SkStrokeJoin[strokeJoin]
   }
-  static get AlphaType () {
-    return CanvasKit.canvasKit.AlphaType
-  }
-  static get BlendMode () {
-    return CanvasKit.canvasKit.BlendMode
-  }
-  static get BlurStyle () {
-    return CanvasKit.canvasKit.BlurStyle
-  }
-  static get ClipOp () {
-    return CanvasKit.canvasKit.ClipOp
-  }
-  static get ColorType () {
-    return CanvasKit.canvasKit.ColorType
-  }
-  static get FillType () {
-    return CanvasKit.canvasKit.FillType
-  }
-  static get FilterMode () {
-    return CanvasKit.canvasKit.FilterMode
-  }
-  static get FontEdging () {
-    return CanvasKit.canvasKit.FontEdging
-  }
-  static get FontHinting () {
-    return CanvasKit.canvasKit.FontHinting
-  }
-  static get GlyphRunFlags () {
-    return CanvasKit.canvasKit.GlyphRunFlags
-  }
-  static get ImageFormat () {
-    return CanvasKit.canvasKit.ImageFormat
-  }
-  static get MipmapMode () {
-    return CanvasKit.canvasKit.MipmapMode
-  }
-  static get PaintStyle () {
-    return CanvasKit.canvasKit.PaintStyle
-  }
-  static get PathOp () {
-    return CanvasKit.canvasKit.PathOp
-  }
-  static get PointMode () {
-    return CanvasKit.canvasKit.PointMode
-  }
-  static get ColorSpace () {
-    return CanvasKit.canvasKit.ColorSpace
-  }
-  static get StrokeCap () {
-    return CanvasKit.canvasKit.StrokeCap
-  }
-  static get StrokeJoin () {
-    return CanvasKit.canvasKit.StrokeJoin
-  }
-  static get TileMode () {
-    return CanvasKit.canvasKit.TileMode
-  }
-  static get VertexMode () {
-    return CanvasKit.canvasKit.VertexMode
-  }
-  static get TRANSPARENT () {
-    return CanvasKit.canvasKit.TRANSPARENT
-  }
-  static get BLACK () {
-    return CanvasKit.canvasKit.BLACK
-  }
-  static get WHITE () {
-    return CanvasKit.canvasKit.WHITE
-  }
-  static get RED () {
-    return CanvasKit.canvasKit.RED
-  }
-  static get GREEN () {
-    return CanvasKit.canvasKit.GREEN
-  }
-  static get BLUE () {
-    return CanvasKit.canvasKit.BLUE
-  }
-  static get YELLOW () {
-    return CanvasKit.canvasKit.YELLOW
-  }
-  static get CYAN () {
-    return CanvasKit.canvasKit.CYAN
-  }
-  static get MAGENTA () {
-    return CanvasKit.canvasKit.MAGENTA
-  }
-  static get MOVE_VERB () {
-    return CanvasKit.canvasKit.MOVE_VERB
-  }
-  static get LINE_VERB () {
-    return CanvasKit.canvasKit.LINE_VERB
-  }
-  static get QUAD_VERB () {
-    return CanvasKit.canvasKit.QUAD_VERB
-  }
-  static get CONIC_VERB () {
-    return CanvasKit.canvasKit.CONIC_VERB
-  }
-  static get CUBIC_VERB () {
-    return CanvasKit.canvasKit.CUBIC_VERB
-  }
-  static get CLOSE_VERB () {
-    return CanvasKit.canvasKit.CLOSE_VERB
-  }
-  static get SaveLayerInitWithPrevious () {
-    return CanvasKit.canvasKit.SaveLayerInitWithPrevious
-  }
-  static get SaveLayerF16ColorType () {
-    return CanvasKit.canvasKit.SaveLayerF16ColorType
-  }
-  static get ShadowTransparentOccluder () {
-    return CanvasKit.canvasKit.ShadowTransparentOccluder
-  }
-  static get ShadowGeometricOnly () {
-    return CanvasKit.canvasKit.ShadowGeometricOnly
-  }
-  static get ShadowDirectionalLight () {
-    return CanvasKit.canvasKit.ShadowDirectionalLight
-  }
-  static get gpu () {
-    return CanvasKit.canvasKit.gpu
-  }
-  static get managed_skottie () {
-    return CanvasKit.canvasKit.managed_skottie
-  }
-  static get particles () {
-    return CanvasKit.canvasKit.particles
-  }
-  static get rt_effect () {
-    return CanvasKit.canvasKit.rt_effect
-  }
-  static get skottie () {
-    return CanvasKit.canvasKit.skottie
-  }
-  static get Affinity () {
-    return CanvasKit.canvasKit.Affinity
-  }
-  static get DecorationStyle () {
-    return CanvasKit.canvasKit.DecorationStyle
-  }
-  static get FontSlant () {
-    return CanvasKit.canvasKit.FontSlant
-  }
-  static get FontWeight () {
-    return CanvasKit.canvasKit.FontWeight
-  }
-  static get FontWidth () {
-    return CanvasKit.canvasKit.FontWidth
-  }
-  static get PlaceholderAlignment () {
-    return CanvasKit.canvasKit.PlaceholderAlignment
-  }
-  static get RectHeightStyle () {
-    return CanvasKit.canvasKit.RectHeightStyle
-  }
-  static get RectWidthStyle () {
-    return CanvasKit.canvasKit.RectWidthStyle
-  }
-  static get TextAlign () {
-    return CanvasKit.canvasKit.TextAlign
-  }
-  static get TextBaseline () {
-    return CanvasKit.canvasKit.TextBaseline
-  }
-  static get TextDirection () {
-    return CanvasKit.canvasKit.TextDirection
-  }
-  static get TextHeightBehavior () {
-    return CanvasKit.canvasKit.TextHeightBehavior
-  }
-  static get NoDecoration () {
-    return CanvasKit.canvasKit.NoDecoration
-  }
-  static get UnderlineDecoration () {
-    return CanvasKit.canvasKit.UnderlineDecoration
-  }
-  static get OverlineDecoration () {
-    return CanvasKit.canvasKit.OverlineDecoration
-  }
-  static get LineThroughDecoration () {
-    return CanvasKit.canvasKit.LineThroughDecoration
-  }
-  static get Color () {
-    return CanvasKit.canvasKit.Color
-  }
-  static get Color4f () {
-    return CanvasKit.canvasKit.Color4f
-  }
-  static get ColorAsInt () {
-    return CanvasKit.canvasKit.ColorAsInt
-  }
-  static get getColorComponents () {
-    return CanvasKit.canvasKit.getColorComponents
-  }
-  static get parseColorString () {
-    return CanvasKit.canvasKit.parseColorString
-  }
-  static get multiplyByAlpha () {
-    return CanvasKit.canvasKit.multiplyByAlpha
-  }
-  static get computeTonalColors () {
-    return CanvasKit.canvasKit.computeTonalColors
-  }
-  static get LTRBRect () {
-    return CanvasKit.canvasKit.LTRBRect
-  }
-  static get XYWHRect () {
-    return CanvasKit.canvasKit.XYWHRect
-  }
-  static get LTRBiRect () {
-    return CanvasKit.canvasKit.LTRBiRect
-  }
-  static get XYWHiRect () {
-    return CanvasKit.canvasKit.XYWHiRect
-  }
-  static get RRectXY () {
-    return CanvasKit.canvasKit.RRectXY
-  }
-  static get getShadowLocalBounds () {
-    return CanvasKit.canvasKit.getShadowLocalBounds
-  }
-  static get Malloc () {
-    return CanvasKit.canvasKit.Malloc
-  }
-  static get MallocGlyphIDs () {
-    return CanvasKit.canvasKit.MallocGlyphIDs
-  }
-  static get Free () {
-    return CanvasKit.canvasKit.Free
-  }
-  static get MakeCanvasSurface () {
-    return CanvasKit.canvasKit.MakeCanvasSurface
-  }
-  static get MakeRasterDirectSurface () {
-    return CanvasKit.canvasKit.MakeRasterDirectSurface
-  }
-  static get MakeSWCanvasSurface () {
-    return CanvasKit.canvasKit.MakeSWCanvasSurface
-  }
-  static get MakeWebGLCanvasSurface () {
-    return CanvasKit.canvasKit.MakeWebGLCanvasSurface
-  }
-  static get MakeSurface () {
-    return CanvasKit.canvasKit.MakeSurface
-  }
-  static get GetWebGLContext () {
-    return CanvasKit.canvasKit.GetWebGLContext
-  }
-  static get MakeGrContext () {
-    return CanvasKit.canvasKit.MakeGrContext
-  }
-  static get MakeOnScreenGLSurface () {
-    return CanvasKit.canvasKit.MakeOnScreenGLSurface
-  }
-  static get MakeRenderTarget () {
-    return CanvasKit.canvasKit.MakeRenderTarget
-  }
-  static get MakeLazyImageFromTextureSource () {
-    return CanvasKit.canvasKit.MakeLazyImageFromTextureSource
-  }
-  static get deleteContext () {
-    return CanvasKit.canvasKit.deleteContext
-  }
-  static get getDecodeCacheLimitBytes () {
-    return CanvasKit.canvasKit.getDecodeCacheLimitBytes
-  }
-  static get getDecodeCacheUsedBytes () {
-    return CanvasKit.canvasKit.getDecodeCacheUsedBytes
-  }
-  static get setDecodeCacheLimitBytes () {
-    return CanvasKit.canvasKit.setDecodeCacheLimitBytes
-  }
-  static get MakeAnimatedImageFromEncoded () {
-    return CanvasKit.canvasKit.MakeAnimatedImageFromEncoded
-  }
-  static get MakeCanvas () {
-    return CanvasKit.canvasKit.MakeCanvas
-  }
-  static get MakeImage () {
-    return CanvasKit.canvasKit.MakeImage
-  }
-  static get MakeImageFromEncoded () {
-    return CanvasKit.canvasKit.MakeImageFromEncoded
-  }
-  static get MakeImageFromCanvasImageSource () {
-    return CanvasKit.canvasKit.MakeImageFromCanvasImageSource
-  }
-  static get MakePicture () {
-    return CanvasKit.canvasKit.MakePicture
-  }
-  static get MakeVertices () {
-    return CanvasKit.canvasKit.MakeVertices
-  }
-  static get MakeAnimation () {
-    return CanvasKit.canvasKit.MakeAnimation
-  }
-  static get MakeManagedAnimation () {
-    return CanvasKit.canvasKit.MakeManagedAnimation
-  }
-  static get MakeParticles () {
-    return CanvasKit.canvasKit.MakeParticles
+
+  static toSkBlurStyle (blurStyle: BlurStyle) {
+    return CanvasKitAPI.SkBlurStyle[blurStyle]
   }
 }
