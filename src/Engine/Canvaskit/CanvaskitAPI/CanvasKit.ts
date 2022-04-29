@@ -1,5 +1,5 @@
 import path from 'path'
-import CanvasKitInit, { CanvasKitInitOptions, CanvasKit as ICanvasKit } from 'canvaskit-wasm'
+import CanvasKitInit, { CanvasKitInitOptions, CanvasKit as ICanvasKit, Paint } from 'canvaskit-wasm'
 
 
 type CanvasKitInitFunction = {
@@ -8,10 +8,10 @@ type CanvasKitInitFunction = {
 
 export class CanvasKit {
   static canvasKit: ICanvasKit
-  static CanvasKitInit () {
+  static CanvasKitInit (uri: string) {
     return (CanvasKitInit as unknown as CanvasKitInitFunction)({
-      locateFile: (uri: string) => {
-        return path.resolve(__dirname, uri)
+      locateFile: () => {
+        return uri
       }
     }).then((canvasKit: ICanvasKit) => {
       CanvasKit.canvasKit = canvasKit

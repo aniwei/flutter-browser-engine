@@ -1,10 +1,15 @@
 import { CanvasKitAPI } from '../CanvasKitAPI'
 
-import type { bool, int } from '@Types'
-import type { Color } from '@UI'
+import type { bool, int, Float32List } from '@Types'
+import type { Color, Rect, RRect, ClipOp } from '@UI'
 import type { SkCanvas } from '../CanvasKitAPI'
 
-
+const { 
+  toSkRRect, 
+  toSkRect, 
+  toSkClipOp,
+  toSkM44FromFloat32
+} = CanvasKitAPI
 
 
 export class CkCanvas {
@@ -177,7 +182,7 @@ export class CkCanvas {
     this.skCanvas.skew(sx, sy)
   }
 
-  transform (matrix: number[]) {
+  transform (matrix: Float32List) {
     this.skCanvas.concat(toSkM44FromFloat32(matrix))
   }
 
