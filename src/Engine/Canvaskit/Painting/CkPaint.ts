@@ -18,6 +18,7 @@ import { CkMaskFilter } from '../MaskFilter'
 import { ManagedSkiaObject } from '../SkiaObjectCache'
 
 import type { SkPaint } from '@Skia'
+import { CkShader } from '../CanvasKitAPI/Shader'
 
 const defaultPaintColor = new Color(0xFF000000)
 
