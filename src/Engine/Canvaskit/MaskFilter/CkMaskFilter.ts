@@ -1,5 +1,5 @@
 import { CanvasKitAPI } from '@Skia'
-
+import { ManagedSkiaObject } from '../SkiaObjectCache'
 import type { 
   SkMaskFilter
 } from '@Skia'

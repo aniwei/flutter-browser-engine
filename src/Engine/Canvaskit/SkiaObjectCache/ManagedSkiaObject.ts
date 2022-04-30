@@ -1,3 +1,5 @@
+import { SkDeletable } from '../CanvasKitAPI'
+import { Collector } from '../CanvasKitAPI/Collector'
 import { SkiaObject } from './SkiaObject'
 import { SkiaObjects } from './SkiaObjects'
 
@@ -10,7 +12,7 @@ export abstract class ManagedSkiaObject<T extends Object> extends SkiaObject<T> 
     return this.rawSkiaObject ?? this.doResurrect()
   }
 
-  constructor (instance: T | null) {
+  constructor (instance: T | null = null) {
     super()
     const defaultObject = instance ?? this.createDefault()
 

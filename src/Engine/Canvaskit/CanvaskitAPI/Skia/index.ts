@@ -16,7 +16,8 @@ import {
   StrokeJoin,
   ImageFilter,
   MaskFilter,
-  BlurStyle
+  BlurStyle,
+  EmbindObject
 } from 'canvaskit-wasm'
 
 export type SkPath = Path
@@ -37,3 +38,4 @@ export type SkParagraphStyle = ParagraphStyle
 export type SkImageFilter = ImageFilter
 export type SkMaskFilter = MaskFilter
 export type SkBlurStyle = BlurStyle
+export type SkDeletable = EmbindObject<SkPath | SkPaint>
