@@ -1,7 +1,65 @@
-import { Float32List } from "@Types"
+import { clamp } from '@Shared'
+import { Float32List } from '@Types'
+import { Matrix4 } from './Matrix4'
 
 export class Vector3 {
-  public v3storage: Float32List
+  static min(a: Vector3, b: Vector3, result: Vector3): void {
+    result.x = Math.min(a.x, b.x)
+    result.y = Math.min(a.y, b.y)
+    result.z = Math.min(a.z, b.z)
+  }
+
+  static max(a: Vector3, b: Vector3, result: Vector3): void {
+    result.x = Math.max(a.x, b.x)
+    result.y = Math.max(a.y, b.y)
+    result.z = Math.max(a.z, b.z)
+  }
+
+  /// Interpolate between [min] and [max] with the amount of [a] using a linear
+  /// interpolation and store the values in [result].
+  static mix(min: Vector3, max: Vector3, a: number, result: Vector3): void {
+    result.x = min.x + a * (max.x - min.x)
+    result.y = min.y + a * (max.y - min.y)
+    result.z = min.z + a * (max.z - min.z)
+  }
+
+  static zero() {
+    const vector3 = new Vector3()
+    vector3.v3storage = new Float32List(3)
+
+    return vector3
+  }
+
+  static all (value: number) {
+    const vector3 = Vector3.zero()
+    vector3.splat(value)
+    return vector3
+  }
+  
+  static copy (other: Vector3) {
+    const vector3 = Vector3.zero()
+    vector3.setFrom(other)
+    return vector3
+  }
+
+  static fromFloat32List (v3storage: Float32List) {
+    const vector3 = new Vector3()
+    vector3.v3storage = v3storage
+    return v3storage
+  }
+
+  static fromBuffer(buffer: Buffer, offset: number) {
+    const v3storage = new Float32List(buffer, offset, 3)
+    const vector3 = new Vector3()
+    vector3.v3storage = v3storage
+    return vector3
+  }
+
+  static random () {
+    return new Vector3(Math.random(), Math.random(), Math.random());
+  }
+
+  public v3storage: Float32List = new Float32List(3)
   public get x () {
     return this.v3storage[0]
   }
@@ -26,59 +84,62 @@ export class Vector3 {
     return this.v3storage
   }
 
-  static min(a: Vector3, b: Vector3, result: Vector3): void {
-    result.x = Math.min(a.x, b.x)
-    result.y = Math.min(a.y, b.y)
-    result.z = Math.min(a.z, b.z)
+  set length(value: number) {
+    if (value === 0.0) {
+      this.setZero()
+    } else {
+      let l = length;
+      if (l === 0.0) {
+        return
+      }
+      l = value / l
+      this.v3storage[0] *= l
+      this.v3storage[1] *= l
+      this.v3storage[2] *= l
+    }
   }
 
-  static max(a: Vector3, b: Vector3, result: Vector3): void {
-    result.x = Math.max(a.x, b.x)
-    result.y = Math.max(a.y, b.y)
-    result.z = Math.max(a.z, b.z)
+  public get length () {
+    return Math.sqrt(this.length2)
   }
 
-  /// Interpolate between [min] and [max] with the amount of [a] using a linear
-  /// interpolation and store the values in [result].
-  static mix(min: Vector3, max: Vector3, a: number, result: Vector3): void {
-    result.x = min.x + a * (max.x - min.x)
-    result.y = min.y + a * (max.y - min.y)
-    result.z = min.z + a * (max.z - min.z)
+  public get length2 () {
+    let sum
+    sum = this.v3storage[0] * this.v3storage[0]
+    sum += this.v3storage[1] * this.v3storage[1]
+    sum += this.v3storage[2] * this.v3storage[2]
+    return sum
   }
 
-  static factory (x: number, y: number, z: number) {
-    const vector3 = Vector3.zero()
-    vector3.setValues(x, y, z)
-
-    return vector3
+  get isInfinite (): boolean {
+    let isInfinite = false
+    isInfinite = isInfinite || !Number.isFinite(this.v3storage[0])
+    isInfinite = isInfinite || !Number.isFinite(this.v3storage[1])
+    isInfinite = isInfinite || !Number.isFinite(this.v3storage[2])
+    return isInfinite;
   }
 
-  static zero() {
-    const vector3 = new Vector3()
-    vector3.v3storage = new Float32List(3)
-
-    return vector3
+  /// True if any component is NaN.
+  get isNaN (): boolean {
+    let isNan = false
+    isNan = isNan || Number.isNaN(this.v3storage[0])
+    isNan = isNan || Number.isNaN(this.v3storage[1])
+    isNan = isNan || Number.isNaN(this.v3storage[2])
+    return isNan
   }
 
-  /// Splat [value] into all lanes of the vector.
-  factory Vector3.all(double value) => Vector3.zero()..splat(value);
+  constructor (x?: number, y?: number, z?: number) {
+    if (x !== undefined) {
+      this.x = x
+    }
 
-  /// Copy of [other].
-  factory Vector3.copy(Vector3 other) => Vector3.zero()..setFrom(other);
+    if (y !== undefined) {
+      this.y = y
+    } 
 
-  /// Constructs Vector3 with given Float32List as [storage].
-  Vector3.fromFloat32List(this.v3storage);
-
-  /// Constructs Vector3 with a [storage] that views given [buffer] starting at
-  /// [offset]. [offset] has to be multiple of [Float32List.bytesPerElement].
-  Vector3.fromBuffer(ByteBuffer buffer, int offset)
-      : v3storage = Float32List.view(buffer, offset, 3);
-
-  /// Generate random vector in the range (0, 0, 0) to (1, 1, 1). You can
-  /// optionally pass your own random number generator.
-  factory Vector3.random([math.Random? rng]) {
-    rng ??= math.Random();
-    return Vector3(rng.nextDouble(), rng.nextDouble(), rng.nextDouble());
+    if (z !== undefined) {
+      this.z = z
+    }
   }
 
   /// Set the values of the vector.
@@ -88,243 +149,190 @@ export class Vector3 {
     this.v3storage[2] = z
   }
 
-  /// Zero vector.
-  void setZero() {
-    v3storage[2] = 0.0;
-    v3storage[1] = 0.0;
-    v3storage[0] = 0.0;
+  
+  setZero () {
+    this.v3storage[2] = 0.0
+    this.v3storage[1] = 0.0
+    this.v3storage[0] = 0.0
   }
 
-  /// Set the values by copying them from [other].
-  void setFrom(Vector3 other) {
-    Float32List otherStorage = other.v3storage;
-    v3storage[0] = otherStorage[0];
-    v3storage[1] = otherStorage[1];
-    v3storage[2] = otherStorage[2];
+  
+  setFrom (other: Vector3) {
+    const otherStorage = other.v3storage
+    this.v3storage[0] = otherStorage[0]
+    this.v3storage[1] = otherStorage[1]
+    this.v3storage[2] = otherStorage[2]
   }
 
-  /// Splat [arg] into all lanes of the vector.
-  void splat(double arg) {
-    v3storage[2] = arg;
-    v3storage[1] = arg;
-    v3storage[0] = arg;
+  splat (arg: number) {
+    this.v3storage[2] = arg
+    this.v3storage[1] = arg
+    this.v3storage[0] = arg
   }
-
-  /// Access the component of the vector at the index [i].
-  double operator [](int i) => v3storage[i];
-
-  /// Set the component of the vector at the index [i].
-  void operator []=(int i, double v) {
-    v3storage[i] = v;
-  }
-
-  /// Set the length of the vector. A negative [value] will change the vectors
-  /// orientation and a [value] of zero will set the vector to zero.
-  set length(double value) {
-    if (value == 0.0) {
-      setZero();
-    } else {
-      double l = length;
-      if (l == 0.0) {
-        return;
-      }
-      l = value / l;
-      v3storage[0] *= l;
-      v3storage[1] *= l;
-      v3storage[2] *= l;
-    }
-  }
-
-  /// Length.
-  double get length => math.sqrt(length2);
-
-  /// Length squared.
-  double get length2 {
-    double sum;
-    sum = v3storage[0] * v3storage[0];
-    sum += v3storage[1] * v3storage[1];
-    sum += v3storage[2] * v3storage[2];
-    return sum;
-  }
-
-  /// Normalizes [this].
-  double normalize() {
-    double l = length;
-    if (l == 0.0) {
-      return 0.0;
-    }
-    double d = 1.0 / l;
-    v3storage[0] *= d;
-    v3storage[1] *= d;
-    v3storage[2] *= d;
-    return l;
-  }
-
-  /// Normalizes copy of [this].
-  Vector3 normalized() => Vector3.copy(this)..normalize();
-
-  /// Normalize vector into [out].
-  Vector3 normalizeInto(Vector3 out) {
-    out
-      ..setFrom(this)
-      ..normalize();
-    return out;
-  }
-
-  /// Distance from [this] to [arg]
-  double distanceTo(Vector3 arg) => math.sqrt(distanceToSquared(arg));
-
-  /// Squared distance from [this] to [arg]
-  double distanceToSquared(Vector3 arg) {
-    Float32List argStorage = arg.v3storage;
-    double dx = v3storage[0] - argStorage[0];
-    double dy = v3storage[1] - argStorage[1];
-    double dz = v3storage[2] - argStorage[2];
-
-    return dx * dx + dy * dy + dz * dz;
-  }
-
-  /// Returns the angle between [this] vector and [other] in radians.
-  double angleTo(Vector3 other) {
-    Float32List otherStorage = other.v3storage;
-    if (v3storage[0] == otherStorage[0] &&
-        v3storage[1] == otherStorage[1] &&
-        v3storage[2] == otherStorage[2]) {
-      return 0.0;
+  
+  normalize (): number {
+    const l = this.length
+    if (l === 0.0) {
+      return 0.0
     }
 
-    double d = dot(other) / (length * other.length);
-
-    return math.acos(d.clamp(-1.0, 1.0));
+    const d = 1.0 / l
+    this.v3storage[0] *= d
+    this.v3storage[1] *= d
+    this.v3storage[2] *= d
+    return l
   }
 
-  /// Inner product.
-  double dot(Vector3 other) {
-    Float32List otherStorage = other.v3storage;
-    double sum;
-    sum = v3storage[0] * otherStorage[0];
-    sum += v3storage[1] * otherStorage[1];
-    sum += v3storage[2] * otherStorage[2];
-    return sum;
+  
+  normalized (): Vector3  {
+    const vector3 = Vector3.copy(this)
+    vector3.normalize()
+
+    return vector3
   }
 
-  /// Projects [this] using the projection matrix [arg]
-  void applyProjection(Matrix4 arg) {
-    Float32List argStorage = arg.storage;
-    double x = v3storage[0];
-    double y = v3storage[1];
-    double z = v3storage[2];
-    double d = 1.0 /
-        (argStorage[3] * x +
-            argStorage[7] * y +
-            argStorage[11] * z +
-            argStorage[15]);
-    v3storage[0] = (argStorage[0] * x +
-            argStorage[4] * y +
-            argStorage[8] * z +
-            argStorage[12]) *
-        d;
-    v3storage[1] = (argStorage[1] * x +
-            argStorage[5] * y +
-            argStorage[9] * z +
-            argStorage[13]) *
-        d;
-    v3storage[2] = (argStorage[2] * x +
-            argStorage[6] * y +
-            argStorage[10] * z +
-            argStorage[14]) *
-        d;
+  normalizeInto (out: Vector3): Vector3 {
+    out.setFrom(this)
+    out.normalize()
+    return out
   }
 
-  /// True if any component is infinite.
-  bool get isInfinite {
-    bool isInfinite = false;
-    isInfinite = isInfinite || v3storage[0].isInfinite;
-    isInfinite = isInfinite || v3storage[1].isInfinite;
-    isInfinite = isInfinite || v3storage[2].isInfinite;
-    return isInfinite;
+  distanceTo (arg: Vector3): number {
+    return Math.sqrt(this.distanceToSquared(arg))
   }
 
-  /// True if any component is NaN.
-  bool get isNaN {
-    bool isNan = false;
-    isNan = isNan || v3storage[0].isNaN;
-    isNan = isNan || v3storage[1].isNaN;
-    isNan = isNan || v3storage[2].isNaN;
-    return isNan;
+  distanceToSquared(arg: Vector3) {
+    const argStorage = arg.v3storage
+    const dx = this.v3storage[0] - argStorage[0]
+    const dy = this.v3storage[1] - argStorage[1]
+    const dz = this.v3storage[2] - argStorage[2]
+
+    return dx * dx + dy * dy + dz * dz
+  }
+
+  angleTo (other: Vector3) {
+    const otherStorage = other.v3storage
+    if (
+      this.v3storage[0] == otherStorage[0] &&
+      this.v3storage[1] == otherStorage[1] &&
+      this.v3storage[2] == otherStorage[2]
+    ) {
+      return 0.0
+    }
+
+    const d = this.dot(other) / (length * other.length)
+
+    return Math.acos(clamp(d, -1.0, 1.0))
+  }
+
+  dot (other: Vector3) {
+    const otherStorage = other.v3storage
+    let sum
+    sum = this.v3storage[0] * otherStorage[0]
+    sum += this.v3storage[1] * otherStorage[1]
+    sum += this.v3storage[2] * otherStorage[2]
+    return sum
+  }
+
+  applyProjection (arg: Matrix4): void {
+    const argStorage = arg.storage
+    const x = this.v3storage[0]
+    const y = this.v3storage[1]
+    const z = this.v3storage[2]
+    const d = 1.0 / (
+      argStorage[3] * x +
+      argStorage[7] * y +
+      argStorage[11] * z +
+      argStorage[15]
+    )
+    this.v3storage[0] = (
+      argStorage[0] * x +
+      argStorage[4] * y +
+      argStorage[8] * z +
+      argStorage[12]
+    ) * d
+    this.v3storage[1] = (
+      argStorage[1] * x +
+      argStorage[5] * y +
+      argStorage[9] * z +
+      argStorage[13]
+    ) * d
+    this.v3storage[2] = (
+      argStorage[2] * x +
+      argStorage[6] * y +
+      argStorage[10] * z +
+      argStorage[14]
+    ) * d
   }
 
   /// Add [arg] to [this].
-  void add(Vector3 arg) {
-    Float32List argStorage = arg.v3storage;
-    v3storage[0] = v3storage[0] + argStorage[0];
-    v3storage[1] = v3storage[1] + argStorage[1];
-    v3storage[2] = v3storage[2] + argStorage[2];
+  add (arg: Vector3): void {
+    const argStorage = arg.v3storage
+    this.v3storage[0] = this.v3storage[0] + argStorage[0]
+    this.v3storage[1] = this.v3storage[1] + argStorage[1]
+    this.v3storage[2] = this.v3storage[2] + argStorage[2]
   }
 
   /// Add [arg] scaled by [factor] to [this].
-  void addScaled(Vector3 arg, double factor) {
-    Float32List argStorage = arg.v3storage;
-    v3storage[0] = v3storage[0] + argStorage[0] * factor;
-    v3storage[1] = v3storage[1] + argStorage[1] * factor;
-    v3storage[2] = v3storage[2] + argStorage[2] * factor;
+  addScaled(arg: Vector3, factor: number): void {
+    const argStorage = arg.v3storage
+    this.v3storage[0] = this.v3storage[0] + argStorage[0] * factor
+    this.v3storage[1] = this.v3storage[1] + argStorage[1] * factor
+    this.v3storage[2] = this.v3storage[2] + argStorage[2] * factor
   }
 
-  /// Subtract [arg] from [this].
-  void sub(Vector3 arg) {
-    Float32List argStorage = arg.v3storage;
-    v3storage[0] = v3storage[0] - argStorage[0];
-    v3storage[1] = v3storage[1] - argStorage[1];
-    v3storage[2] = v3storage[2] - argStorage[2];
+  sub(arg: Vector3): void {
+    const argStorage = arg.v3storage
+    this.v3storage[0] = this.v3storage[0] - argStorage[0]
+    this.v3storage[1] = this.v3storage[1] - argStorage[1]
+    this.v3storage[2] = this.v3storage[2] - argStorage[2]
   }
 
   /// Multiply entries in [this] with entries in [arg].
-  void multiply(Vector3 arg) {
-    Float32List argStorage = arg.v3storage;
-    v3storage[0] = v3storage[0] * argStorage[0];
-    v3storage[1] = v3storage[1] * argStorage[1];
-    v3storage[2] = v3storage[2] * argStorage[2];
+  multiply(arg: Vector3): void {
+    const argStorage = arg.v3storage
+    this.v3storage[0] = this.v3storage[0] * argStorage[0]
+    this.v3storage[1] = this.v3storage[1] * argStorage[1]
+    this.v3storage[2] = this.v3storage[2] * argStorage[2]
   }
 
   /// Divide entries in [this] with entries in [arg].
-  void divide(Vector3 arg) {
-    Float32List argStorage = arg.v3storage;
-    v3storage[0] = v3storage[0] / argStorage[0];
-    v3storage[1] = v3storage[1] / argStorage[1];
-    v3storage[2] = v3storage[2] / argStorage[2];
+  divide (arg: Vector3): void {
+    const argStorage = arg.v3storage
+    this.v3storage[0] = this.v3storage[0] / argStorage[0]
+    this.v3storage[1] = this.v3storage[1] / argStorage[1]
+    this.v3storage[2] = this.v3storage[2] / argStorage[2]
   }
 
-  /// Scale [this].
-  void scale(double arg) {
-    v3storage[2] = v3storage[2] * arg;
-    v3storage[1] = v3storage[1] * arg;
-    v3storage[0] = v3storage[0] * arg;
+  scale (arg: number): void {
+    this.v3storage[2] = this.v3storage[2] * arg
+    this.v3storage[1] = this.v3storage[1] * arg
+    this.v3storage[0] = this.v3storage[0] * arg
   }
 
-  /// Create a copy of [this] and scale it by [arg].
-  Vector3 scaled(double arg) => clone()..scale(arg);
+  scaled (arg: number) {
+    const vector3 = this.clone()
+    vector3.scale(arg)
+    return vector3
+  }
 
-  /// Clone of [this].
-  Vector3 clone() => Vector3.copy(this);
+  clone() { 
+    return Vector3.copy(this)
+  }
 
   /// Copy [this] into [arg].
-  Vector3 copyInto(Vector3 arg) {
-    Float32List argStorage = arg.v3storage;
-    argStorage[0] = v3storage[0];
-    argStorage[1] = v3storage[1];
-    argStorage[2] = v3storage[2];
-    return arg;
+  copyInto (arg: Vector3) {
+    const argStorage = arg.v3storage
+    argStorage[0] = this.v3storage[0]
+    argStorage[1] = this.v3storage[1]
+    argStorage[2] = this.v3storage[2]
+    return arg
   }
 
   /// Copies [this] into [array] starting at [offset].
-  void copyIntoArray(List<double> array, [int offset = 0]) {
-    array[offset + 2] = v3storage[2];
-    array[offset + 1] = v3storage[1];
-    array[offset + 0] = v3storage[0];
+  copyIntoArray (array: number[], offset: number = 0) {
+    array[offset + 2] = this.v3storage[2]
+    array[offset + 1] = this.v3storage[1]
+    array[offset + 0] = this.v3storage[0]
   }
-
-  set x(double arg) => v3storage[0] = arg;
-  set y(double arg) => v3storage[1] = arg;
-  set z(double arg) => v3storage[2] = arg;
-
 }

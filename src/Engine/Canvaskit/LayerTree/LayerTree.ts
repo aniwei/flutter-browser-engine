@@ -1,6 +1,9 @@
-import { Size } from '@UI';
+import { Color, Picture, Rect, Size } from '@UI';
 import { RootLayer, PrerollContext } from '../Layer'
 import { Matrix4 } from '../../VectorMath'
+import { PaintContext } from '../Layer/PaintContext';
+import { Frame } from './Frame';
+import { CkNWayCanvas } from '../NWayCanvas';
 
 export class LayerTree {
   public rootLayer: RootLayer
@@ -19,47 +22,43 @@ export class LayerTree {
     this.rootLayer.preroll(context, Matrix4.identity());
   }
 
-  /// Paints the layer tree into the given [frame].
-  ///
-  /// If [ignoreRasterCache] is `true`, then the raster cache will
-  /// not be used.
-  void paint(Frame frame, {bool ignoreRasterCache = false}) {
-    final CkNWayCanvas internalNodesCanvas = CkNWayCanvas();
-    internalNodesCanvas.addCanvas(frame.canvas);
-    final List<CkCanvas> overlayCanvases =
-        frame.viewEmbedder!.getOverlayCanvases();
-    for (int i = 0; i < overlayCanvases.length; i++) {
-      internalNodesCanvas.addCanvas(overlayCanvases[i]);
+  paint (frame: Frame, ignoreRasterCache = false) {
+    const internalNodesCanvas = new CkNWayCanvas()
+    internalNodesCanvas.addCanvas(frame.canvas)
+    const overlayCanvases = frame.viewEmbedder!.getOverlayCanvases()
+    
+    for (let i = 0; i < overlayCanvases.length; i++) {
+      internalNodesCanvas.addCanvas(overlayCanvases[i])
     }
-    // Clear the canvases before painting
-    internalNodesCanvas.clear(const ui.Color(0x00000000));
-    final PaintContext context = PaintContext(
+
+    
+    internalNodesCanvas.clear(new Color(0x00000000))
+    const context = new PaintContext(
       internalNodesCanvas,
       frame.canvas,
       ignoreRasterCache ? null : frame.rasterCache,
       frame.viewEmbedder,
-    );
-    if (rootLayer.needsPainting) {
-      rootLayer.paint(context);
+    )
+    if (this.rootLayer.needsPainting) {
+      this.rootLayer.paint(context)
     }
   }
 
-  /// Flattens the tree into a single [ui.Picture].
-  ///
-  /// This picture does not contain any platform views.
-  ui.Picture flatten() {
-    final CkPictureRecorder recorder = CkPictureRecorder();
-    final CkCanvas canvas = recorder.beginRecording(ui.Rect.largest);
-    final PrerollContext prerollContext = PrerollContext(null, null);
-    rootLayer.preroll(prerollContext, Matrix4.identity());
+  flatten (): Picture {
+    const recorder = CkPictureRecorder()
+    const canvas = recorder.beginRecording(Rect.largest)
+    const prerollContext = new PrerollContext(null, null)
+    this.rootLayer.preroll(prerollContext, Matrix4.identity())
 
-    final CkNWayCanvas internalNodesCanvas = CkNWayCanvas();
-    internalNodesCanvas.addCanvas(canvas);
-    final PaintContext paintContext =
-        PaintContext(internalNodesCanvas, canvas, null, null);
-    if (rootLayer.needsPainting) {
-      rootLayer.paint(paintContext);
+    const internalNodesCanvas = new CkNWayCanvas()
+    internalNodesCanvas.addCanvas(canvas)
+    
+    const paintContext = new PaintContext(internalNodesCanvas, canvas, null, null)
+    
+    if (this.rootLayer.needsPainting) {
+      this.rootLayer.paint(paintContext)
     }
-    return recorder.endRecording();
+
+    return recorder.endRecording()
   }
 }

@@ -41,7 +41,6 @@ export class CkCanvas {
 
   clipRRect (
     rect: Rect,
-    clipOp: ClipOp,
     doAntiAlias: boolean
   ) {
     this.skCanvas.clipRRect(

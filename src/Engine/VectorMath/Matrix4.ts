@@ -1,6 +1,7 @@
 import { invariant } from 'ts-invariant'
 import { ArgumentError } from '@Shared'
 import { Float32List, Float64List } from '@Types'
+import { Vector3 } from './Vector3'
 
 export class Matrix4 {
   static tryInvert (other: Matrix4) {
@@ -368,7 +369,7 @@ export class Matrix4 {
   }
 
   perspectiveTransform (arg: Vector3): Vector3 {
-    const argStorage = arg._v3storage
+    const argStorage = arg.v3storage
 
     const x = (this.m4storage[0] * argStorage[0]) + (this.m4storage[4] * argStorage[1]) + (this.m4storage[8] * argStorage[2]) + this.m4storage[12]
     const y = (this.m4storage[1] * argStorage[0]) + (this.m4storage[5] * argStorage[1]) + (this.m4storage[9] * argStorage[2]) + this.m4storage[13]
@@ -433,7 +434,7 @@ export class Matrix4 {
 
   rotate (axis: Vector3, angle: number) {
     const len = axis.length
-    const axisStorage = axis._v3storage
+    const axisStorage = axis.v3storage
     const x = axisStorage[0] / len
     const y = axisStorage[1] / len
     const z = axisStorage[2] / len
@@ -498,7 +499,7 @@ export class Matrix4 {
 
   /// Sets the translation vector in this homogeneous transformation matrix.
   setTranslation (t: Vector3) {
-    const tStorage = t._v3storage
+    const tStorage = t.v3storage
     const z = tStorage[2]
     const y = tStorage[1]
     const x = tStorage[0]
@@ -918,7 +919,7 @@ export class Matrix4 {
 
   
   rotate3 (arg: Vector3): Vector3 {
-    const argStorage = arg._v3storage;
+    const argStorage = arg.v3storage;
     const x = (this.m4storage[0] * argStorage[0]) +
         (this.m4storage[4] * argStorage[1]) +
         (this.m4storage[8] * argStorage[2]);
