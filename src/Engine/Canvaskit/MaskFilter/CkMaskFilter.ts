@@ -1,4 +1,4 @@
-import { CanvasKitAPI } from '@Skia'
+import { CanvasKitAPI } from '@CanvasKitAPI'
 import { ManagedSkiaObject } from '../SkiaObjectCache'
 import type { 
   SkMaskFilter
@@ -13,6 +13,7 @@ export class CkMaskFilter extends ManagedSkiaObject<SkMaskFilter> {
     sigma: number
   ) {
     const maskFilter = new CkMaskFilter(blurStyle, sigma)
+    return maskFilter
   }
 
   public blurStyle: BlurStyle

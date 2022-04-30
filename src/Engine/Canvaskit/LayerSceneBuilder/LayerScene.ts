@@ -1,8 +1,6 @@
 import { IScene, Image } from '@UI'
-import { RootLayer } from '../RootLayer'
+import { RootLayer } from '../Layer'
 import { LayerTree } from '../LayerTree'
-
-import type { int } from '@Types'
 
 
 export class LayerScene implements IScene {
@@ -13,8 +11,8 @@ export class LayerScene implements IScene {
   }
   
   toImage (
-    width: int, 
-    height: int
+    width: number, 
+    height: number
   ): Promise<Image> {
     const picture = this.layerTree.flatten()
 

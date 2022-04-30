@@ -1,21 +1,27 @@
-import { BlurStyle } from 'canvaskit-wasm'
 import { invariant } from 'ts-invariant'
-
-import { double, bool } from '@Types'
+import { BlurStyle } from '@UI'
 
 export class MaskFilter {
   static blur (
     style: BlurStyle,
-    sigma: double,
+    sigma: number,
   ) {
     const maskFilter = new MaskFilter(style, sigma)
     return maskFilter
   }
 
   public style: BlurStyle
-  public sigma: double
+  public sigma: number
 
-  constructor (style: BlurStyle, sigma: double) {
+  public get webOnlySigma () {
+    return this.sigma
+  }
+
+  public get webOnlyBlurStyle () {
+    return this.style
+  }
+
+  constructor (style: BlurStyle, sigma: number) {
     invariant (style !== null)
     invariant (sigma !== null)
     
@@ -23,7 +29,7 @@ export class MaskFilter {
     this.sigma = sigma
   }
 
-  isEqual (maskFilter: MaskFilter): bool {
+  isEqual (maskFilter: MaskFilter): boolean {
     if (this === maskFilter) {
       return true
     }

@@ -1,7 +1,10 @@
 import { SkImageFilter } from '@Skia'
 import { FilterQuality, TileMode } from '@UI'
-import { ManagedSkiaObject } from '../../ManagedSkiaObject'
+import { ManagedSkiaObject } from '../SkiaObjectCache'
 import { CkColorFilter } from '../ColorFilter'
+import { CkBlurImageFilter } from './CkBlurImageFilter'
+import { CkColorFilterImageFilter } from './CkColorFilterImageFilter'
+import { Float64List } from '@Types'
 
 export abstract class CkImageFilter extends ManagedSkiaObject<SkImageFilter> {
   static blur (
@@ -9,7 +12,7 @@ export abstract class CkImageFilter extends ManagedSkiaObject<SkImageFilter> {
     sigmaY: number,
     tileMode: TileMode 
   ) {
-    return new _CkBlurImageFilter(sigmaX, sigmaY, tileMode)
+    return new CkBlurImageFilter(sigmaX, sigmaY, tileMode)
   }
 
   static color(

@@ -5,7 +5,9 @@ import type {
   PaintingStyle,
   StrokeCap, 
   StrokeJoin,
-  BlurStyle
+  BlurStyle,
+  TileMode,
+  Offset
 } from '@UI'
 import type { 
   SkBlendMode,
@@ -14,6 +16,7 @@ import type {
   SkStrokeJoin,
   SkBlurStyle
 } from '@Skia'
+import { Float32List, Float64List } from '@Types'
 
 type CanvasKitInitHandle = {
   (options: CanvasKitInitOptions): Promise<CanvasKit>
@@ -46,6 +49,12 @@ export class CanvasKitAPI {
   static SkStrokeCap: SkStrokeCap[]
   static SkStrokeJoin: SkStrokeJoin[]
   static SkBlurStyle: SkBlurStyle[]
+  static SkTileMode: SkBlendMode[]
+  static SkMatrixIndexToMatrix4Index = [
+    0, 4, 12, // Row 1
+    1, 5, 13, // Row 2
+    3, 7, 15, // Row 3
+  ]
   
   static CanvasKit: CanvasKit
 
@@ -108,6 +117,12 @@ export class CanvasKitAPI {
         CanvasKit.BlurStyle.Solid,
         CanvasKit.BlurStyle.Outer,
         CanvasKit.BlurStyle.Inner,
+      ]
+      CanvasKitAPI.SkTileMode = [
+        CanvasKit.TileMode.Clamp,
+        CanvasKit.TileMode.Repeat,
+        CanvasKit.TileMode.Mirror,
+        CanvasKit.TileMode.Decal,
       ]
 
       return CanvasKit
@@ -193,5 +208,29 @@ export class CanvasKitAPI {
 
   static toSkBlurStyle (blurStyle: BlurStyle) {
     return CanvasKitAPI.SkBlurStyle[blurStyle]
+  }
+
+  static toSkTileMode (mode: TileMode) {
+    return CanvasKitAPI.SkTileMode[mode]
+  }
+
+  static toSkPoint (offset: Offset) {
+    const point: Float32List = new Float32List(2)
+    point[0] = offset.dx
+    point[1] = offset.dy
+    return point
+  }
+
+  static toSkMatrixFromFloat64 (matrix4: Float64List) {
+    const skMatrix: Float32List = new Float32List(9)
+    for (let i = 0; i < 9; ++i) {
+      const matrix4Index = CanvasKitAPI.SkMatrixIndexToMatrix4Index[i]
+      if (matrix4Index < matrix4.length) {
+        skMatrix[i] = matrix4[matrix4Index]
+      } else {
+        skMatrix[i] = 0.0
+      }
+    }
+    return skMatrix
   }
 }

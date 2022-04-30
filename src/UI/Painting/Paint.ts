@@ -18,7 +18,7 @@ export interface IPaint {
   shader: Shader | null
   maskFilter: MaskFilter | null
   filterQuality: FilterQuality
-  colorFilter: ColorFilter
+  colorFilter: ColorFilter | null
   strokeMiterLimit: number
   imageFilter: ImageFilter | null
 }

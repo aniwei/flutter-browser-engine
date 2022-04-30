@@ -3,12 +3,7 @@ import { CkImageFilter } from './CkImageFilter'
 import { CkColorFilter } from '../ColorFilter'
 
 export class CkColorFilterImageFilter extends CkImageFilter {
-  public colorFilter: CkColorFilter
-
-  public get hashCode () {
-    return this.colorFilter.hashCode
-  }
-  
+  public colorFilter: CkColorFilter  
 
   constructor (colorFilter: CkColorFilter) {
     super()
@@ -21,15 +16,7 @@ export class CkColorFilterImageFilter extends CkImageFilter {
   } 
 
   isEqual (other) {
-    if (this.runtimeType !== other.runtimeType) {
-      return false
-    }
-
-    if (other instanceof CkColorFilterImageFilter) {
-      return other.colorFilter === this.colorFilter
-    }
-
-    return false
+    return other.colorFilter === this.colorFilter
   }
 
   toString () {

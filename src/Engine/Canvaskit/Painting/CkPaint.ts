@@ -9,6 +9,7 @@ import {
   StrokeCap, 
   StrokeJoin,
   IPaint,
+  ImageFilter,
 } from '@UI'
 import { CanvasKitAPI } from '@CanvasKitAPI'
 import { 
@@ -21,15 +22,26 @@ import type {
   SkPaint,
   SkImageFilter
 } from '@Skia'
+import { Float32List } from '@Types'
+import { CkColorFilter, CkComposeColorFilter, CkMatrixColorFilter } from '../ColorFilter'
+import { CkManagedSkImageFilterConvertible } from '../ImageFilter'
 
 const defaultPaintColor = new Color(0xFF000000)
+const invertColorMatrix: Float32List = Float32List.from([
+  -1.0, 0, 0, 1.0, 0, // row
+  0, -1.0, 0, 1.0, 0, // row
+  0, 0, -1.0, 1.0, 0, // row
+  1.0, 1.0, 1.0, 1.0, 0
+])
+const invertColorFilter: ManagedSkColorFilter = new ManagedSkColorFilter(
+  new CkMatrixColorFilter(invertColorMatrix)
+)
 
 export class CkPaint extends ManagedSkiaObject<SkPaint> implements IPaint {
   public ckMaskFilter: CkMaskFilter | null = null
   public managedImageFilter: ManagedSkiaObject<SkImageFilter> | null = null
   public effectiveColorFilter: ManagedSkColorFilter | null = null
   public originalColorFilter: ManagedSkColorFilter | null = null
-
 
   public _blendMode: BlendMode = BlendMode.srcOver
   public get blendMode () {
@@ -128,22 +140,30 @@ export class CkPaint extends ManagedSkiaObject<SkPaint> implements IPaint {
   }
   public set invertColors (invertColors: boolean) {
     if (invertColors === this._invertColors) {
-      return;
+      return
     }
     if (!invertColors) {
-      // _effectiveColorFilter = _originalColorFilter;
-      // _originalColorFilter = null;
+      this.effectiveColorFilter = this.originalColorFilter
+      this.originalColorFilter = null
     } else {
-      // _originalColorFilter = _effectiveColorFilter;
-      // if (_effectiveColorFilter == null) {
-      //   _effectiveColorFilter = _invertColorFilter;
-      // } else {
-      //   _effectiveColorFilter = ManagedSkColorFilter(
-      //       CkComposeColorFilter(_invertColorFilter, _effectiveColorFilter!));
-      // }
+      this.originalColorFilter = this.effectiveColorFilter
+      if (this.effectiveColorFilter === null) {
+        this.effectiveColorFilter = invertColorFilter
+      } else {
+        this.effectiveColorFilter = new ManagedSkColorFilter(
+          new CkComposeColorFilter(
+            invertColorFilter, 
+            this.effectiveColorFilter
+          )
+        )
+      }
     }
-    // this.skiaObject.setColorFilter(_effectiveColorFilter?.skiaObject);
-    this._invertColors = invertColors
+
+    if (this.effectiveColorFilter) {
+      this.skiaObject.setColorFilter(this.effectiveColorFilter?.skiaObject);
+    }
+
+    this.invertColors = invertColors
   }
 
   public _shader: Shader | null = null
@@ -170,25 +190,26 @@ export class CkPaint extends ManagedSkiaObject<SkPaint> implements IPaint {
 
     this._maskFilter = maskFilter
     if (maskFilter !== null) {
-      // CanvasKit returns `null` if the sigma is `0` or infinite.
       if (
         !(
-          maskFilter.webOnlySigma.isFinite && 
+          Number.isFinite(maskFilter.webOnlySigma) && 
           maskFilter.webOnlySigma > 0
         )
       ) {
-        // Don't create a [CkMaskFilter].
         this.ckMaskFilter = null
       } else {
         this.ckMaskFilter = CkMaskFilter.blur(
-          value.webOnlyBlurStyle,
-          value.webOnlySigma,
-        );
+          maskFilter.webOnlyBlurStyle,
+          maskFilter.webOnlySigma,
+        )
       }
     } else {
-      this.ckMaskFilter = null;
+      this.ckMaskFilter = null
     }
-    this.skiaObject.setMaskFilter(this.ckMaskFilter?.skiaObject);
+
+    if (this.ckMaskFilter?.skiaObject) {
+      this.skiaObject.setMaskFilter(this.ckMaskFilter?.skiaObject);
+    }
   }
   
   public _filterQuality: FilterQuality = FilterQuality.none
@@ -208,39 +229,42 @@ export class CkPaint extends ManagedSkiaObject<SkPaint> implements IPaint {
   public get colorFilter () {
     return this._colorFilter
   }
-  public set colorFilter (colorFilter: ColorFilter) {
+  public set colorFilter (colorFilter: ColorFilter | null) {
     if (this.colorFilter === colorFilter) {
       return
     }
 
-    this._originalColorFilter = null
+    this.originalColorFilter = null
     if (colorFilter === null) {
-      this._effectiveColorFilter = null
+      this.effectiveColorFilter = null
     } else {
-      this._effectiveColorFilter = new ManagedSkColorFilter(colorFilter as CkColorFilter)
+      this.effectiveColorFilter = new ManagedSkColorFilter(colorFilter as CkColorFilter)
     }
 
     if (this.invertColors) {
-      this._originalColorFilter = this._effectiveColorFilter
+      this.originalColorFilter = this.effectiveColorFilter
       
-      if (this._effectiveColorFilter === null) {
-        this._effectiveColorFilter = this._invertColorFilter
+      if (this.effectiveColorFilter === null) {
+        this.effectiveColorFilter = invertColorFilter
       } else {
-        this._effectiveColorFilter = new ManagedSkColorFilter(
-          CkComposeColorFilter(
-            this._invertColorFilter, 
-            this._effectiveColorFilter!
+        this.effectiveColorFilter = new ManagedSkColorFilter(
+          new CkComposeColorFilter(
+            invertColorFilter, 
+            this.effectiveColorFilter!
           )
         )
       }
     }
 
-    this.skiaObject.setColorFilter(this._effectiveColorFilter?.skiaObject);
+    if (this.effectiveColorFilter) {
+      this.skiaObject.setColorFilter(this.effectiveColorFilter?.skiaObject);
+    }
+
   }
 
   public _strokeMiterLimit: number = 0.0
   public get strokeMiterLimit () {
-    this._strokeMiterLimit
+    return this._strokeMiterLimit
   } 
   public set strokeMiterLimit (strokeMiterLimit: number) {
     if (this._strokeMiterLimit == strokeMiterLimit) {
@@ -262,7 +286,11 @@ export class CkPaint extends ManagedSkiaObject<SkPaint> implements IPaint {
 
     this._imageFilter = imageFilter as CkManagedSkImageFilterConvertible
     this.managedImageFilter = this._imageFilter?.imageFilter
-    this.skiaObject.setImageFilter(this.managedImageFilter?.skiaObject)
+
+    if (this.managedImageFilter) {
+      this.skiaObject.setImageFilter(this.managedImageFilter?.skiaObject)
+    }
+
   }
 
   createDefault (): SkPaint {
@@ -281,12 +309,21 @@ export class CkPaint extends ManagedSkiaObject<SkPaint> implements IPaint {
     paint.setAntiAlias(this.isAntiAlias)
     paint.setColorInt(this.color.value)
     paint.setShader(this.shader?.withQuality(this.filterQuality))
-    paint.setMaskFilter(this.ckMaskFilter?.skiaObject)
-    paint.setColorFilter(this.effectiveColorFilter?.skiaObject)
-    paint.setImageFilter(this.managedImageFilter?.skiaObject)
     paint.setStrokeCap(CanvasKitAPI.toSkStrokeCap(this.strokeCap))
     paint.setStrokeJoin(CanvasKitAPI.toSkStrokeJoin(this.strokeJoin))
     paint.setStrokeMiter(this.strokeMiterLimit)
+
+    if (this.ckMaskFilter) {
+      paint.setMaskFilter(this.ckMaskFilter?.skiaObject)
+    }
+
+    if (this.effectiveColorFilter) {
+      paint.setColorFilter(this.effectiveColorFilter?.skiaObject)
+    }
+
+    if (this.managedImageFilter) {
+      paint.setImageFilter(this.managedImageFilter?.skiaObject)
+    }
     
     return paint
   }

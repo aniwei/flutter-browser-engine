@@ -1,6 +1,24 @@
 import { Rect } from '@UI'
 import type { double } from '@Types'
 
+export function listEquals <T>(listA: T[], listB: T[]) {
+  if (listA === null) {
+    return listB === null
+  }
+
+  if (listB === null || listA.length !== listB.length) {
+    return false
+  }
+
+  for (let index = 0; index < listA.length; index += 1) {
+    if (listA[index] !== listB[index]) {
+      return false
+    }
+  }
+
+  return true
+}
+
 export function transformRect (transform: Matrix4, rect: Rect): Rect {
   const tempRectData: Float32List = []
   tempRectData[0] = rect.left;

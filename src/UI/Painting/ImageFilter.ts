@@ -1,13 +1,13 @@
 import { ArgumentError, UnimplementedError } from '@Shared'
-import { Float64List, double } from '@Types'
-import { CkImageFilter } from '@Engine'
+import { Float64List } from '@Types'
+import { CkImageFilter } from '@CanvasKit'
 import { TileMode } from '@UI'
 import { FilterQuality } from '.'
 
 export class ImageFilter {
   static blur (
-    sigmaX: double = 0,
-    sigmaY: double = 0,
+    sigmaX: number = 0.0,
+    sigmaY: number = 0.0,
     tileMode: TileMode = TileMode.clamp
   ) {
     return CkImageFilter.blur(
@@ -31,8 +31,6 @@ export class ImageFilter {
     )
   }
 
-  // TODO(ferhat): add implementation and remove the "ignore".
-  // ignore: avoid_unused_constructor_parameters
   static compose (
     outer: ImageFilter,
     inner: ImageFilter

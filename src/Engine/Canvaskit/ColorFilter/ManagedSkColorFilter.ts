@@ -1,5 +1,5 @@
 import type { SkColorFilter } from '@Skia'
-import { ManagedSkiaObject } from '../../SkiaObjectCache'
+import { ManagedSkiaObject } from '../SkiaObjectCache'
 import { CkColorFilter } from './CkColorFilter';
 
 export class ManagedSkColorFilter extends ManagedSkiaObject<SkColorFilter> {
