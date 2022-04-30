@@ -16,8 +16,8 @@ export abstract class ManagedSkiaObject<T extends Object> extends SkiaObject<T> 
     super()
     const defaultObject = instance ?? this.createDefault()
 
-    this.rawSkiaObject = defaultObject
-    Collector.instance.register(this, defaultObject as SkDeletable);
+    this.rawSkiaObject = defaultObject as SkDeletable
+    Collector.instance.register(this, defaultObject);
   }
  
   doResurrect (): T  {

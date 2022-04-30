@@ -130,6 +130,7 @@ export enum PixelFormat {
 
 export * from './Image'
 export * from './Color'
+export * from './Paint'
 export * from './Shader'
 export * from './Shadow'
 export * from './Gradient'

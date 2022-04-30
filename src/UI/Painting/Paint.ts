@@ -1,4 +1,4 @@
-import { bool, double } from '@Types'
+import { CkPaint } from '@CanvasKit'
 import { BlendMode, StrokeCap, StrokeJoin, FilterQuality, PaintingStyle } from '.'
 import { MaskFilter } from './MaskFilter'
 import { ColorFilter } from './ColorFilter'
@@ -6,25 +6,42 @@ import { ImageFilter } from './ImageFilter'
 import { Shader } from './Shader'
 import { Color } from './Color'
 
-export abstract class Paint {
+export interface IPaint {
+  blendMode: BlendMode
+  style: PaintingStyle
+  strokeWidth: number
+  strokeCap: StrokeCap
+  strokeJoin: StrokeJoin
+  isAntiAlias: boolean
+  color: Color
+  invertColors: boolean
+  shader: Shader | null
+  maskFilter: MaskFilter | null
+  filterQuality: FilterQuality
+  colorFilter: ColorFilter
+  strokeMiterLimit: number
+  imageFilter: ImageFilter | null
+}
+
+export abstract class Paint implements IPaint {
   static factory () {
-    // 
+    return new CkPaint()
   }
 
-  static enableDithering: bool = false
+  static enableDithering: boolean = false
 
   abstract blendMode: BlendMode
   abstract style: PaintingStyle
-  abstract strokeWidth: double
+  abstract strokeWidth: number
   abstract strokeCap: StrokeCap
   abstract strokeJoin: StrokeJoin
-  abstract isAntiAlias: bool
+  abstract isAntiAlias: boolean
   abstract color: Color
-  abstract invertColors: bool
+  abstract invertColors: boolean
   abstract shader: Shader | null
   abstract maskFilter: MaskFilter | null
   abstract filterQuality: FilterQuality
   abstract colorFilter: ColorFilter
-  abstract strokeMiterLimit: double
+  abstract strokeMiterLimit: number
   abstract imageFilter: ImageFilter | null
 }

@@ -8,21 +8,23 @@ import {
   Shader, 
   StrokeCap, 
   StrokeJoin,
-  
+  IPaint,
 } from '@UI'
+import { CanvasKitAPI } from '@CanvasKitAPI'
 import { 
-  CanvasKitAPI,
+  CkShader, 
+  CkMaskFilter, 
+  ManagedSkiaObject, 
+  ManagedSkColorFilter,
+} from '@CanvasKit'
+import type { 
+  SkPaint,
   SkImageFilter
 } from '@Skia'
-import { CkMaskFilter } from '../MaskFilter'
-import { ManagedSkiaObject } from '../SkiaObjectCache'
-
-import type { SkPaint } from '@Skia'
-import { CkShader } from '../CanvasKitAPI/Shader'
 
 const defaultPaintColor = new Color(0xFF000000)
 
-export class CkPaint extends ManagedSkiaObject<SkPaint> {
+export class CkPaint extends ManagedSkiaObject<SkPaint> implements IPaint {
   public ckMaskFilter: CkMaskFilter | null = null
   public managedImageFilter: ManagedSkiaObject<SkImageFilter> | null = null
   public effectiveColorFilter: ManagedSkColorFilter | null = null
@@ -154,7 +156,7 @@ export class CkPaint extends ManagedSkiaObject<SkPaint> {
     }
 
     this._shader = shader as CkShader
-    this.skiaObject.setShader(this._shader?.withQuality(_filterQuality));
+    this.skiaObject.setShader(this._shader?.withQuality(this.filterQuality))
   }
 
   public _maskFilter: MaskFilter | null = null
