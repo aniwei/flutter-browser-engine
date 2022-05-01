@@ -1,8 +1,13 @@
-import type { int } from '@Types'
 import type { Image } from '../Painting'
 
-export abstract class Picture {
-  abstract approximateBytesUsed: int
-  abstract toImage(width: int, height: int): Promise<Image> 
-  abstract dispose(): void
+export interface IPicture {
+  approximateBytesUsed: number
+  toImage (width: number, height: number): Promise<Image> 
+  dispose (): void
+}
+
+export abstract class Picture implements IPicture {
+  abstract approximateBytesUsed: number
+  abstract toImage (width: number, height: number): Promise<Image> 
+  abstract dispose (): void
 }

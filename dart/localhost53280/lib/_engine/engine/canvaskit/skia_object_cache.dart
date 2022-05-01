@@ -3,10 +3,6 @@ part of dart._engine;
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-
-
-
-
 /// A cache of Skia objects whose memory Flutter manages.
 ///
 /// When using Skia, Flutter creates Skia objects which are allocated in
@@ -33,11 +29,13 @@ class SkiaObjectCache {
   ///
   /// This makes it fast to find the node in the queue when we need to
   /// move the object to the front of the queue.
-  final Map<SkiaObject<Object>, DoubleLinkedQueueEntry<SkiaObject<Object>>> _itemMap;
+  final Map<SkiaObject<Object>, DoubleLinkedQueueEntry<SkiaObject<Object>>>
+      _itemMap;
 
   SkiaObjectCache(this.maximumSize)
       : _itemQueue = DoubleLinkedQueue<SkiaObject<Object>>(),
-        _itemMap = <SkiaObject<Object>, DoubleLinkedQueueEntry<SkiaObject<Object>>>{};
+        _itemMap =
+            <SkiaObject<Object>, DoubleLinkedQueueEntry<SkiaObject<Object>>>{};
 
   /// The number of objects in the cache.
   int get length => _itemQueue.length;
@@ -45,7 +43,7 @@ class SkiaObjectCache {
   /// Whether or not [object] is in the cache.
   ///
   /// This is only for testing.
-  
+
   bool debugContains(SkiaObject<Object> object) {
     return _itemMap.containsKey(object);
   }
@@ -99,11 +97,13 @@ class SynchronousSkiaObjectCache {
   ///
   /// This makes it fast to find the node in the queue when we need to
   /// move the object to the front of the queue.
-  final Map<SkiaObject<Object>, DoubleLinkedQueueEntry<SkiaObject<Object>>> _itemMap;
+  final Map<SkiaObject<Object>, DoubleLinkedQueueEntry<SkiaObject<Object>>>
+      _itemMap;
 
   SynchronousSkiaObjectCache(this.maximumSize)
       : _itemQueue = DoubleLinkedQueue<SkiaObject<Object>>(),
-        _itemMap = <SkiaObject<Object>, DoubleLinkedQueueEntry<SkiaObject<Object>>>{};
+        _itemMap =
+            <SkiaObject<Object>, DoubleLinkedQueueEntry<SkiaObject<Object>>>{};
 
   /// The number of objects in the cache.
   int get length => _itemQueue.length;
@@ -111,7 +111,7 @@ class SynchronousSkiaObjectCache {
   /// Whether or not [object] is in the cache.
   ///
   /// This is only for testing.
-  
+
   bool debugContains(SkiaObject<Object> object) {
     return _itemMap.containsKey(object);
   }
@@ -342,8 +342,9 @@ class SkiaObjectBox<R extends StackTraceDebugger, T extends Object>
   /// Creates an object box that's memory-managed using [SkFinalizationRegistry].
   ///
   /// This constructor must only be used if [browserSupportsFinalizationRegistry] is true.
-  SkiaObjectBox(R debugReferrer, T initialValue) :
-        assert(browserSupportsFinalizationRegistry), _resurrector = null {
+  SkiaObjectBox(R debugReferrer, T initialValue)
+      : assert(browserSupportsFinalizationRegistry),
+        _resurrector = null {
     _initialize(debugReferrer, initialValue);
     Collector.instance.register(this, _skDeletable!);
   }
@@ -352,8 +353,8 @@ class SkiaObjectBox<R extends StackTraceDebugger, T extends Object>
   ///
   /// This constructor must only be used if [browserSupportsFinalizationRegistry] is false.
   SkiaObjectBox.resurrectable(
-      R debugReferrer, T initialValue, this._resurrector) :
-        assert(!browserSupportsFinalizationRegistry) {
+      R debugReferrer, T initialValue, this._resurrector)
+      : assert(!browserSupportsFinalizationRegistry) {
     _initialize(debugReferrer, initialValue);
     if (Instrumentation.enabled) {
       Instrumentation.instance.incrementCounter(
@@ -509,23 +510,18 @@ class SkiaObjectBox<R extends StackTraceDebugger, T extends Object>
 // ignore: avoid_classes_with_only_static_members
 /// Singleton that manages the lifecycles of [SkiaObject] instances.
 class SkiaObjects {
-  
   static final List<ManagedSkiaObject<Object>> resurrectableObjects =
       <ManagedSkiaObject<Object>>[];
 
-  
   static int maximumCacheSize = 1024;
 
-  
   static final SkiaObjectCache expensiveCache =
       SkiaObjectCache(maximumCacheSize);
 
-  
   static final List<SkiaObjectCache> cachesToResize = <SkiaObjectCache>[];
 
   static bool _addedCleanupCallback = false;
 
-  
   static void registerCleanupCallback() {
     if (_addedCleanupCallback) {
       return;

@@ -1,9 +1,9 @@
-import { Color, Picture, Rect, Size } from '@UI';
+import { Color, Picture, Rect, Size } from '@UI'
 import { RootLayer, PrerollContext } from '../Layer'
 import { Matrix4 } from '../../VectorMath'
-import { PaintContext } from '../Layer/PaintContext';
-import { Frame } from './Frame';
-import { CkNWayCanvas } from '../NWayCanvas';
+import { PaintContext } from '../Layer/PaintContext'
+import { Frame } from './Frame'
+import { CkNWayCanvas } from '../NWayCanvas'
 
 export class LayerTree {
   public rootLayer: RootLayer
@@ -45,7 +45,7 @@ export class LayerTree {
   }
 
   flatten (): Picture {
-    const recorder = CkPictureRecorder()
+    const recorder = new CkPictureRecorder()
     const canvas = recorder.beginRecording(Rect.largest)
     const prerollContext = new PrerollContext(null, null)
     this.rootLayer.preroll(prerollContext, Matrix4.identity())

@@ -1,10 +1,9 @@
-import type { int, bool } from '@Types';
-import type { ImageByteFormat } from '.';
+import type { ImageByteFormat } from '.'
 
 export abstract class Image {
-  abstract width: int
-  abstract height: int
-  abstract debugDisposed: bool
+  abstract width: number
+  abstract height: number
+  abstract debugDisposed: boolean
   abstract toByteData ()
   abstract dispose ()
   abstract toBytedata (format: ImageByteFormat): Promise<ByteData | null> 

@@ -3,7 +3,7 @@ import { Collector } from '../CanvasKitAPI/Collector'
 import { SkiaObject } from './SkiaObject'
 import { SkiaObjects } from './SkiaObjects'
 
-export abstract class ManagedSkiaObject<T extends Object> extends SkiaObject<T> {
+export abstract class ManagedSkiaObject<T> extends SkiaObject<T> {
   public rawSkiaObject: T | null = null
   public get isResurrectionExpensive () {
     return false

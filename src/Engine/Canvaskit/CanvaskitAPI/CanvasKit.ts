@@ -7,7 +7,8 @@ import type {
   StrokeJoin,
   BlurStyle,
   TileMode,
-  Offset
+  Offset,
+  Rect
 } from '@UI'
 import type { 
   SkBlendMode,
@@ -188,6 +189,15 @@ export class CanvasKitAPI {
   }
   static get SkPathOp () {
     return CanvasKitAPI.CanvasKit.PathOp
+  }
+
+  static toSkRect (rect: Rect): Float32List {
+    const skRect = new Float32List(4)
+    skRect[0] = rect.left
+    skRect[1] = rect.top
+    skRect[2] = rect.right
+    skRect[3] = rect.bottom
+    return skRect
   }
 
   static toSkBlendMode = (blendMode: BlendMode) => {

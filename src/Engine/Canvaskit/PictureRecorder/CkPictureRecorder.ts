@@ -1,5 +1,8 @@
 import { StateError } from '@Shared'
+import { SkPictureRecorder, SkCanvas } from '@Skia'
 import { Rect, PictureRecorder } from '@UI'
+import { CkCanvas } from '../Canvas'
+import { CanvasKitAPI } from '../CanvasKitAPI/CanvasKit'
 
 export class CkPictureRecorder implements PictureRecorder {
   public cullRect: Rect | null = null
@@ -12,12 +15,10 @@ export class CkPictureRecorder implements PictureRecorder {
 
   beginRecording (bounds: Rect): CkCanvas  {
     this.cullRect = bounds
-    const recorder: SkPictureRecorder = this.skRecorder = new SkPictureRecorder()
-    const skRect: Float32List = toSkRect(bounds)
+    const recorder: SkPictureRecorder = this.skRecorder = new CanvasKitAPI.CanvasKit.PictureRecorder()
+    const skRect: Float32List = CanvasKitAPI.toSkRect(bounds)
     const skCanvas: SkCanvas = recorder.beginRecording(skRect)
-    return this.recordingCanvas = browserSupportsFinalizationRegistry
-        ? new CkCanvas(skCanvas)
-        : new RecordingCkCanvas(skCanvas, bounds)
+    return this.recordingCanvas = new CkCanvas(skCanvas)
   }
 
   endRecording (): CkPicture {
