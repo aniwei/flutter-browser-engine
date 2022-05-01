@@ -6,9 +6,9 @@ import {
   MaskFilter, 
   PaintingStyle, 
   Shader, 
+  Paint,
   StrokeCap, 
   StrokeJoin,
-  IPaint,
   ImageFilter,
 } from '@UI'
 import { CanvasKitAPI } from '@CanvasKitAPI'
@@ -37,7 +37,7 @@ const invertColorFilter: ManagedSkColorFilter = new ManagedSkColorFilter(
   new CkMatrixColorFilter(invertColorMatrix)
 )
 
-export class CkPaint extends ManagedSkiaObject<SkPaint> implements IPaint {
+export class CkPaint extends ManagedSkiaObject<SkPaint> implements Paint {
   public ckMaskFilter: CkMaskFilter | null = null
   public managedImageFilter: ManagedSkiaObject<SkImageFilter> | null = null
   public effectiveColorFilter: ManagedSkColorFilter | null = null

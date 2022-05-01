@@ -1,3 +1,4 @@
+import { clamp } from '@Shared';
 import { invariant } from 'ts-invariant'
 import { scaleAlpha } from '.'
 
@@ -13,7 +14,7 @@ export class Color {
   static getAlphaFromOpacity (opacity: number) {
     invariant(opacity !== null)
     
-    return Math.round(opacity.clamp(0.0, 1.0) * 255)
+    return Math.round(clamp(opacity, 0.0, 1.0) * 255)
   }
 
   static lerp (
@@ -33,12 +34,12 @@ export class Color {
       if (a === null) {
         return scaleAlpha(b, t);
       } else {
-        return Color.fromARGB(
-          engine.clampInt(_lerpInt(a.alpha, b.alpha, t).toInt(), 0, 255),
-          engine.clampInt(_lerpInt(a.red, b.red, t).toInt(), 0, 255),
-          engine.clampInt(_lerpInt(a.green, b.green, t).toInt(), 0, 255),
-          engine.clampInt(_lerpInt(a.blue, b.blue, t).toInt(), 0, 255),
-        );
+        // return Color.fromARGB(
+        //   clamp(_lerpInt(a.alpha, b.alpha, t).toInt(), 0, 255),
+        //   clamp(_lerpInt(a.red, b.red, t).toInt(), 0, 255),
+        //   clamp(_lerpInt(a.green, b.green, t).toInt(), 0, 255),
+        //   clamp(_lerpInt(a.blue, b.blue, t).toInt(), 0, 255),
+        // );
       }
     }
   }

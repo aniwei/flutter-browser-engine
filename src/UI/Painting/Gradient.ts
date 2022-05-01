@@ -1,14 +1,15 @@
 import { Offset } from '../Geometry'
 import { Shader } from './Shader'
 import { Color } from './Color'
-import type { double, Float64List } from '@Types'
+import type { Float64List } from '@Types'
+import type { TileMode } from '@UI'
 
 export abstract class Gradient extends Shader {
   static linear (
     from: Offset,
     to: Offset,
     color: Color[],
-    colorStops: double[],
+    colorStops: number[],
     tileMode: TileMode,
     matrix4: Float64List
   ) {
@@ -17,7 +18,7 @@ export abstract class Gradient extends Shader {
 
   static radial (
     center: Offset,
-    radius: double,
+    radius: number,
     colors: Color[]
   ) {
 

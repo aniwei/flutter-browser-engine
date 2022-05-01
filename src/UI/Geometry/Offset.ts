@@ -1,5 +1,6 @@
 import { invariant } from 'ts-invariant'
 import { OffsetBase } from './OffsetBase'
+import { lerpDouble } from '../Lerp'
 
 import type { bool, double } from '@Types'
 

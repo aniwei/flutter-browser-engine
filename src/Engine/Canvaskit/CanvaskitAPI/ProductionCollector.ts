@@ -1,19 +1,17 @@
-import invariant from 'ts-invariant'
-import { Collector } from './Collector'
+import { invariant } from 'ts-invariant'
 import { SkiaObjectCollectionError } from './SkiaObjectCollectionError'
+import { Collector } from './Collector'
 
-import type { SkDeletable } from '@Skia'
+import type { SkDeletable } from './Skia'
 
-export class ProductionCollector extends Collector {
+export class ProductionCollector implements Collector {
   public skObjectFinalizationRegistry
-  public skiaObjectCollectionTimer: null = null
+  public skiaObjectCollectionTimer
   public skiaObjectCollectionQueue: SkDeletable[] = []
 
   constructor () {
-    super()
-
     this.skiaObjectCollectionQueue = []
-    this.skObjectFinalizationRegistry = new FinalizationRegistry((deletable) => {
+    this.skObjectFinalizationRegistry = new FinalizationRegistry((deletable: SkDeletable) => {
       if (!deletable.isDeleted()) {
         this.collect(deletable)
       }
@@ -31,12 +29,12 @@ export class ProductionCollector extends Collector {
       'Attempted to delete an already deleted Skia object.',
     );
     this.skiaObjectCollectionQueue.push(deletable)
-    this.skiaObjectCollectionTimer = Timer(Duration.zero, () => {
+    this.skiaObjectCollectionTimer = setTimeout(() => {
       // Null out the timer so we can schedule a new one next time objects are
       // scheduled for deletion.
       this.skiaObjectCollectionTimer = null
       this.collectSkiaObjectsNow()
-    });
+    }, 0);
   }
 
   collectSkiaObjectsNow () {
@@ -54,10 +52,6 @@ export class ProductionCollector extends Collector {
       try {
         deletable.delete();
       } catch (error) {
-        // Remember the error, but keep going. If for some reason CanvasKit fails
-        // to delete an object we still want to delete other objects and empty
-        // out the queue. Otherwise, the queue will never be flushed and keep
-        // accumulating objects, a.k.a. memory leak.
         if (firstError == null) {
           firstError = error
           firstStackTrace = firstError.stack
@@ -70,7 +64,7 @@ export class ProductionCollector extends Collector {
     performance.mark('SkObject collection-end')
     performance.measure('SkObject collection', 'SkObject collection-start', 'SkObject collection-end')
 
-    if (firstError != null) {
+    if (firstError !== null) {
       throw new SkiaObjectCollectionError(firstError, firstStackTrace);
     }
   }

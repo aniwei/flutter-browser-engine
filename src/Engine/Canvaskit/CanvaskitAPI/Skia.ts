@@ -19,7 +19,13 @@ import {
   ColorFilter,
   BlurStyle,
   EmbindObject,
-  PictureRecorder
+  PictureRecorder,
+  AlphaType,
+  ColorType,
+  ImageInfo,
+  ClipOp,
+  FillType,
+  PathOp
 } from 'canvaskit-wasm'
 
 export * from 'canvaskit-wasm'
@@ -44,3 +50,9 @@ export type SkBlurStyle = BlurStyle
 export type SkDeletable = EmbindObject<SkPath | SkPaint>
 export type SkColorFilter = ColorFilter
 export type SkPictureRecorder = PictureRecorder
+export type SkAlphaType = AlphaType
+export type SkColorType = ColorType
+export type SkImageInfo = ImageInfo
+export type SkClipOp = ClipOp
+export type SkFillType = FillType
+export type SkPathOp = PathOp

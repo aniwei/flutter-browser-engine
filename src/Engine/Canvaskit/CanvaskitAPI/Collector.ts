@@ -1,19 +1,19 @@
-import { ProductionCollector } from './ProductionCollector'
 import { SkDeletable } from './Skia'
+import { ProductionCollector } from './ProductionCollector'
 
 export abstract class Collector {
   static productionInstance: Collector = new ProductionCollector()
 
   /// The collector implementation currently in use.
   static get instance () {
-    return _instance
+    return this._instance
   }
 
-  static _instance: Collector = productionInstance
+  static _instance: Collector = this.productionInstance
 
   /// In tests overrides the collector implementation.
-  static void debugOverrideCollector(Collector override) {
-    _instance = override;
+  static debugOverrideCollector (override: Collector) {
+    this._instance = override;
   }
 
   static debugRestoreCollector () {

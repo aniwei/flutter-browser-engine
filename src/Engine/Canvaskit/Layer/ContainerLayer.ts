@@ -3,6 +3,7 @@ import { invariant } from 'ts-invariant'
 import { Layer } from '../Layer'
 import { PaintContext } from './PaintContext'
 import { PrerollContext } from './PrerollContext'
+import { Matrix4 } from '../../VectorMath'
 
 export abstract class ContainerLayer extends Layer {
   public layers: Layer[] = []

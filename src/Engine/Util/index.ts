@@ -1,5 +1,6 @@
 import { Rect } from '@UI'
-import type { double } from '@Types'
+import { double, Float32List } from '@Types'
+import { Matrix4 } from '../VectorMath'
 
 export function listEquals <T>(listA: T[], listB: T[]) {
   if (listA === null) {
@@ -19,8 +20,9 @@ export function listEquals <T>(listA: T[], listB: T[]) {
   return true
 }
 
+
+const tempRectData = new Float32List(4)
 export function transformRect (transform: Matrix4, rect: Rect): Rect {
-  const tempRectData: Float32List = []
   tempRectData[0] = rect.left;
   tempRectData[1] = rect.top;
   tempRectData[2] = rect.right;
@@ -36,26 +38,10 @@ export function transformRect (transform: Matrix4, rect: Rect): Rect {
   );
 }
 
-export function transformLTRB (transform: Matrix4, ltrb: Float32List) {
-  // Construct a matrix where each row represents a vector pointing at
-  // one of the four corners of the (left, top, right, bottom) rectangle.
-  // Using the row-major order allows us to multiply the matrix in-place
-  // by the transposed current transformation matrix. The vector_math
-  // library has a convenience function `multiplyTranspose` that performs
-  // the multiplication without copying. This way we compute the positions
-  // of all four points in a single matrix-by-matrix multiplication at the
-  // cost of one `Matrix4` instance and one `Float32List` instance.
-  //
-  // The rejected alternative was to use `Vector3` for each point and
-  // multiply by the current transform. However, that would cost us four
-  // `Vector3` instances, four `Float32List` instances, and four
-  // matrix-by-vector multiplications.
-  //
-  // `Float32List` initializes the array with zeros, so we do not have to
-  // fill in every single element.
+const tempPointData = new Float32List(16)
+const tempPointMatrix = Matrix4.fromFloat32List(tempPointData)
 
-  // Row 0: top-left
-  const tempPointData: Float32List = []
+export function transformLTRB (transform: Matrix4, ltrb: Float32List) {
   tempPointData[0] = ltrb[0]
   tempPointData[4] = ltrb[1]
   tempPointData[8] = 0
@@ -79,7 +65,6 @@ export function transformLTRB (transform: Matrix4, ltrb: Float32List) {
   tempPointData[11] = 0
   tempPointData[15] = 1
 
-  const tempPointMatrix = []
   tempPointMatrix.multiplyTranspose(transform)
 
   // Handle non-homogenous matrices.

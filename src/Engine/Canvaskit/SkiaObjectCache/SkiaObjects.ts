@@ -1,8 +1,9 @@
-import { SkiaObject } from '../SkiaObject'
+import { SkiaObject } from './SkiaObject'
 import { ManagedSkiaObject } from './ManagedSkiaObject'
 import { SkiaObjectCache } from './SkiaObjectCache'
 
 const maximumCacheSize = 1024
+
 export class SkiaObjects {
   static resurrectableObjects: ManagedSkiaObject<Object>[] = []
   static expensiveCache = new SkiaObjectCache(maximumCacheSize)

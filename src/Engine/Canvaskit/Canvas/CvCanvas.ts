@@ -1,18 +1,22 @@
 import { CanvasKitAPI } from '../CanvasKitAPI'
 
-import type { bool, int } from '@Types'
-import type { Color } from '@UI'
+import type { BlendMode, ClipOp, Color, ImageFilter, Offset, Rect, RRect } from '@UI'
 import type { SkCanvas } from '../CanvasKitAPI'
+import type { CkPath } from '../Path'
+import { CkPaint } from '../Painting'
+import { CkImage } from '../Image/CkImage'
+import { CkManagedSkImageFilterConvertible } from '../ImageFilter'
 
 
 
+
+const _kMitchellNetravali_B = 1.0 / 3.0
+const _kMitchellNetravali_C = 1.0 / 3.0
 
 export class CkCanvas {
-  static _kMitchellNetravali_B = 1.0 / 3.0
-  static _kMitchellNetravali_C = 1.0 / 3.0
 
   public skCanvas: SkCanvas
-  public get saveCount (): int {
+  public get saveCount (): number {
     return this.skCanvas.getSaveCount()
   }
 
@@ -30,7 +34,7 @@ export class CkCanvas {
 
   clipPath (
     path: CkPath, 
-    doAntiAlias: bool
+    doAntiAlias: boolean
   ): void {
     this.skCanvas.clipPath(
       path.skiaObject,
@@ -40,11 +44,11 @@ export class CkCanvas {
   }
 
   clipRRect (
-    rect: Rect,
+    rrect: RRect,
     doAntiAlias: boolean
   ) {
     this.skCanvas.clipRRect(
-      toSkRRect(rect),
+     CanvasKitAPI.toSkRRect(rrect),
       this.clipOpIntersect,
       doAntiAlias
     )
@@ -56,8 +60,8 @@ export class CkCanvas {
     doAntiAlias: boolean
   ) {
     this.skCanvas.clipRect(
-      toSkRect(rect),
-      toSkClipOp(clipOp),
+      CanvasKitAPI.toSkRect(rect),
+      CanvasKitAPI.toSkClipOp(clipOp),
       doAntiAlias
     )
   }
@@ -100,7 +104,7 @@ export class CkCanvas {
   ) {
     this.skCanvas.drawColorInt(
       color.value,
-      toSkBlendMode(blendMode),
+      CanvasKitAPI.toSkBlendMode(blendMode),
     )
   }
 
@@ -110,8 +114,8 @@ export class CkCanvas {
     paint: CkPaint
   ) {
     this.skCanvas.drawDRRect(
-      toSkRRect(outer),
-      toSkRRect(inner),
+      CanvasKitAPI.toSkRRect(outer),
+      CanvasKitAPI.toSkRRect(inner),
       paint.skiaObject,
     )
   }
@@ -138,14 +142,13 @@ export class CkCanvas {
   ) {
     this.skCanvas.saveLayer(
       paint?.skiaObject,
-      toSkRect(bounds),
-      null,
-      null,
+      CanvasKitAPI.toSkRect(bounds),
+      null
     )
   }
 
   saveLayerWithoutBounds (paint: CkPaint) {
-    this.skCanvas.saveLayer(paint?.skiaObject, null, null, null);
+    this.skCanvas.saveLayer(paint?.skiaObject, null, null);
   }
 
   saveLayerWithFilter (
@@ -156,7 +159,7 @@ export class CkCanvas {
     const convertible = filter as CkManagedSkImageFilterConvertible
     return this.skCanvas.saveLayer(
       paint?.skiaObject,
-      toSkRect(bounds),
+      CanvasKitAPI.toSkRect(bounds),
       convertible.imageFilter.skiaObject,
       0,
     )
@@ -176,8 +179,8 @@ export class CkCanvas {
     this.skCanvas.skew(sx, sy)
   }
 
-  transform (matrix: number[]) {
-    this.skCanvas.concat(toSkM44FromFloat32(matrix))
+  transform (matrix: Float32List) {
+    this.skCanvas.concat(CanvasKitAPI.toSkM44FromFloat32(matrix))
   }
 
   translate (

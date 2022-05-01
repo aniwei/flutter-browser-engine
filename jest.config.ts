@@ -1,12 +1,14 @@
-/*
- * For a detailed explanation regarding each configuration property and type check, visit:
- * https://jestjs.io/docs/en/configuration.html
- */
+import tsconfig from './tsconfig.json'
+import tsconfigPathsJest from 'tsconfig-paths-jest'
+
+const moduleNameMapper = tsconfigPathsJest(tsconfig)
+
 
 export default {
-  testRegex: 'tests(.+)\\.test\\.ts$',
+  testRegex: '__tests__(.+)\\.test\\.ts$',
   transform: {
-      '^.+\\.tsx?$': 'ts-jest'
+    '^.+\\.tsx?$': 'ts-jest'
   },
+  moduleNameMapper,
   moduleFileExtensions: ['ts', 'tsx', 'js', 'jsx', 'json', 'node'],
 };

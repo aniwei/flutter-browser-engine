@@ -5,10 +5,10 @@ export enum TileMode {
   decal,
 }
 
-
 export * from './Path'
 export * from './Canvas'
 export * from './Painting'
 export * from './Geometry'
+export * from './PathMetrics'
 export * from './Compositing'
 export * from './RSTransform'

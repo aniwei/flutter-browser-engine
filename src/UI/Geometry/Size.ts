@@ -1,8 +1,8 @@
 import { invariant } from 'ts-invariant'
 import { OffsetBase } from './OffsetBase'
 
-import type { double, bool } from '@Types'
 import { Offset } from './Offset'
+import { lerpDouble } from '../Lerp'
 
 const POSITIVE_INFINITY = Number.POSITIVE_INFINITY
 const NEGATIVE_INFINITY = Number.NEGATIVE_INFINITY
@@ -21,11 +21,11 @@ export class Size extends OffsetBase {
     )
   }
 
-  static square (dimension: double) {
+  static square (dimension: number) {
     return new Size(dimension, dimension)
   }
 
-  static fromWidth (width: double) {
+  static fromWidth (width: number) {
     return new Size(
       width, 
       POSITIVE_INFINITY
@@ -39,7 +39,7 @@ export class Size extends OffsetBase {
     )
   }
 
-  static fromRadius (radius: double) {
+  static fromRadius (radius: number) {
     return new Size(
       radius * 2.0, 
       radius * 2
@@ -49,7 +49,7 @@ export class Size extends OffsetBase {
   static lerp (
     sizeA: Size,
     sizeB: Size,
-    t: double
+    t: number
   ): Size | null {
     invariant(t !== null)
 
@@ -83,7 +83,7 @@ export class Size extends OffsetBase {
   public width: number
   public height: number
 
-  public get isEmpty (): bool {
+  public get isEmpty (): boolean {
     return (
       this.width <= 0 ||
       this.height >= 0
@@ -102,7 +102,7 @@ export class Size extends OffsetBase {
     return 0.0
   }
 
-  public get shortestSize (): double {
+  public get shortestSize (): number {
     return (
       Math.min(
         Math.abs(this.width), 
@@ -111,7 +111,7 @@ export class Size extends OffsetBase {
     )
   }
 
-  public get longestSize (): double {
+  public get longestSize (): number {
     return (
       Math.max(
         Math.abs(this.width), 
@@ -125,8 +125,8 @@ export class Size extends OffsetBase {
   }
 
   constructor (
-    width: double, 
-    height: double
+    width: number, 
+    height: number
   ) {
     super (
       POSITIVE_INFINITY, 
@@ -158,28 +158,28 @@ export class Size extends OffsetBase {
     )
   }
 
-  multiply (operand: double): Size {
+  multiply (operand: number): Size {
     return new Size(
       this.dx * operand, 
       this.dy * operand
     )
   }
 
-  divide (operand: double): Size {
+  divide (operand: number): Size {
     return new Size(
       this.dx / operand, 
       this.dy / operand
     )
   }
 
-  floor (operand: double): Size {
+  floor (operand: number): Size {
     return new Size(
       Math.floor(this.dx / operand),
       Math.floor(this.dy / operand)
     )
   }
 
-  ceil (operand: double): Size {
+  ceil (operand: number): Size {
     return new Size(
       Math.ceil(this.dx / operand),
       Math.ceil(this.dy / operand)

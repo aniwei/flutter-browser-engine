@@ -1,34 +1,62 @@
-import { IPath, Rect } from '@UI'
-import { SkPath, CanvasKit } from '../CanvasKitAPI'
-import { ManagedSkiaObject } from './ManagedSkiaObject'
+import { Float64List } from '@Types'
+import { Offset, Path, PathFillType, PathOperation, Radius, Rect, RRect } from '@UI'
+import { Matrix4 } from '../../VectorMath'
+import { SkPath, CanvasKitAPI } from '../CanvasKitAPI'
+import { ManagedSkiaObject } from '../SkiaObjectCache'
 
-export class CkPath extends ManagedSkiaObject<SkPath> implements IPath {
+export class CkPath extends ManagedSkiaObject<SkPath> implements Path {
   static from (path: CkPath) {
     const newPath = new CkPath()
     newPath.fillType = path.fillType
   }
 
   static fromSkPath (skPath: SkPath, fillType) {
-    const path = new CkPath(skPath)
+    const path = new CkPath()
+    path.rawSkiaObject = skPath
     path.fillType = fillType
+    return path
   }
 
-  public _fillType: PathFillType = nonZero
+  static combine(
+    operation: PathOperation,
+    uiPath1: Path,
+    uiPath2: Path,
+ ) {
+   const path1 = uiPath1 as unknown as CkPath
+   const path2 = uiPath2 as unknown as CkPath
+   const newPath = CanvasKitAPI.CanvasKit.Path.MakeFromOp(
+     path1.skiaObject,
+     path2.skiaObject,
+     CanvasKitAPI.toSkPathOp(operation),
+   ) as SkPath
+   return CkPath.fromSkPath(newPath, path1._fillType);
+ }
+
+
+  public _fillType: PathFillType = PathFillType.nonZero
   public get fillType () {
     return this._fillType
   }
 
-  public set fillType (newFillType: FillType) {
+  public set fillType (newFillType: PathFillType) {
     if (this.fillType == newFillType) {
       return
     }
 
     this._fillType = newFillType
-    
-    skiaObject.setFillType(toSkFillType(newFillType));
+    this.skiaObject.setFillType(CanvasKitAPI.toSkFillType(newFillType));
   }
 
-  
+  get isEmpty () {
+    return this.skiaObject.isEmpty()
+  }
+
+  get isResurrectionExpensive () {
+    return false
+  }
+
+  public cachedCommands: Float32Array | null = null
+
   addArc (
     oval: Rect, 
     startAngle: number, 
@@ -36,35 +64,34 @@ export class CkPath extends ManagedSkiaObject<SkPath> implements IPath {
   ) {
     const toDegrees = 180.0 / Math.PI
     
-    skiaObject.addArc(
-      toSkRect(oval),
+    this.skiaObject.addArc(
+      CanvasKitAPI.toSkRect(oval),
       startAngle * toDegrees,
       sweepAngle * toDegrees,
     )
   }
 
   addOval (oval: Rect) {
-    skiaObject.addOval(toSkRect(oval), false, 1)
+    this.skiaObject.addOval(CanvasKitAPI.toSkRect(oval), false, 1)
   }
 
   
   addPath (
     path: Path, 
     offset: Offset, 
-    matrix
+    matrix4: Float64List | null = null
   ) {
-    let skMatrix = []
+    let skMatrix: Float32List
 
-    if (matrix4 == null) {
-      skMatrix = toSkMatrixFromFloat32(
-      Matrix4.translationValues(offset.dx, offset.dy, 0.0).storage)
+    if (matrix4 === null) {
+      skMatrix = CanvasKitAPI.toSkMatrixFromFloat32(Matrix4.translationValues(offset.dx, offset.dy, 0.0).storage)
     } else {
-      skMatrix = toSkMatrixFromFloat64(matrix4)
+      skMatrix = CanvasKitAPI.toSkMatrixFromFloat64(matrix4)
       skMatrix[2] += offset.dx
       skMatrix[5] += offset.dy
     }
-    final CkPath otherPath = path as CkPath
-    skiaObject.addPath(
+    const otherPath = path as unknown as CkPath
+    this.skiaObject.addPath(
       otherPath.skiaObject,
       skMatrix[0],
       skMatrix[1],
@@ -84,21 +111,21 @@ export class CkPath extends ManagedSkiaObject<SkPath> implements IPath {
     close: boolean
   ) {
     (points != null); 
-    const encodedPoints = toMallocedSkPoints(points)
-    skiaObject.addPoly(encodedPoints.toTypedArray(), close)
-    freeFloat32List(encodedPoints)
+    const encodedPoints = CanvasKitAPI.toMallocedSkPoints(points)
+    this.skiaObject.addPoly(encodedPoints.toTypedArray(), close)
+    CanvasKitAPI.freeFloat32List(encodedPoints)
   }
 
-  addRRect (rrect: RRect) {
-    skiaObject.addRRect(
-      toSkRRect(rrect),
+  addRRect (rrect: RRect): void {
+    this.skiaObject.addRRect(
+      CanvasKitAPI.toSkRRect(rrect),
       false,
     )
   }
 
 
   addRect(rect: Rect) {
-    skiaObject.addRect(toSkRect(rect));
+    this.skiaObject.addRect(CanvasKitAPI.toSkRect(rect));
   }
 
 
@@ -110,8 +137,8 @@ export class CkPath extends ManagedSkiaObject<SkPath> implements IPath {
   ) {
     const toDegrees = 180.0 / Math.PI;
 
-    skiaObject.arcToOval(
-      toSkRect(rect),
+    this.skiaObject.arcToOval(
+      CanvasKitAPI.toSkRect(rect),
       startAngle * toDegrees,
       sweepAngle * toDegrees,
       forceMoveTo,
@@ -121,14 +148,12 @@ export class CkPath extends ManagedSkiaObject<SkPath> implements IPath {
 
   arcToPoint(
     arcEnd: Offset,
-    { 
-      radius = Radius.zero,
-      rotation = 0.0,
-      largeArc = false,
-      clockwise = true
-    }
+    radius = Radius.zero,
+    rotation = 0.0,
+    largeArc = false,
+    clockwise = true
   ) {
-    skiaObject.arcToRotated(
+    this.skiaObject.arcToRotated(
       radius.x,
       radius.y,
       rotation,
@@ -136,48 +161,56 @@ export class CkPath extends ManagedSkiaObject<SkPath> implements IPath {
       !clockwise,
       arcEnd.dx,
       arcEnd.dy,
-    );
+    )
   }
 
 
   close() {
-    skiaObject.close();
+    this.skiaObject.close()
   }
-
 
   computeMetrics(forceClosed = false) {
-    return CkPathMetrics(this, forceClosed);
+    return new CkPathMetrics(this, forceClosed)
   }
-
 
   conicTo(x1: number, y1: number, x2: number, y2: number, w: number) {
-    skiaObject.conicTo(x1, y1, x2, y2, w)
+    this.skiaObject.conicTo(x1, y1, x2, y2, w)
   }
 
 
-  bool contains(ui.Offset point) {
-    return skiaObject.contains(point.dx, point.dy);
+  contains (point: Offset): boolean {
+    return this.skiaObject.contains(point.dx, point.dy)
   }
 
 
   cubicTo(
-      double x1, double y1, double x2, double y2, double x3, double y3) {
-    skiaObject.cubicTo(x1, y1, x2, y2, x3, y3);
+    x1: number, 
+    y1: number, 
+    x2: number, 
+    y2: number, 
+    x3: number, 
+    y3: number
+  ) {
+    this.skiaObject.cubicTo(x1, y1, x2, y2, x3, y3)
   }
 
 
-  extendWithPath(ui.Path path, ui.Offset offset, {Float64List? matrix4}) {
-    List<double> skMatrix;
+  extendWithPath (
+    path: Path,  
+    offset: Offset, 
+    matrix4: Float64List | null 
+  ) {
+    let skMatrix: Float32List
     if (matrix4 == null) {
-      skMatrix = toSkMatrixFromFloat32(
+      skMatrix = CanvasKitAPI.toSkMatrixFromFloat32(
           Matrix4.translationValues(offset.dx, offset.dy, 0.0).storage);
     } else {
-      skMatrix = toSkMatrixFromFloat64(matrix4);
+      skMatrix = CanvasKitAPI.toSkMatrixFromFloat64(matrix4);
       skMatrix[2] += offset.dx;
       skMatrix[5] += offset.dy;
     }
-    final CkPath otherPath = path as CkPath;
-    skiaObject.addPath(
+    const otherPath = path as unknown as CkPath
+    this.skiaObject.addPath(
       otherPath.skiaObject,
       skMatrix[0],
       skMatrix[1],
@@ -193,30 +226,31 @@ export class CkPath extends ManagedSkiaObject<SkPath> implements IPath {
   }
 
 
-  ui.Rect getBounds() => fromSkRect(skiaObject.getBounds());
+  getBounds () {
+    return CanvasKitAPI.fromSkRect(this.skiaObject.getBounds())
+  }
 
+  lineTo(x: number, y: number) {
+    this.skiaObject.lineTo(x, y)
+  }
 
-  lineTo(double x, double y) {
-    skiaObject.lineTo(x, y);
+  moveTo(x: number, y: number) {
+    this.skiaObject.moveTo(x, y);
+  }
+
+  quadraticBezierTo(x1: number, y1: number, x2: number, y2: number) {
+    this.skiaObject.quadTo(x1, y1, x2, y2);
   }
 
 
-  moveTo(double x, double y) {
-    skiaObject.moveTo(x, y);
-  }
-
-
-  quadraticBezierTo(double x1, double y1, double x2, double y2) {
-    skiaObject.quadTo(x1, y1, x2, y2);
-  }
-
-
-  relativeArcToPoint(ui.Offset arcEndDelta,
-      {ui.Radius radius = ui.Radius.zero,
-      double rotation = 0.0,
-      bool largeArc = false,
-      bool clockwise = true}) {
-    skiaObject.rArcTo(
+  relativeArcToPoint ( 
+    arcEndDelta,
+    radius = Radius.zero,
+    rotation: number = 0.0,
+    largeArc = false,
+    clockwise = true
+  ) {
+    this.skiaObject.rArcTo(
       radius.x,
       radius.y,
       rotation,
@@ -224,75 +258,68 @@ export class CkPath extends ManagedSkiaObject<SkPath> implements IPath {
       !clockwise,
       arcEndDelta.dx,
       arcEndDelta.dy,
-    );
+    )
   }
 
-
-  relativeConicTo(double x1, double y1, double x2, double y2, double w) {
-    skiaObject.rConicTo(x1, y1, x2, y2, w);
+  relativeConicTo(
+    x1: number, 
+    y1: number, 
+    x2: number, 
+    y2: number, 
+    w: number
+  ) {
+    this.skiaObject.rConicTo(x1, y1, x2, y2, w);
   }
-
 
   relativeCubicTo(
-      double x1, double y1, double x2, double y2, double x3, double y3) {
-    skiaObject.rCubicTo(x1, y1, x2, y2, x3, y3);
+    x1: number, 
+    y1: number, 
+    x2: number, 
+    y2: number, 
+    x3: number, 
+    y3: number
+  ) {
+    this.skiaObject.rCubicTo(x1, y1, x2, y2, x3, y3)
+  }
+
+  relativeLineTo(dx: number, dy: number) {
+    this.skiaObject.rLineTo(dx, dy)
+  }
+
+  relativeMoveTo(dx: number, dy: number) {
+    this.skiaObject.rMoveTo(dx, dy)
+  }
+
+  relativeQuadraticBezierTo (
+    x1: number, 
+    y1: number, 
+    x2: number, 
+    y2: number
+  ) {
+    this.skiaObject.rQuadTo(x1, y1, x2, y2)
   }
 
 
-  relativeLineTo(double dx, double dy) {
-    skiaObject.rLineTo(dx, dy);
+  reset () {
+    this._fillType = PathFillType.nonZero
+    this.skiaObject.reset();
   }
 
-
-  relativeMoveTo(double dx, double dy) {
-    skiaObject.rMoveTo(dx, dy);
-  }
-
-
-  relativeQuadraticBezierTo(double x1, double y1, double x2, double y2) {
-    skiaObject.rQuadTo(x1, y1, x2, y2);
-  }
-
-
-  reset() {
-    // Only reset the local field. Skia will reset its internal state via
-    // SkPath.reset() below.
-    _fillType = ui.PathFillType.nonZero;
-    skiaObject.reset();
-  }
-
-
-  CkPath shift(ui.Offset offset) {
-    // `SkPath.transform` mutates the existing path, so create a copy and call
-    // `transform` on the copy.
-    final SkPath shiftedPath = skiaObject.copy();
+  shift (offset: Offset): CkPath {
+    const shiftedPath = this.skiaObject.copy()
+    
     shiftedPath.transform(
       1.0, 0.0, offset.dx,
       0.0, 1.0, offset.dy,
       0.0, 0.0, 1.0,
-    );
-    return CkPath.fromSkPath(shiftedPath, _fillType);
+    )
+    
+    return CkPath.fromSkPath(shiftedPath, this._fillType)
   }
 
-  static CkPath combine(
-    ui.PathOperation operation,
-    ui.Path uiPath1,
-    ui.Path uiPath2,
-  ) {
-    final CkPath path1 = uiPath1 as CkPath;
-    final CkPath path2 = uiPath2 as CkPath;
-    final SkPath newPath = canvasKit.Path.MakeFromOp(
-      path1.skiaObject,
-      path2.skiaObject,
-      toSkPathOp(operation),
-    );
-    return CkPath.fromSkPath(newPath, path1._fillType);
-  }
-
-
-  ui.Path transform(Float64List matrix4) {
-    final SkPath newPath = skiaObject.copy();
-    final Float32List m = toSkMatrixFromFloat64(matrix4);
+  transform (matrix4: Float64List) {
+    const newPath = this.skiaObject.copy();
+    const m = CanvasKitAPI.toSkMatrixFromFloat64(matrix4)
     newPath.transform(
       m[0],
       m[1],
@@ -303,41 +330,29 @@ export class CkPath extends ManagedSkiaObject<SkPath> implements IPath {
       m[6],
       m[7],
       m[8],
-    );
-    return CkPath.fromSkPath(newPath, _fillType);
+    )
+    return CkPath.fromSkPath(newPath, this._fillType)
   }
 
-  String? toSvgString() {
-    return skiaObject.toSVGString();
+  toSvgString (): string {
+    return this.skiaObject.toSVGString()
   }
-
-  /// Return `true` if this path contains no segments.
-  bool get isEmpty {
-    return skiaObject.isEmpty();
-  }
-
-
-  bool get isResurrectionExpensive => true;
-
 
   createDefault (): SkPath {
-    const path: SkPath = new CanvasKit.Path()
-    path.setFillType(toSkFillType(_fillType));
+    const path: SkPath = new CanvasKitAPI.CanvasKit.Path()
+    path.setFillType(CanvasKitAPI.toSkFillType(this._fillType));
     return path;
   }
 
-  List<dynamic>? _cachedCommands;
-
-
   delete () {
-    _cachedCommands = skiaObject.toCmds();
-    rawSkiaObject?.delete();
+    this.cachedCommands = this.skiaObject.toCmds()
+    this.rawSkiaObject?.delete()
   }
 
 
   resurrect (): SkPath  {
-    const path: SkPath = canvasKit.Path.MakeFromCmds(_cachedCommands!)
-    path.setFillType(toSkFillType(_fillType))
+    const path: SkPath = CanvasKitAPI.CanvasKit.Path.MakeFromCmds(this.cachedCommands!) as SkPath
+    path.setFillType(CanvasKitAPI.toSkFillType(this._fillType))
     return path
   }
 }

@@ -4,21 +4,13 @@ export abstract class Image {
   abstract width: number
   abstract height: number
   abstract debugDisposed: boolean
-  abstract toByteData ()
   abstract dispose ()
-  abstract toBytedata (format: ImageByteFormat): Promise<ByteData | null> 
+  abstract toByteData (format: ImageByteFormat): Promise<any | null> 
 
-  clone () {
-    return this
-  }
+  abstract clone (): Image
+  abstract isCloneOf (image: Image): boolean
 
-  isCloneOf (image: Image) {
-    return this === image
-  }
-
-  debugGetOpenHandleStackTraces (): StackTrace[] | null {
-    return null
-  }
+  abstract debugGetOpenHandleStackTraces (): [] | null
 
   toString () {
     return `[${this.width}\u00D7${this.height}]`

@@ -1,6 +1,6 @@
 import { FilterQuality } from '@UI'
-import { ManagedSkiaObject } from '@CanvasKit'
-import type { SkShader } from '@Skia'
+import { ManagedSkiaObject } from 'src/Engine/Canvasj'
+import type { SkShader } from 'src/Engine/Canvasj/CanvasKitAPI/Skia'
 
 export abstract class CkShader extends ManagedSkiaObject<SkShader> {
   withQuality (contextualQuality: FilterQuality) {

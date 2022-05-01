@@ -3,8 +3,8 @@
     "experimentalDecorators": true,
     "emitDecoratorMetadata": true,
     "emitDeclarationOnly": false,
-    "target": "ES2020",
-    "lib": ["dom", "ES2020"],
+    "target": "ES2021",
+    "lib": ["dom", "ES2021"],
     "types": ["@types/jest", "node"],
     "allowJs": false,
     "skipLibCheck": true,
@@ -28,10 +28,10 @@
     "paths": {
       "@UI": ["./src/UI/index.ts"],
       "@Util": ["./src/ENgine/Util/index.ts"],
-      "@Skia": ["./src/Engine/CanvasKit/CanvasKitAPI/Skia/index.ts"],
-      "@Layer": ["./src/ENgine/CanvasKit/Layer/index.ts"],
-      "@CanvasKit": ["./src/Engine/CanvasKit/index.ts"],
-      "@CanvasKitAPI": ["./src/Engine/CanvasKit/CanvasKitAPI/index.ts"],
+      "@Skia": ["src/Engine/CanvasKit/CanvasKitAPI/Skia.ts"],
+      "@Layer": ["src/Engine/CanvasKit/Layer/index.ts"],
+      "@CanvasKit": ["src/Engine/CanvasKit/index.ts"],
+      "@CanvasKitAPI": ["src/Engine/CanvasKit/CanvasKitAPI/index.ts"],
       "@Types": ["./src/Types/index.ts"],
       "@Shared": ["./src/Shared/index.ts"],
       "@Engine": ["./src/Engine/index.ts"],
@@ -42,5 +42,5 @@
       { "transform": "typescript-transform-paths", "afterDeclarations": true }
     ]
   },
-  "include": ["src/**/*.ts", "src/Engine/CanvasKit/ImageFilter"]
+  "include": ["src/**/*.ts", "__tests__/**/*.test.ts"]
 }

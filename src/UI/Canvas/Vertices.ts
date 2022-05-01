@@ -1,4 +1,4 @@
-import { CkVertices } from '@Engine'
+// import { CkVertices } from '@Engine'
 import { Offset } from '../Geometry/Offset'
 import { Color } from '../Painting'
 import type { int } from '@Types'
@@ -17,13 +17,13 @@ export class Vertices {
     colors: Color[],
     indices: number[]
   ) {
-    return new Vertices(
-      mode,
-      positions,
-      textureCoordinates,
-      colors,
-      indices
-    )
+    // return new Vertices(
+    //   mode,
+    //   positions,
+    //   textureCoordinates,
+    //   colors,
+    //   indices
+    // )
   }
 
   static factory (
@@ -33,12 +33,12 @@ export class Vertices {
     colors: Color[] | null,
     indices: int[] | null
   ) {
-    return new CkVertices(
-      mode,
-      positions,
-      textureCoordinates,
-      colors,
-      indices
-    );
+    // return new CkVertices(
+    //   mode,
+    //   positions,
+    //   textureCoordinates,
+    //   colors,
+    //   indices
+    // );
   }
 }

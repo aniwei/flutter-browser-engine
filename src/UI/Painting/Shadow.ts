@@ -31,11 +31,11 @@ export class Shadow {
       if (shadowA == null) {
         return shadowB.scale(t);
       } else {
-        return Shadow(
-          color: Color.lerp(a.color, b.color, t),
-          offset: Offset.lerp(a.offset, b.offset, t),
-          blurRadius: _lerpDouble(a.blurRadius, b.blurRadius, t),
-        );
+        // return new Shadow(
+        //   Color.lerp(a.color, b.color, t),
+        //   Offset.lerp(a.offset, b.offset, t),
+        //   _lerpDouble(a.blurRadius, b.blurRadius, t),
+        // );
       }
     }
   }

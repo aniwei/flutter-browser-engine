@@ -1,5 +1,5 @@
 import { invariant } from 'ts-invariant'
-import { ArgumentError } from '@Shared'
+import { ArgumentError, clamp } from '@Shared'
 import { Offset } from '../Geometry'
 
 import type { Float64List, double } from '@Types'
@@ -37,7 +37,7 @@ export function scaleAlpha(
   a: Color, 
   factor: double
 ): Color {
-  return a.withAlpha(engine.clampInt(Math.round(a.alpha * factor), 0, 255))
+  return a.withAlpha(clamp(Math.round(a.alpha * factor), 0, 255))
 }
 
 export enum BlurStyle {
@@ -132,7 +132,7 @@ export * from './Image'
 export * from './Color'
 export * from './Paint'
 export * from './Shader'
-export * from './Shadow'
+// export * from './Shadow'
 export * from './Gradient'
 export * from './MaskFilter'
 export * from './ColorFilter'
