@@ -1,9 +1,9 @@
-import { SkiaObject } from '../SkiaObject'
+import { SkiaObject } from './SkiaObject'
 import { SkiaObjects } from './SkiaObjects'
 
 export class SkiaObjectCache {
   public maximumSize: number
-  public itemQueue: DoubleLinkedQueue<SkiaObject<Object>>
+  public itemQueue: SkiaObject<Object>[]
   public itemMap: Map<SkiaObject<Object>, DoubleLinkedQueueEntry<SkiaObject<Object>>>
 
 
@@ -14,7 +14,7 @@ export class SkiaObjectCache {
 
   constructor (maximumSize) {
     this.maximumSize = maximumSize
-    this.itemQueue = new DoubleLinkedQueue<SkiaObject<Object>()
+    this.itemQueue = []
     this.itemMap = new Map()
   }
   
@@ -24,7 +24,7 @@ export class SkiaObjectCache {
 
   
   add (object: SkiaObject<Object>): void {
-    this.itemQueue.addFirst(object)
+    this.itemQueue.unshift(object)
     this.itemMap.set(object, this.itemQueue.firstEntry())
 
     if (this.itemQueue.length > this.maximumSize) {
@@ -36,14 +36,14 @@ export class SkiaObjectCache {
     const item: DoubleLinkedQueueEntry<SkiaObject<Object>> | null = this.itemMap.get(object)
     item?.remove()
     
-    this.itemQueue.addFirst(object)
+    this.itemQueue.unshift(object)
     this.itemMap.set(object, this.itemQueue.firstEntry())
   }
 
   resize (): void {
     const itemsToDelete = Math.floor(this.maximumSize / 2)
     for (let i = 0; i < itemsToDelete; i++) {
-      const oldObject: SkiaObject<Object> = this.itemQueue.removeLast()
+      const oldObject: SkiaObject<Object> = this.itemQueue.pop()
       this.itemMap.delete(oldObject)
       oldObject.delete()
       oldObject.didDelete()

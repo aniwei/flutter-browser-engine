@@ -4,19 +4,16 @@ import { CkCanvas } from '../Canvas'
 
 export class PaintContext {
   public internalNodesCanvas: CkNWayCanvas
-  public leafNodesCanvas?: CkCanvas
-  public rasterCache?: RasterCache
-  public viewEmbedder?: HtmlViewEmbedder 
+  public leafNodesCanvas: CkCanvas | null = null
+  public rasterCache: RasterCache | null = null
 
   constructor (
     internalNodesCanvas,
     leafNodesCanvas,
-    rasterCache,
-    viewEmbedder
+    rasterCache
   ) {
     this.internalNodesCanvas = internalNodesCanvas
     this.leafNodesCanvas = leafNodesCanvas
     this.rasterCache = rasterCache
-    this.viewEmbedder = viewEmbedder
   }
 }

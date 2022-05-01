@@ -1,57 +1,50 @@
 
+import { Path, Rect, RRect } from '@UI'
+import { listEquals } from '../../Util'
+import { Matrix4 } from '../../VectorMath'
 import { Mutator } from './Mutator'
 
-export class MutatorsStack extends Array<Mutator> {
-  MutatorsStack() : _mutators = <Mutator>[];
+export class MutatorsStack {
+  public mutators: Mutator[] = []
 
   static copy (origin: MutatorsStack) {
-    const mutators = new MutatorsStack()
+    const mutatorsStack = new MutatorsStack()
+    mutatorsStack.mutators = Array.from(origin.mutators)
 
-
-    return mutators
+    return mutatorsStack
   }
 
-  MutatorsStack._copy(MutatorsStack original)
-      : _mutators = List<Mutator>.from(original._mutators);
-
-  final List<Mutator> _mutators;
-
-  void pushClipRect(ui.Rect rect) {
-    _mutators.add(Mutator.clipRect(rect));
+  pushClipRect (rect: Rect) {
+    this.mutators.push(Mutator.clipRect(rect))
   }
 
-  void pushClipRRect(ui.RRect rrect) {
-    _mutators.add(Mutator.clipRRect(rrect));
+  pushClipRRect (rrect: RRect) {
+    this.mutators.push(Mutator.clipRRect(rrect));
   }
 
-  void pushClipPath(ui.Path path) {
-    _mutators.add(Mutator.clipPath(path));
+  pushClipPath(path: Path) {
+    this.mutators.push(Mutator.clipPath(path));
   }
 
-  void pushTransform(Matrix4 matrix) {
-    _mutators.add(Mutator.transform(matrix));
+  pushTransform (matrix: Matrix4) {
+    this.mutators.push(Mutator.transform(matrix));
   }
 
-  void pushOpacity(int alpha) {
-    _mutators.add(Mutator.opacity(alpha));
+  pushOpacity (alpha: number) {
+    this.mutators.push(Mutator.opacity(alpha));
   }
 
-  void pop() {
-    _mutators.removeLast();
+  pop() {
+    this.mutators.pop()
   }
 
-  @override
-  bool operator ==(Object other) {
-    if (identical(other, this)) {
-      return true;
+  isEqual (other) {
+    if (this === other) {
+      return true
     }
-    return other is MutatorsStack &&
-        listEquals<Mutator>(other._mutators, _mutators);
+
+    return (
+      listEquals(other.mutators, this.mutators)
+    )
   }
-
-  @override
-  int get hashCode => ui.hashList(_mutators);
-
-  @override
-  Iterator<Mutator> get iterator => _mutators.reversed.iterator;
 }

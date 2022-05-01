@@ -1,9 +1,10 @@
+import { invariant } from 'ts-invariant'
 import { Clip, Rect } from '@UI'
-import invariant from 'ts-invariant';
-import { CkPath } from '../CkPath';
+import { Matrix4 } from '../../VectorMath'
+import { CkPath } from '../Path'
 import { ContainerLayer } from './ContainerLayer'
-import { PaintContext } from './PaintContext';
-import { PrerollContext } from './PrerollContext';
+import { PaintContext } from './PaintContext'
+import { PrerollContext } from './PrerollContext'
 
 export class ClipPathEngineLayer extends ContainerLayer {
   public clipPath: CkPath

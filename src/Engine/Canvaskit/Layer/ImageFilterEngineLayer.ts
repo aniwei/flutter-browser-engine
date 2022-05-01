@@ -1,5 +1,6 @@
 import { ImageFilter } from '@UI'
 import { invariant } from 'ts-invariant'
+import { CkPaint } from '../Painting'
 import { ContainerLayer } from './ContainerLayer'
 import { PaintContext } from './PaintContext'
 

@@ -142,6 +142,26 @@ export class RRect {
     return this.bottom - this.top
   }
 
+  public get outerRect () {
+    return Rect.fromLTRB(this.left, this.top, this.right, this.bottom)
+  }
+
+  public get safeInnerRect () {
+    const kInsetFactor = 0.29289321881 // 1-cos(pi/4)
+
+    const leftRadius = Math.max(this.blRadiusX, this.tlRadiusX)
+    const topRadius = Math.max(this.tlRadiusY, this.trRadiusY)
+    const rightRadius = Math.max(this.trRadiusX, this.brRadiusX)
+    const bottomRadius = Math.max(this.brRadiusY, this.blRadiusY)
+
+    return Rect.fromLTRB(
+      this.left + leftRadius * kInsetFactor,
+      this.top + topRadius * kInsetFactor,
+      this.right - rightRadius * kInsetFactor,
+      this.bottom - bottomRadius * kInsetFactor
+    )
+  }
+
   constructor (
     left: double = 0,
     top: double = 0,

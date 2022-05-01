@@ -24,7 +24,7 @@ import type {
 } from '@Skia'
 import { Float32List } from '@Types'
 import { CkColorFilter, CkComposeColorFilter, CkMatrixColorFilter } from '../ColorFilter'
-import { CkManagedSkImageFilterConvertible } from '../ImageFilter'
+import { CkImageFilter, CkManagedSkImageFilterConvertible } from '../ImageFilter'
 
 const defaultPaintColor = new Color(0xFF000000)
 const invertColorMatrix: Float32List = Float32List.from([
@@ -176,7 +176,7 @@ export class CkPaint extends ManagedSkiaObject<SkPaint> implements Paint {
     }
 
     this._shader = shader as CkShader
-    this.skiaObject.setShader(this._shader?.withQuality(this.filterQuality))
+    this.skiaObject.setShader((this._shader as CkShader)?.withQuality(this.filterQuality))
   }
 
   public _maskFilter: MaskFilter | null = null
@@ -221,7 +221,7 @@ export class CkPaint extends ManagedSkiaObject<SkPaint> implements Paint {
       return
     }
     this._filterQuality = filterQuality
-    this.skiaObject.setShader(this._shader?.withQuality(filterQuality))
+    this.skiaObject.setShader((this._shader as CkShader)?.withQuality(filterQuality))
   }
 
 
@@ -285,7 +285,7 @@ export class CkPaint extends ManagedSkiaObject<SkPaint> implements Paint {
     }
 
     this._imageFilter = imageFilter as CkManagedSkImageFilterConvertible
-    this.managedImageFilter = this._imageFilter?.imageFilter
+    this.managedImageFilter = (this._imageFilter as CkImageFilter)?.imageFilter
 
     if (this.managedImageFilter) {
       this.skiaObject.setImageFilter(this.managedImageFilter?.skiaObject)
@@ -308,7 +308,7 @@ export class CkPaint extends ManagedSkiaObject<SkPaint> implements Paint {
     paint.setStrokeWidth(this.strokeWidth)
     paint.setAntiAlias(this.isAntiAlias)
     paint.setColorInt(this.color.value)
-    paint.setShader(this.shader?.withQuality(this.filterQuality))
+    paint.setShader((this.shader as CkShader)?.withQuality(this.filterQuality))
     paint.setStrokeCap(CanvasKitAPI.toSkStrokeCap(this.strokeCap))
     paint.setStrokeJoin(CanvasKitAPI.toSkStrokeJoin(this.strokeJoin))
     paint.setStrokeMiter(this.strokeMiterLimit)

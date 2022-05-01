@@ -38,7 +38,7 @@ export class SkiaObjectBox<R extends StackTraceDebugger, T> extends SkiaObject<T
     super()
     this.resurrector = null
     this.initialize(debugReferrer, initialValue)
-    Collector.instance.register(this, this.skDeletable)
+    Collector.instance.register(this, this.skDeletable as SkDeletable)
   }
       
   static resurrectable<R extends StackTraceDebugger, T> (
@@ -48,7 +48,7 @@ export class SkiaObjectBox<R extends StackTraceDebugger, T> extends SkiaObject<T
   ) {
     const box = new SkiaObjectBox(debugReferrer, initialValue)
     box.resurrector = resurrector
-    SkiaObjects.manageExpensive(this)
+    SkiaObjects.manageExpensive(this as unknown as SkiaObject<T>)
   }
   
   initialize (debugReferrer: R, initialValue: T) {

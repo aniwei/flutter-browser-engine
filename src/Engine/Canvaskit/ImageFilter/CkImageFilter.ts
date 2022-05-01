@@ -4,7 +4,8 @@ import { ManagedSkiaObject } from '../SkiaObjectCache'
 import { CkColorFilter } from '../ColorFilter'
 import { CkBlurImageFilter } from './CkBlurImageFilter'
 import { CkColorFilterImageFilter } from './CkColorFilterImageFilter'
-import { Float64List } from '@Types'
+import { CkMatrixImageFilter } from './CkMatrixImageFilter'
+import type { Float64List } from '@Types'
 
 export abstract class CkImageFilter extends ManagedSkiaObject<SkImageFilter> {
   static blur (
@@ -24,24 +25,25 @@ export abstract class CkImageFilter extends ManagedSkiaObject<SkImageFilter> {
     matrix: Float64List,
     filterQuality: FilterQuality 
   ) {
-    return new _CkMatrixImageFilter(matrix, filterQuality)
+    return new CkMatrixImageFilter(matrix, filterQuality)
   }
 
 
-public get imageFilter (): ManagedSkiaObject<SkImageFilter> {
-  return this
-}
+  public get imageFilter (): ManagedSkiaObject<SkImageFilter> {
+    return this
+  }
 
-abstract initSkiaObject (): SkImageFilter
+  abstract initSkiaObject (): SkImageFilter
 
-createDefault (): SkImageFilter  {
-  return this.initSkiaObject()
-}
+  createDefault (): SkImageFilter  {
+    return this.initSkiaObject()
+  }
 
-resurrect () {
-  return this.initSkiaObject()
-}
+  resurrect () {
+    return this.initSkiaObject()
+  }
 
-delete () {
-  this.rawSkiaObject?.delete()
+  delete () {
+    this.rawSkiaObject?.delete()
+  }
 }

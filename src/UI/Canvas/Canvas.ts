@@ -1,16 +1,16 @@
 import { Offset } from '../Geometry/Offset'
 import { Rect } from '../Geometry/Rect'
 import { RRect } from '../Geometry/RRect'
-import { Paint } from '../Paint'
 import { RSTransform } from '../RSTransform'
-import type { double, Float64List, int } from '@Types'
 import { ClipOp, PointMode } from '.'
 import { Path } from '../Path'
-import { BlendMode, Color, Image } from '../Painting'
+import { BlendMode, Color, Paint, Image } from '../Painting'
 import { Picture } from './Picture'
 import { Paragraph } from '../Text'
 import { Vertices } from './Vertices'
 import { PictureRecorder } from './PictureRecorder'
+
+import type { double, Float64List, int } from '@Types'
 
 export interface ICanvas {
   save ()

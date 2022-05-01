@@ -2,7 +2,7 @@ import fs from 'fs'
 import path from 'path'
 import jimp from 'jimp'
 import { Surface } from 'canvaskit-wasm';
-import { CanvasKitAPI } from '../src/Engine/CanvasKit/CanvasKitAPI'
+import { CanvasKitAPI } from '@CanvasKitAPI'
 
 function starPath(CanvasKit, X=128, Y=128, R=116) {
   let p = new CanvasKit.Path();
