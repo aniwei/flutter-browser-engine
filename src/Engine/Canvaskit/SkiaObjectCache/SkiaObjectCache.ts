@@ -33,7 +33,14 @@ export class SkiaObjectCache {
   }
 
   markUsed (object: SkiaObject<Object>) {
-    const item: SkiaObject<Object> | null = this.itemMap.get(object)
+    const item = this.itemMap.get(object)
+
+    if (item && this.itemQueue.includes(item)) {
+      const index = this.itemQueue.indexOf(item)
+      if (index > -1) {
+        this.itemQueue.splice(index, 1)
+      }
+    }
     
     this.itemQueue.unshift(object)
     this.itemMap.set(object, this.itemQueue[0])
