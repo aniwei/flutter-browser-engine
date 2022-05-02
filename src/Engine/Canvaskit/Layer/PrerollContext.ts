@@ -31,7 +31,7 @@ export class PrerollContext {
     return cullRect
   }
 
-  constructor (rasterCache: RasterCache) {
+  constructor (rasterCache: RasterCache | null) {
     this.rasterCache = rasterCache
   }
 }

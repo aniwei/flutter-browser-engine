@@ -1,10 +1,10 @@
 import { StateError } from '@Shared'
-import { SkPictureRecorder, SkCanvas } from '@Skia'
+import { SkPictureRecorder, SkCanvas, SkPicture } from '@Skia'
 import { Rect, PictureRecorder } from '@UI'
 import { CkCanvas } from '../Canvas'
 import { CanvasKitAPI } from '../CanvasKitAPI/CanvasKit'
 
-export class CkPictureRecorder implements PictureRecorder {
+export class CkPictureRecorder {
   public cullRect: Rect | null = null
   public skRecorder?: SkPictureRecorder | null = null
   public recordingCanvas: CkCanvas | null = null
@@ -21,22 +21,22 @@ export class CkPictureRecorder implements PictureRecorder {
     return this.recordingCanvas = new CkCanvas(skCanvas)
   }
 
-  endRecording (): CkPicture {
-    const recorder: SkPictureRecorder | null = this.skRecorder
+  endRecording () {
+  //   const recorder: SkPictureRecorder | null = this.skRecorder
 
-    if (recorder === null) {
-      throw new StateError('PictureRecorder is not recording')
-    }
+  //   if (recorder === null) {
+  //     throw new StateError('PictureRecorder is not recording')
+  //   }
 
-   const skPicture: SkPicture = recorder.finishRecordingAsPicture()
-    recorder.delete()
+  //  const skPicture: SkPicture = recorder.finishRecordingAsPicture()
+  //   recorder.delete()
     
-    this.skRecorder = null
-    return new CkPicture(
-      skPicture, 
-      this.cullRect, 
-      this.recordingCanvas!.pictureSnapshot
-    )
+  //   this.skRecorder = null
+  //   return new CkPicture(
+  //     skPicture, 
+  //     this.cullRect, 
+  //     this.recordingCanvas!.pictureSnapshot
+  //   )
   }
 
   

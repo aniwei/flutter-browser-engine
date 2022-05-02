@@ -1,17 +1,15 @@
-import type { SkColorFilter } from '@Skia'
 import { ManagedSkiaObject } from '../SkiaObjectCache'
-import { CkColorFilter } from './CkColorFilter';
+import type { CkColorFilter } from './CkColorFilter'
+import type { SkColorFilter } from '@Skia'
 
 export class ManagedSkColorFilter extends ManagedSkiaObject<SkColorFilter> {
   public colorFilter: CkColorFilter
 
   constructor (ckColorFilter: CkColorFilter) {
-    super()
-
+    super(ckColorFilter.initRawColorFilter())
     this.colorFilter = ckColorFilter
   }
 
-  
   createDefault (): SkColorFilter {
     return this.colorFilter.initRawColorFilter()
   }

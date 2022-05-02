@@ -1,7 +1,10 @@
 
-import { BlendMode, ImageFilter, Rect } from '@UI'
-import { PrerollContext } from './PrerollContext'
+import { CkPaint } from '../Painting'
 import { ContainerLayer } from './ContainerLayer'
+import type { BlendMode, ImageFilter, Rect } from '@UI'
+import type { PrerollContext } from './PrerollContext'
+import type { Matrix4 } from '../../VectorMath'
+import type { PaintContext } from './PaintContext'
 
 export class BackdropFilterEngineLayer extends ContainerLayer {
   public filter: ImageFilter

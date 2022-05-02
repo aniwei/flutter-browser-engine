@@ -4,10 +4,11 @@ import { Matrix4 } from '../../VectorMath'
 import { PaintContext } from '../Layer/PaintContext'
 import { Frame } from './Frame'
 import { CkNWayCanvas } from '../NWayCanvas'
+import { CkPictureRecorder } from '../PictureRecorder'
 
 export class LayerTree {
   public rootLayer: RootLayer
-  public frameSize: Size = window.physicalSize
+  public frameSize: Size = new Size(400, 600) // window.size
   public devicePixelRatio: number | null = null
 
   constructor (rootLayer: RootLayer) {
@@ -17,7 +18,6 @@ export class LayerTree {
   preroll (frame: Frame, ignoreRasterCache: boolean = false): void {
     const context = new PrerollContext(
       ignoreRasterCache ? null : frame.rasterCache,
-      frame.viewEmbedder,
     );
     this.rootLayer.preroll(context, Matrix4.identity());
   }
@@ -37,23 +37,22 @@ export class LayerTree {
       internalNodesCanvas,
       frame.canvas,
       ignoreRasterCache ? null : frame.rasterCache,
-      frame.viewEmbedder,
     )
     if (this.rootLayer.needsPainting) {
       this.rootLayer.paint(context)
     }
   }
 
-  flatten (): Picture {
+  flatten (): any /* Picture */ {
     const recorder = new CkPictureRecorder()
     const canvas = recorder.beginRecording(Rect.largest)
-    const prerollContext = new PrerollContext(null, null)
+    const prerollContext = new PrerollContext(null)
     this.rootLayer.preroll(prerollContext, Matrix4.identity())
 
     const internalNodesCanvas = new CkNWayCanvas()
     internalNodesCanvas.addCanvas(canvas)
     
-    const paintContext = new PaintContext(internalNodesCanvas, canvas, null, null)
+    const paintContext = new PaintContext(internalNodesCanvas, canvas, null)
     
     if (this.rootLayer.needsPainting) {
       this.rootLayer.paint(paintContext)

@@ -1,7 +1,8 @@
-import { Color, Rect, RRect, ClipOp, ImageFilter } from '@UI'
-import { CkCanvas } from '../Canvas/CvCanvas'
-import { CkPaint } from '../Painting'
-import { CkPath } from '../Path'
+import type { CkCanvas } from '../Canvas/CvCanvas'
+import type { CkPath } from '../Path'
+import type { Color, Rect, RRect, ClipOp, ImageFilter } from '@UI'
+import type { CkPaint } from '../Painting'
+import { Float32List } from '@Types'
 
 export class CkNWayCanvas {
   public canvases: CkCanvas[] = []
@@ -25,7 +26,7 @@ export class CkNWayCanvas {
     }
   }
 
-  saveLayerWithFilter (bounds: Rect, filter: ImageFilter, paint?: CkPaint) {
+  saveLayerWithFilter (bounds: Rect, filter: ImageFilter, paint: CkPaint | null) {
     for (let i = 0; i < this.canvases.length; i++) {
       this.canvases[i].saveLayerWithFilter(bounds, filter, paint)
     }

@@ -241,7 +241,7 @@ export class Rect {
     return this.inflate(-delta)
   }
 
-  numberersect (rect: Rect) {
+  intersect (rect: Rect) {
     return Rect.fromLTRB(
       Math.max(this.left, rect.left),
       Math.max(this.top, rect.top),

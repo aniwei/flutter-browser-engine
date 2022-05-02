@@ -1,8 +1,8 @@
 import { UnimplementedError } from '@Shared'
 import { Clip, Color, EngineLayer, FilterQuality, ISceneBuilder, Offset, OffsetEngineLayer, OpacityEngineLayer, Path, Rect, Scene, Shader } from '@UI'
 import { BackdropFilterEngineLayer, ImageFilterEngineLayer, OffsetEngineLayer, OpacityEngineLayer, PhysicalShapeEngineLayer, ShaderMaskEngineLayer, TransformEngineLayer } from '../Layer'
-import { ContainerLayer } from './ContainerLayer'
-import { RootLayer } from './RootLayer'
+import { ContainerLayer } from '../Layer'
+import { RootLayer } from '../Layer'
 import { LayerScene } from './LayerScene'
 
 import type { bool, double, Float64List, int } from '@Types'

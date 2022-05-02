@@ -16,7 +16,7 @@ export class LayerScene implements IScene {
   ): Promise<Image> {
     const picture = this.layerTree.flatten()
 
-    return picture.toImage()
+    return picture.toImage(width, height)
   }
 
   dispose (): void {}

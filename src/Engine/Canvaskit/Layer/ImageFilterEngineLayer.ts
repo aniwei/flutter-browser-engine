@@ -1,8 +1,8 @@
-import { ImageFilter } from '@UI'
 import { invariant } from 'ts-invariant'
 import { CkPaint } from '../Painting'
 import { ContainerLayer } from './ContainerLayer'
-import { PaintContext } from './PaintContext'
+import type { PaintContext } from './PaintContext'
+import type { ImageFilter } from '@UI'
 
 export class ImageFilterEngineLayer extends ContainerLayer {
   public filter: ImageFilter

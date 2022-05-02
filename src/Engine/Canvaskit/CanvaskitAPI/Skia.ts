@@ -59,4 +59,4 @@ export type SkClipOp = ClipOp
 export type SkFillType = FillType
 export type SkPathOp = PathOp
 export type SkFilterMode = FilterMode
-export type SkMipmapMode =   MipmapMode
+export type SkMipmapMode = MipmapMode

@@ -1,7 +1,7 @@
 import { SkImageFilter, SkColorFilter } from '@Skia'
 import { CanvasKitAPI } from '../CanvasKitAPI'
 import { CkColorFilterImageFilter } from '../ImageFilter'
-import { ManagedSkiaObject } from '../SkiaObjectCache'
+import type { ManagedSkiaObject } from '../SkiaObjectCache'
 
 
 export abstract class CkColorFilter {

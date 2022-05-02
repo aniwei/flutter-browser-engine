@@ -1,45 +1,47 @@
 import { 
-  BlendMode, 
   Color, 
-  ColorFilter, 
   FilterQuality, 
-  MaskFilter, 
   PaintingStyle, 
-  Shader, 
-  Paint,
   StrokeCap, 
   StrokeJoin,
-  ImageFilter,
+  BlendMode
 } from '@UI'
 import { CanvasKitAPI } from '@CanvasKitAPI'
-import { 
-  CkShader, 
-  CkMaskFilter, 
-  ManagedSkiaObject, 
-  ManagedSkColorFilter,
-} from '@CanvasKit'
+import { Float32List } from '@Types'
+import { CkComposeColorFilter, CkMatrixColorFilter, ManagedSkColorFilter } from '../ColorFilter'
+import { ManagedSkiaObject } from '../SkiaObjectCache'
+import { CkMaskFilter } from '../MaskFilter'
+import { CkShader } from '../Shader'
+
+import type { CkImageFilter, CkManagedSkImageFilterConvertible } from '../ImageFilter'
+import type { CkColorFilter } from '../ColorFilter'
 import type { 
   SkPaint,
   SkImageFilter
 } from '@Skia'
-import { Float32List } from '@Types'
-import { CkComposeColorFilter, CkMatrixColorFilter } from '../ColorFilter'
-import { CkImageFilter, CkManagedSkImageFilterConvertible } from '../ImageFilter'
+import type { 
+  ColorFilter, 
+  MaskFilter, 
+  Shader, 
+  Paint,
+  ImageFilter,
+} from '@UI'
 
-import { CkColorFilter } from '../ColorFilter'
-
-const defaultPaintColor = new Color(0xFF000000)
-const invertColorMatrix: Float32List = Float32List.from([
-  -1.0, 0, 0, 1.0, 0, // row
-  0, -1.0, 0, 1.0, 0, // row
-  0, 0, -1.0, 1.0, 0, // row
-  1.0, 1.0, 1.0, 1.0, 0
-])
-const invertColorFilter: ManagedSkColorFilter = new ManagedSkColorFilter(
-  new CkMatrixColorFilter(invertColorMatrix)
-)
 
 export class CkPaint extends ManagedSkiaObject<SkPaint> implements Paint {
+  static defaultPaintColor = new Color(0xFF000000)
+  static invertColorMatrix: Float32List = Float32List.from([
+    -1.0, 0, 0, 1.0, 0, // row
+    0, -1.0, 0, 1.0, 0, // row
+    0, 0, -1.0, 1.0, 0, // row
+    1.0, 1.0, 1.0, 1.0, 0
+  ])
+  static get invertColorFilter () {
+    return new ManagedSkColorFilter(
+      new CkMatrixColorFilter(this.invertColorMatrix)
+    )
+  } 
+
   public ckMaskFilter: CkMaskFilter | null = null
   public managedImageFilter: ManagedSkiaObject<SkImageFilter> | null = null
   public effectiveColorFilter: ManagedSkColorFilter | null = null
@@ -123,7 +125,7 @@ export class CkPaint extends ManagedSkiaObject<SkPaint> implements Paint {
     this.skiaObject.setAntiAlias(isAntiAlias)
   }
 
-  public _color: Color = defaultPaintColor
+  public _color: Color = CkPaint.defaultPaintColor
   public get color () {
     return this._color
   }
@@ -150,11 +152,11 @@ export class CkPaint extends ManagedSkiaObject<SkPaint> implements Paint {
     } else {
       this.originalColorFilter = this.effectiveColorFilter
       if (this.effectiveColorFilter === null) {
-        this.effectiveColorFilter = invertColorFilter
+        this.effectiveColorFilter = CkPaint.invertColorFilter
       } else {
         this.effectiveColorFilter = new ManagedSkColorFilter(
           new CkComposeColorFilter(
-            invertColorFilter, 
+            CkPaint.invertColorFilter, 
             this.effectiveColorFilter
           )
         )
@@ -247,11 +249,11 @@ export class CkPaint extends ManagedSkiaObject<SkPaint> implements Paint {
       this.originalColorFilter = this.effectiveColorFilter
       
       if (this.effectiveColorFilter === null) {
-        this.effectiveColorFilter = invertColorFilter
+        this.effectiveColorFilter = CkPaint.invertColorFilter
       } else {
         this.effectiveColorFilter = new ManagedSkColorFilter(
           new CkComposeColorFilter(
-            invertColorFilter, 
+            CkPaint.invertColorFilter, 
             this.effectiveColorFilter!
           )
         )

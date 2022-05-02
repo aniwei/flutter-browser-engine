@@ -1,11 +1,12 @@
-import { CanvasKitAPI } from '../CanvasKitAPI'
+import { CanvasKitAPI, SkClipOp } from '../CanvasKitAPI'
 
 import type { BlendMode, ClipOp, Color, ImageFilter, Offset, Rect, RRect } from '@UI'
 import type { SkCanvas } from '../CanvasKitAPI'
 import type { CkPath } from '../Path'
-import { CkPaint } from '../Painting'
-import { CkImage } from '../Image/CkImage'
-import { CkManagedSkImageFilterConvertible } from '../ImageFilter'
+import type { CkPaint } from '../Painting'
+import type { CkImage } from '../Image/CkImage'
+import type { CkManagedSkImageFilterConvertible } from '../ImageFilter'
+import { Float32List } from '@Types'
 
 
 
@@ -22,6 +23,10 @@ export class CkCanvas {
 
   public get pictureSnapshot (): null {
     return null
+  }
+
+  public get clipOpIntersect (): SkClipOp {
+    return CanvasKitAPI.CanvasKit.ClipOp.Intersect
   }
 
   constructor (skCanvas: SkCanvas) {
@@ -138,7 +143,7 @@ export class CkCanvas {
 
   saveLayer (
     bounds: Rect, 
-    paint?: CkPaint
+    paint: CkPaint | null
   ) {
     this.skCanvas.saveLayer(
       paint?.skiaObject,
@@ -154,7 +159,7 @@ export class CkCanvas {
   saveLayerWithFilter (
     bounds: Rect, 
     filter: ImageFilter,
-    paint?: CkPaint
+    paint: CkPaint | null
   ) {
     const convertible = filter as CkManagedSkImageFilterConvertible
     return this.skCanvas.saveLayer(
