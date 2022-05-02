@@ -1,11 +1,11 @@
-import { SkImageFilter } from '@Skia'
-import { FilterQuality, TileMode } from '@UI'
 import { ManagedSkiaObject } from '../SkiaObjectCache'
-import { CkColorFilter } from '../ColorFilter'
 import { CkBlurImageFilter } from './CkBlurImageFilter'
 import { CkColorFilterImageFilter } from './CkColorFilterImageFilter'
 import { CkMatrixImageFilter } from './CkMatrixImageFilter'
+import type { SkImageFilter } from '@Skia'
+import type { FilterQuality, TileMode } from '@UI'
 import type { Float64List } from '@Types'
+import type { CkColorFilter } from '../ColorFilter'
 
 export abstract class CkImageFilter extends ManagedSkiaObject<SkImageFilter> {
   static blur (

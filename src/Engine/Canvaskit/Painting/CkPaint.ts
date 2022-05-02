@@ -23,8 +23,10 @@ import type {
   SkImageFilter
 } from '@Skia'
 import { Float32List } from '@Types'
-import { CkColorFilter, CkComposeColorFilter, CkMatrixColorFilter } from '../ColorFilter'
+import { CkComposeColorFilter, CkMatrixColorFilter } from '../ColorFilter'
 import { CkImageFilter, CkManagedSkImageFilterConvertible } from '../ImageFilter'
+
+import { CkColorFilter } from '../ColorFilter'
 
 const defaultPaintColor = new Color(0xFF000000)
 const invertColorMatrix: Float32List = Float32List.from([

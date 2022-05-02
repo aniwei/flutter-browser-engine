@@ -3,6 +3,7 @@ import { TileMode } from '@UI'
 import { CanvasKitAPI } from '../CanvasKitAPI/CanvasKit'
 import { CkImageFilter } from './CkImageFilter'
 
+debugger
 export class CkBlurImageFilter extends CkImageFilter {
 
   public sigmaX: number
