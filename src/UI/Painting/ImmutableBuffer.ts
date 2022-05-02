@@ -1,5 +1,5 @@
 import { invariant } from 'ts-invariant'
-import { Uint8List, int, bool } from '@Types'
+import { Uint8List } from '@Types'
 
 export class ImmutableBuffer {
   static async fromUint8List (list: Uint8List) {
@@ -10,10 +10,10 @@ export class ImmutableBuffer {
   }
 
   public list: Uint8List | null = null
-  public length: int
+  public length: number
 
-  public get debugDisposed (): bool {
-    let disposed: bool
+  public get debugDisposed (): boolean {
+    let disposed: boolean
 
     invariant((() => {
       disposed = this.list == null;
@@ -23,7 +23,7 @@ export class ImmutableBuffer {
     return disposed
   }
 
-  constructor (length: int) {
+  constructor (length: number) {
     this.length = length
   }
 

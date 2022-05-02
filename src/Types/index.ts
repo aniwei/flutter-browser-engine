@@ -1,7 +1,3 @@
-export type int = number
-export type bool = boolean
-export type double = number
-
 export class Uint8List extends Uint8Array {}
 export class Float32List extends Float32Array {}
 export class Float64List extends Float64Array {}
@@ -16,3 +12,4 @@ export abstract class VideoFrame {
   abstract duration: string
   abstract close (): void
 }
+

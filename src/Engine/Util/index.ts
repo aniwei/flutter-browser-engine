@@ -1,5 +1,5 @@
 import { Rect } from '@UI'
-import { double, Float32List } from '@Types'
+import { Float32List } from '@Types'
 import { Matrix4 } from '../VectorMath'
 
 export function listEquals <T>(listA: T[], listB: T[]) {
@@ -68,7 +68,7 @@ export function transformLTRB (transform: Matrix4, ltrb: Float32List) {
   tempPointMatrix.multiplyTranspose(transform)
 
   // Handle non-homogenous matrices.
-  let w: double = transform[15]
+  let w: number = transform[15]
   if (w === 0.0) {
     w = 1.0
   }

@@ -1,7 +1,6 @@
 // import { CkVertices } from '@Engine'
 import { Offset } from '../Geometry/Offset'
 import { Color } from '../Painting'
-import type { int } from '@Types'
 
 export enum VertexMode {
   triangles,
@@ -31,7 +30,7 @@ export class Vertices {
     positions: Offset[],
     textureCoordinates: Offset[] | null,
     colors: Color[] | null,
-    indices: int[] | null
+    indices: number[] | null
   ) {
     // return new CkVertices(
     //   mode,

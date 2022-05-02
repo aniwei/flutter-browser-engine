@@ -1,6 +1,5 @@
 import { BlendMode } from '.';
 import { Color } from './Color'
-import type { double } from '@Types';
 
 export abstract class ColorFilter {
   static mode (
@@ -8,7 +7,7 @@ export abstract class ColorFilter {
     blendMode: BlendMode
   ) {}
 
-  static matrix (matrix: double[]) {}
+  static matrix (matrix: number[]) {}
      
   static linearToSrgbGamma () {}
   static srgbToLinearGamma () {}

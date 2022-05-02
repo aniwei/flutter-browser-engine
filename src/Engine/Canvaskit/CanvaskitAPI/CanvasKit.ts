@@ -14,6 +14,7 @@ import {
   ClipOp,
   PathFillType,
   PathOperation,
+  FilterQuality,
 } from '@UI'
 import { 
   Float32List, 
@@ -28,7 +29,9 @@ import type {
   SkFloat32List,
   SkClipOp,
   SkFillType,
-  SkPathOp
+  SkPathOp,
+  SkFilterMode,
+  SkMipmapMode
 } from './Skia'
 
 type CanvasKitInitHandle = {
@@ -55,6 +58,29 @@ export function Proxify<T> (CanvasKit: CanvasKit): CanvasKitProxify<T> {
   })
 }
 
+class CkTransformFilterOptions {
+  public filter: SkFilterMode
+  public mipmap: SkMipmapMode
+
+  constructor (
+    filter,
+    mipmap
+  ) {
+    this.filter = filter
+    this.mipmap = mipmap
+  }
+}
+
+class CkCubicFilterOptions {
+  public B: number
+  public C: number
+
+  constructor (B, C) {
+    this.B = B
+    this.C = C
+  }
+}
+
 
 export class CanvasKitAPI {
   static SkBlendMode: SkBlendMode[]
@@ -66,6 +92,7 @@ export class CanvasKitAPI {
   static SkClipOp: SkClipOp[]
   static SkFillType: SkFillType[]
   static SkPathOp: SkPathOp[]
+  static SkFilterOptions: Map<FilterQuality, CkTransformFilterOptions | CkCubicFilterOptions>
   static SkMatrixIndexToMatrix4Index = [
     0, 4, 12, // Row 1
     1, 5, 13, // Row 2
@@ -158,6 +185,36 @@ export class CanvasKitAPI {
         CanvasKit.PathOp.ReverseDifference,
       ]
       CanvasKitAPI.SkSharedSkColor1 = CanvasKit.Malloc(Float32Array, 4)
+
+      CanvasKitAPI.SkFilterOptions = new Map()
+      CanvasKitAPI.SkFilterOptions.set(
+        FilterQuality.none, 
+        new CkTransformFilterOptions(
+          CanvasKit.FilterMode.Nearest,
+          CanvasKit.MipmapMode.None
+        )
+      )
+      CanvasKitAPI.SkFilterOptions.set(
+        FilterQuality.low, 
+        new CkTransformFilterOptions(
+          CanvasKit.FilterMode.Linear,
+          CanvasKit.MipmapMode.None
+        )
+      )
+      CanvasKitAPI.SkFilterOptions.set(
+        FilterQuality.medium, 
+        new CkTransformFilterOptions(
+          CanvasKit.FilterMode.Linear,
+          CanvasKit.MipmapMode.Linear
+        )
+      )
+      CanvasKitAPI.SkFilterOptions.set(
+        FilterQuality.high, 
+        new CkCubicFilterOptions(
+          1.0 / 3,
+          1.0 / 3
+        )
+      )
 
       return CanvasKit
     })
@@ -354,5 +411,9 @@ export class CanvasKitAPI {
 
   static toSkPathOp (pathOp: PathOperation) {
     return CanvasKitAPI.SkPathOp[pathOp]
+  }
+
+  static toSkFilterOptions (filterQuality: FilterQuality) {
+    return CanvasKitAPI.SkFilterOptions.get(filterQuality)
   }
 }

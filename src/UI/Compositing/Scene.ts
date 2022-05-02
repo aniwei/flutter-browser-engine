@@ -1,6 +1,5 @@
 import { LayerSceneBuilder } from '@Engine'
 
-import type { int, bool, double, Float64List } from '@Types'
 import type {
   BackdropFilterEngineLayer,
   ClipPathEngineLayer,
@@ -16,10 +15,10 @@ import type {
   TransformEngineLayer
 } from './EngineLayer'
 import type { BlendMode, Clip, Color, ColorFilter, FilterQuality, ImageFilter, Shader } from '../Painting'
-import type { Offset, Rect } from '../Geometry'
+import type { Offset, Rect, RRect } from '../Geometry'
 import type { Path } from '../Path'
-import { Picture } from '../Canvas'
-import { RRect } from 'canvaskit-wasm'
+import type { Float64List } from '@Types'
+import type { Picture } from '../Canvas'
 
 export interface IScene {
   toImage (width: number, height: number)
@@ -33,8 +32,8 @@ export abstract class Scene implements IScene {
 
 export interface ISceneBuilder {
   pushOffset (
-    dx: double,
-    dy: double, 
+    dx: number,
+    dy: number, 
     oldLayer: OffsetEngineLayer | null,
   ): OffsetEngineLayer
 
@@ -62,7 +61,7 @@ export interface ISceneBuilder {
   ): ClipPathEngineLayer
 
   pushOpacity (
-    alpha: int,
+    alpha: number,
     offset: Offset,
     oldLayer: OpacityEngineLayer | null
   ): OpacityEngineLayer
@@ -92,7 +91,7 @@ export interface ISceneBuilder {
 
   pushPhysicalShape (
     path: Path,
-    elevation: double,
+    elevation: number,
     color: Color,
     shadowColor: Color | null,
     clipBehavior: Clip,
@@ -103,45 +102,45 @@ export interface ISceneBuilder {
   pop (): void
 
   addPerformanceOverlay (
-    enabledOptions: int,
+    enabledOptions: number,
     bounds: Rect
   )
 
   addPicture (
     offset: Offset,
     picture: Picture,
-    isComplexHint: bool,
-    willChangeHint: bool
+    isComplexHnumber: boolean,
+    willChangeHnumber: boolean
   )
 
   addTexture (
-    textureId: int,
+    textureId: number,
     offset: Offset,
-    width: double,
-    height: double,
-    freeze: bool,
+    width: number,
+    height: number,
+    freeze: boolean,
     filterQuality: FilterQuality
   )
 
   addPlatformView (
-    viewId: int,
+    viewId: number,
     offset: Offset,
-    width: double,
-    height: double
+    width: number,
+    height: number
   )
 
-  setRasterizerTracingThreshold (frameInterval: int)
+  setRasterizerTracingThreshold (frameInterval: number)
   setCheckerboardRasterCacheImages (checkerboard: boolean)
   setCheckerboardOffscreenLayers (checkerboard: boolean)
   build (): Scene
   setProperties (
-    width: double,
-    height: double,
-    insetTop: double,
-    insetRight: double,
-    insetBottom: double,
-    insetLeft: double,
-    focusable: bool  
+    width: number,
+    height: number,
+    insetTop: number,
+    insetRight: number,
+    insetBottom: number,
+    insetLeft: number,
+    focusable: boolean  
   )
 }
 
@@ -152,8 +151,8 @@ export abstract class SceneBuilder implements ISceneBuilder {
   }
 
   abstract pushOffset (
-    dx: double,
-    dy: double, 
+    dx: number,
+    dy: number, 
     oldLayer: OffsetEngineLayer | null,
   ): OffsetEngineLayer
 
@@ -181,7 +180,7 @@ export abstract class SceneBuilder implements ISceneBuilder {
   ): ClipPathEngineLayer
 
   abstract pushOpacity (
-    alpha: int,
+    alpha: number,
     offset: Offset,
     oldLayer: OpacityEngineLayer | null
   ): OpacityEngineLayer
@@ -211,7 +210,7 @@ export abstract class SceneBuilder implements ISceneBuilder {
 
   abstract pushPhysicalShape (
     path: Path,
-    elevation: double,
+    elevation: number,
     color: Color,
     shadowColor: Color | null,
     clipBehavior: Clip,
@@ -222,44 +221,44 @@ export abstract class SceneBuilder implements ISceneBuilder {
   abstract pop (): void
 
   abstract addPerformanceOverlay (
-    enabledOptions: int,
+    enabledOptions: number,
     bounds: Rect
   )
 
   abstract addPicture (
     offset: Offset,
     picture: Picture,
-    isComplexHint: bool,
-    willChangeHint: bool
+    isComplexHnumber: boolean,
+    willChangeHnumber: boolean
   )
 
   abstract addTexture (
-    textureId: int,
+    textureId: number,
     offset: Offset,
-    width: double,
-    height: double,
-    freeze: bool,
+    width: number,
+    height: number,
+    freeze: boolean,
     filterQuality: FilterQuality
   )
 
   abstract addPlatformView (
-    viewId: int,
+    viewId: number,
     offset: Offset,
-    width: double,
-    height: double
+    width: number,
+    height: number
   )
 
-  abstract setRasterizerTracingThreshold (frameInterval: int)
+  abstract setRasterizerTracingThreshold (frameInterval: number)
   abstract setCheckerboardRasterCacheImages (checkerboard: boolean)
   abstract setCheckerboardOffscreenLayers (checkerboard: boolean)
   abstract build (): Scene
   abstract setProperties (
-    width: double,
-    height: double,
-    insetTop: double,
-    insetRight: double,
-    insetBottom: double,
-    insetLeft: double,
-    focusable: bool  
+    width: number,
+    height: number,
+    insetTop: number,
+    insetRight: number,
+    insetBottom: number,
+    insetLeft: number,
+    focusable: boolean  
   )
 }

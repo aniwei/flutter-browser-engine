@@ -2,7 +2,7 @@ import { invariant } from 'ts-invariant'
 import { ArgumentError, clamp } from '@Shared'
 import { Offset } from '../Geometry'
 
-import type { Float64List, double } from '@Types'
+import type { Float64List } from '@Types'
 import type { Color } from './Color'
 
 export function offsetIsValid (offset: Offset) {
@@ -20,7 +20,7 @@ export function matrix4IsValid (matrix4: Float64List) {
 
 export function validateColorStops (
   colors: Color[], 
-  colorStops: double[] | null
+  colorStops: number[] | null
 ) {
   if (colorStops === null) {
     if (colors.length !== 2) {
@@ -35,7 +35,7 @@ export function validateColorStops (
 
 export function scaleAlpha(
   a: Color, 
-  factor: double
+  factor: number
 ): Color {
   return a.withAlpha(clamp(Math.round(a.alpha * factor), 0, 255))
 }

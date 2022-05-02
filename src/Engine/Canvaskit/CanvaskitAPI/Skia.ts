@@ -25,7 +25,9 @@ import {
   ImageInfo,
   ClipOp,
   FillType,
-  PathOp
+  PathOp,
+  FilterMode,
+  MipmapMode
 } from 'canvaskit-wasm'
 
 export * from 'canvaskit-wasm'
@@ -56,3 +58,5 @@ export type SkImageInfo = ImageInfo
 export type SkClipOp = ClipOp
 export type SkFillType = FillType
 export type SkPathOp = PathOp
+export type SkFilterMode = FilterMode
+export type SkMipmapMode =   MipmapMode

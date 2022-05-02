@@ -2,7 +2,6 @@ import { invariant } from 'ts-invariant'
 import { OffsetBase } from './OffsetBase'
 import { lerpDouble } from '../Lerp'
 
-import type { bool, double } from '@Types'
 
 const POSITIVE_INFINITY = Number.POSITIVE_INFINITY
 
@@ -14,8 +13,8 @@ export class Offset extends OffsetBase {
   )
   
   static fromDirection (
-    direction: double, 
-    distance: double = 1.0
+    direction: number, 
+    distance: number = 1.0
   ) {
     const offset = new Offset(
       distance * Math.cos(direction),
@@ -28,7 +27,7 @@ export class Offset extends OffsetBase {
   static lerp (
     offsetA: Offset | null, 
     offsetB: Offset | null, 
-    t: double
+    t: number
   ): Offset | null {
     invariant(t !== null)
     if (offsetB === null) {
@@ -73,8 +72,8 @@ export class Offset extends OffsetBase {
   }
 
   scale (
-    scaleX: double, 
-    scaleY: double
+    scaleX: number, 
+    scaleY: number
   ): Offset {
     return new Offset(
       this.dx * scaleX, 
@@ -83,8 +82,8 @@ export class Offset extends OffsetBase {
   }
 
   translate (
-    translateX: double, 
-    translateY: double
+    translateX: number, 
+    translateY: number
   ) {
     return new Offset(
       this.dx + translateX, 
@@ -113,35 +112,35 @@ export class Offset extends OffsetBase {
     )
   }
 
-  multiply (operand: double): Offset {
+  multiply (operand: number): Offset {
     return new Offset(
       this.dx * operand, 
       this.dy * operand
     )
   }
 
-  divide (operand: double): Offset {
+  divide (operand: number): Offset {
     return new Offset(
       this.dx / operand, 
       this.dy / operand
     )
   }
 
-  floor (operand: double): Offset {
+  floor (operand: number): Offset {
     return new Offset(
       Math.floor(this.dx / operand),
       Math.floor(this.dy / operand)
     )
   }
 
-  ceil (operand: double): Offset {
+  ceil (operand: number): Offset {
     return new Offset(
       Math.ceil(this.dx / operand),
       Math.ceil(this.dy / operand)
     )
   }
 
-  isEqual (offset: Offset): bool {
+  isEqual (offset: Offset): boolean {
     if (offset === this) {
       return true
     }

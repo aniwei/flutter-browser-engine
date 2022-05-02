@@ -10,7 +10,7 @@ import { Paragraph } from '../Text'
 import { Vertices } from './Vertices'
 import { PictureRecorder } from './PictureRecorder'
 
-import type { double, Float64List, int } from '@Types'
+import type { Float64List } from '@Types'
 
 export interface ICanvas {
   save ()
@@ -168,10 +168,10 @@ export abstract class Canvas {
   abstract save (): void
   abstract saveLayer(bounds: Rect | null, paint: Paint): void
   abstract restore (): void
-  abstract getSaveCount(): int
-  abstract translate (dx: double, dy: double): void
-  abstract scale (dx: double, dy?: double): void
-  abstract rotate (radians: double): void
-  abstract skew (sx: double, sy: double): void
+  abstract getSaveCount(): number
+  abstract translate (dx: number, dy: number): void
+  abstract scale (dx: number, dy?: number): void
+  abstract rotate (radians: number): void
+  abstract skew (sx: number, sy: number): void
   abstract transform(matrix4: Float64List): void
 }

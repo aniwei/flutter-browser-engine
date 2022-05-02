@@ -1,11 +1,10 @@
 import { invariant } from 'ts-invariant'
-import type { double } from '@Types';
 
 export abstract class OffsetBase {
-  public dx: double
-  public dy: double
+  public dx: number
+  public dy: number
 
-  constructor (dx: double, dy: double) {
+  constructor (dx: number, dy: number) {
     invariant(dx !== null)
     invariant(dy !== null)
 

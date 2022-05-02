@@ -1,4 +1,4 @@
-import { Rect, RRect } from '@UI'
+import { Rect } from '@UI'
 import { MutatorsStack, MutatorType } from '../EmbeddedViews'
 import { RasterCache } from '../RasterCache'
 

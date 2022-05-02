@@ -2,17 +2,16 @@ import { Rect } from './Rect'
 import { Offset } from './Offset'
 import { Radius } from './Radius'
 
-import { bool, double } from '@Types'
 
 export class RRect {
   static zero = new RRect()
   static fromLTRBXY (
-    left: double, 
-    top: double, 
-    right: double, 
-    bottom: double,
-    radiusX: double,
-    radiusY: double
+    left: number, 
+    top: number, 
+    right: number, 
+    bottom: number,
+    radiusX: number,
+    radiusY: number
   ) {
     return new RRect(
       left,
@@ -32,10 +31,10 @@ export class RRect {
   }
 
   static fromLTRBR (
-    left: double, 
-    top: double, 
-    right: double, 
-    bottom: double,
+    left: number, 
+    top: number, 
+    right: number, 
+    bottom: number,
     radius: Radius
   ) {
     return new RRect(
@@ -57,8 +56,8 @@ export class RRect {
 
   static fromRectXY (
     rect: Rect,
-    radiusX: double,
-    radiusY: double
+    radiusX: number,
+    radiusY: number
   ) {
     return new RRect(
       rect.top,
@@ -104,18 +103,18 @@ export class RRect {
 
   }
 
-  public left: double
-  public top: double
-  public right: double
-  public bottom: double
-  public tlRadiusX: double
-  public tlRadiusY: double
-  public trRadiusX: double
-  public trRadiusY: double
-  public brRadiusX: double
-  public brRadiusY: double
-  public blRadiusX: double
-  public blRadiusY: double
+  public left: number
+  public top: number
+  public right: number
+  public bottom: number
+  public tlRadiusX: number
+  public tlRadiusY: number
+  public trRadiusX: number
+  public trRadiusY: number
+  public brRadiusX: number
+  public brRadiusY: number
+  public blRadiusX: number
+  public blRadiusY: number
   public uniformRadii: boolean
 
   public get tlRadius () {
@@ -163,19 +162,19 @@ export class RRect {
   }
 
   constructor (
-    left: double = 0,
-    top: double = 0,
-    right: double = 0,
-    bottom: double = 0,
-    tlRadiusX: double = 0,
-    tlRadiusY: double = 0,
-    trRadiusX: double = 0,
-    trRadiusY: double = 0,
-    brRadiusX: double = 0,
-    brRadiusY: double = 0,
-    blRadiusX: double = 0,
-    blRadiusY: double = 0,
-    uniformRadii: bool = false
+    left: number = 0,
+    top: number = 0,
+    right: number = 0,
+    bottom: number = 0,
+    tlRadiusX: number = 0,
+    tlRadiusY: number = 0,
+    trRadiusX: number = 0,
+    trRadiusY: number = 0,
+    brRadiusX: number = 0,
+    brRadiusY: number = 0,
+    blRadiusX: number = 0,
+    blRadiusY: number = 0,
+    uniformRadii: boolean = false
   ) {
     this.left = left 
     this.top = top 
@@ -193,10 +192,10 @@ export class RRect {
   }
 
   getMin (
-    min: double,
-    radiusA: double,
-    radiusB: double,
-    limit: double
+    min: number,
+    radiusA: number,
+    radiusB: number,
+    limit: number
   ) {
     const sum = radiusA + radiusB
     if (sum > limit && sum !== 0) {

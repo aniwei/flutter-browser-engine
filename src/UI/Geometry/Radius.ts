@@ -1,19 +1,18 @@
-import type { bool, double } from '@Types'
 
 export class Radius {
   static zero = Radius.circular(0)
-  static circular (radius: double) {
+  static circular (radius: number) {
     return Radius.elliptical(radius, radius)
   }
 
-  static elliptical (x: double, y: double) {
+  static elliptical (x: number, y: number) {
     return new Radius(x, y)
   }
 
-  public x: double
-  public y: double
+  public x: number
+  public y: number
 
-  constructor (x: double, y: double) {
+  constructor (x: number, y: number) {
     this.x = x
     this.y = y
   }

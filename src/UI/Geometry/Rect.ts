@@ -1,6 +1,5 @@
 import { Size } from './Size'
 
-import type { bool, double, int } from '@Types'
 import { Offset } from './Offset'
 
 const GIANT_SCALAR = 1.0E+9
@@ -17,10 +16,10 @@ export class Rect {
   )
 
   static fromLTRB (
-    left: double, 
-    top: double, 
-    right: double, 
-    bottom: double
+    left: number, 
+    top: number, 
+    right: number, 
+    bottom: number
   ) {
     return new Rect(
       left, 
@@ -31,10 +30,10 @@ export class Rect {
   }
 
   static fromLTWH (
-    left: double, 
-    top: double, 
-    width: double, 
-    height: double
+    left: number, 
+    top: number, 
+    width: number, 
+    height: number
   ) {
     return new Rect(
       left, 
@@ -46,7 +45,7 @@ export class Rect {
 
   static fromCircle (
     center: Offset,
-    radius: double
+    radius: number
   ) {
     return Rect.fromCenter(
       center, 
@@ -68,7 +67,7 @@ export class Rect {
     )
   }
 
-  static fromPoints (offsetA: Offset, offsetB: Offset) {
+  static fromPonumbers (offsetA: Offset, offsetB: Offset) {
     return new Rect(
       Math.min(offsetA.dx, offsetB.dx),
       Math.min(offsetA.dy, offsetB.dy),
@@ -77,16 +76,16 @@ export class Rect {
     )
   }
 
-  public left: double
-  public top: double
-  public right: double
-  public bottom: double
+  public left: number
+  public top: number
+  public right: number
+  public bottom: number
 
-  public get width (): double {
+  public get width (): number {
     return this.right - this.left
   }
 
-  public get height (): double {
+  public get height (): number {
     return this.bottom - this.top
   }
 
@@ -200,10 +199,10 @@ export class Rect {
   }
 
   constructor (
-    left: double, 
-    top: double, 
-    right: double, 
-    bottom: double
+    left: number, 
+    top: number, 
+    right: number, 
+    bottom: number
   ) {
     this.left = left
     this.top = top
@@ -242,7 +241,7 @@ export class Rect {
     return this.inflate(-delta)
   }
 
-  intersect (rect: Rect) {
+  numberersect (rect: Rect) {
     return Rect.fromLTRB(
       Math.max(this.left, rect.left),
       Math.max(this.top, rect.top),
@@ -260,7 +259,7 @@ export class Rect {
     )
   }
 
-  overlaps (rect: Rect): bool {
+  overlaps (rect: Rect): boolean {
     if (
       this.right <= rect.left ||
       rect.right <= this.left
@@ -278,7 +277,7 @@ export class Rect {
     return true
   }
 
-  contains (offset: Offset): bool {
+  contains (offset: Offset): boolean {
     return (
       offset.dx >= this.left &&
       offset.dx < this.right &&
@@ -287,7 +286,7 @@ export class Rect {
     )
   }
 
-  isEqual (rect: Rect): bool {
+  isEqual (rect: Rect): boolean {
     if (this === rect) {
       return true
     }
