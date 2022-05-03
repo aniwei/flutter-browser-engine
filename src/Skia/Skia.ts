@@ -1,23 +1,17 @@
-import CanvasKitInit, { CanvasKitInitOptions, CanvasKit, Path, Paint } from 'canvaskit-wasm'
+import CanvasKitInit from 'canvaskit-wasm'
+import { CanvasKitInitOptions, CanvasKit, Path, Paint } from 'canvaskit-wasm'
 
 
 type SkiaInit = {
   (options: CanvasKitInitOptions): Promise<CanvasKit>
 }
 
-function SkiaAPI (
-  target: Skia,
-  key: keyof CanvasKit
-) {
-  Object.defineProperty(target, key, {
-    get () {
-      return Skia.current[key]
-    }
-  })
+export type FillType = {
+  NonZero
 }
 
 export class Skia {
-  static current: Skia
+  static s: CanvasKit
   static Init (uri: string) {
     return (
       (CanvasKitInit as unknown as SkiaInit)({
@@ -25,18 +19,28 @@ export class Skia {
           return uri
         }
       }).then((skia: CanvasKit) => {
-        return Skia.current =  new Skia(skia)
+        return Skia.s =  skia
       })
     )
   }
 
+  static get Path () {
+    return Skia.s.Path
+  }
+
+  static get Paint () {
+    return Skia.s.Paint
+  }
+
+  static get FillType () {
+    return Skia.s.FillType
+  }
+
+  static get MakeFromCmds () {
+    return Skia.s.Path.MakeFromCmds
+  }
+
   public skia: CanvasKit
-
-  @SkiaAPI
-  static Path: Path
-
-  @SkiaAPI
-  public Paint!: Paint
 
   constructor (skia: CanvasKit) {
     this.skia = skia

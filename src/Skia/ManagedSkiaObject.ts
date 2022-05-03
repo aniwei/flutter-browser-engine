@@ -8,6 +8,10 @@ export abstract class ManagedSkiaObject <T extends RawSkia<T>> extends SkiaObjec
     return this.rawSkia as T
   }
 
+  public set skia (skia: T) {
+    this.rawSkia = skia
+  }
+
   constructor (skia?: T) {
     super()
     skia = skia ?? this.create()
