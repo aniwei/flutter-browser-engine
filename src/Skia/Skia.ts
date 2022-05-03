@@ -33,7 +33,7 @@ export class Skia {
   public skia: CanvasKit
 
   @SkiaAPI
-  public Path!: Path
+  static Path: Path
 
   @SkiaAPI
   public Paint!: Paint
