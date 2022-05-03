@@ -1,4 +1,7 @@
-export abstract class ManagedSkiaObject <T> extends SkiaObject<T> {
+import { SkiaFinalizationRegistry } from './SkiaFinalizationRegistry'
+import { RawSkia, SkiaObject } from './SkiaObject'
+
+export abstract class ManagedSkiaObject <T extends RawSkia<T>> extends SkiaObject<T> {
   rawSkia: T | null = null
 
   public get skia () {
@@ -10,7 +13,7 @@ export abstract class ManagedSkiaObject <T> extends SkiaObject<T> {
     skia = skia ?? this.create()
     this.rawSkia = skia
 
-    //
+    SkiaFinalizationRegistry.registry(this, skia)
   }
 
   abstract resurrect (): T
