@@ -1,5 +1,7 @@
-import { ManagedSkiaObject, Skia } from '@Skia'
-import type { BlendMode, ColorFilter, ColorInt, ImageFilter, MaskFilter, Paint, Shader, StrokeCap, StrokeJoin } from 'canvaskit-wasm'
+import { ManagedSkiaObject, Skia, SkiaFilterQuality } from '@Skia'
+import type { BlendMode, ColorFilter, ColorInt, MaskFilter, Paint, StrokeCap, StrokeJoin } from 'canvaskit-wasm'
+import type { CkManagedSkImageFilterConvertible } from './CkImageFilter'
+import type { CkShader } from './CkShader'
 
 export class CkPaint extends ManagedSkiaObject<Paint> {
   static kDefaultPaintColor = 0xFF000000
@@ -80,7 +82,7 @@ export class CkPaint extends ManagedSkiaObject<Paint> {
 
   public _color: ColorInt = CkPaint.kDefaultPaintColor
   public get color () {
-    return this._color
+    return this._color as ColorInt
   }
   public set color (color: ColorInt) {
     if (this.color !== color) {
@@ -97,11 +99,11 @@ export class CkPaint extends ManagedSkiaObject<Paint> {
     // @TODO
   }
 
-  public _shader: Shader | null = null
+  public _shader: CkShader | null = null
   public get shader () {
     return this.shader
   }
-  public set shader (shader: Shader) {
+  public set shader (shader: CkShader) {
     if (this.shader !== shader) {
       this._shader = shader
       // @TODO
@@ -111,7 +113,7 @@ export class CkPaint extends ManagedSkiaObject<Paint> {
 
   public _maskFilter: MaskFilter | null = null
   public get maskFilter () {
-    return this._maskFilter
+    return this._maskFilter as MaskFilter
   }
   public set maskFilter (maskFilter: MaskFilter) {
     if (this.maskFilter !== maskFilter) {
@@ -120,18 +122,21 @@ export class CkPaint extends ManagedSkiaObject<Paint> {
     }
   }
 
-  public _filterQuality
+  public _filterQuality: SkiaFilterQuality = SkiaFilterQuality.None
   public get filterQuality () {
     return this._filterQuality
   }
   // @TODO
-  public set filterQuality (filterQuality: FilterQuality) {
-
+  public set filterQuality (filterQuality: SkiaFilterQuality) {
+    if (this.filterQuality !== filterQuality) {
+      this._filterQuality = filterQuality
+      this.skia.setShader(this.shader.withQuality(this.filterQuality))
+    }
   }
 
   public _colorFilter: ColorFilter | null = null
   public get colorFilter () {
-    return this._colorFilter
+    return this._colorFilter as ColorFilter
   }
   public set colorFilter (colorFilter: ColorFilter) {
     if (this.colorFilter !== colorFilter) {
@@ -153,25 +158,21 @@ export class CkPaint extends ManagedSkiaObject<Paint> {
   }
 
    // @TODO
-  public _imageFilter: ImageFilter | null = null
+  public _imageFilter: CkManagedSkImageFilterConvertible | null = null
   public get imageFilter () {
-    return this._imageFilter
+    return this._imageFilter as CkManagedSkImageFilterConvertible
   }
-  public set imageFilter (imageFilter: ImageFilter) {
+  public set imageFilter (imageFilter: CkManagedSkImageFilterConvertible) {
     if (this._imageFilter !== imageFilter) {
       this._imageFilter = imageFilter
-      this.skia.setImageFilter(imageFilter.imageFilter.skia)
+      this.managedImageFilter = imageFilter.imageFilter
+      this.skia.setImageFilter(this.managedImageFilter.skia)
     }
   }
-
-  public _color
-  public get color () {}
-  public set color () {}
 
   public originalColorFilter // @TODO
   public effectiveColorFilter // @TODO
   public managedImageFilter // @TODO
-  public imageFilter // @TODO
 
   constructor () {
     super()
@@ -184,7 +185,7 @@ export class CkPaint extends ManagedSkiaObject<Paint> {
     paint.setStrokeWidth(this.strokeWidth)
     paint.setAntiAlias(this.isAntiAlias)
     paint.setColorInt(this.color)
-    paint.setShader(this.shader) // @TODO
+    paint.setShader(this.shader.withQuality(this.filterQuality)) // @TODO
     paint.setMaskFilter(this.maskFilter)
     paint.setColorFilter(this.colorFilter)
     paint.setImageFilter(this.managedImageFilter)

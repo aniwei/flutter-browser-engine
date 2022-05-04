@@ -2,8 +2,15 @@ import CanvasKitInit from 'canvaskit-wasm'
 import { CanvasKitInitOptions, CanvasKit, Path, Paint } from 'canvaskit-wasm'
 
 
-type SkiaInit = {
+export type SkiaInit = {
   (options: CanvasKitInitOptions): Promise<CanvasKit>
+}
+
+export enum SkiaFilterQuality {
+  None,
+  Low,
+  Medium,
+  High,
 }
 
 export type SkiaInitOption = {
@@ -44,6 +51,10 @@ export class Skia {
 
   static get BlendMode () {
     return Skia.s.BlendMode
+  }
+
+  static get ImageFilter () {
+    return Skia.s.ImageFilter
   }
 
   static get FillType () {
