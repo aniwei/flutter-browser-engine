@@ -1,5 +1,5 @@
 import { FillType, Path, PathOp, Rect } from 'canvaskit-wasm'
-import { ManagedSkiaObject, Skia } from '../Skia'
+import { ManagedSkiaObject, Skia } from '@Skia'
 
 export class CkPath extends ManagedSkiaObject<Path> {
   static from (other: CkPath) {
@@ -53,6 +53,7 @@ export class CkPath extends ManagedSkiaObject<Path> {
   constructor () {
     super()
     this.fillType = Skia.FillType.Winding
+    this.skia.setFillType(this.fillType)
   }
 
   addArc (
@@ -87,7 +88,10 @@ export class CkPath extends ManagedSkiaObject<Path> {
 
   create (): Path {
     const skPath = new Skia.Path()
-    skPath.setFillType(this.fillType)
+
+    if (this.fillType) {
+      skPath.setFillType(this.fillType)
+    }
 
     return skPath
   }

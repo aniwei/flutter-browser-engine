@@ -22,4 +22,9 @@ export abstract class ManagedSkiaObject <T extends RawSkia<T>> extends SkiaObjec
 
   abstract resurrect (): T
   abstract create (): T
+
+  didDelete () {
+    this.rawSkia = null
+  }
 }
+
