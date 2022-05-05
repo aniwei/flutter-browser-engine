@@ -1,5 +1,5 @@
 import CanvasKitInit from 'canvaskit-wasm'
-import { CanvasKitInitOptions, CanvasKit, Path, Paint } from 'canvaskit-wasm'
+import type { CanvasKitInitOptions, CanvasKit, FilterMode, MipmapMode } from 'canvaskit-wasm'
 
 
 export type SkiaInit = {
@@ -13,6 +13,40 @@ export enum SkiaFilterQuality {
   High,
 }
 
+export type SkiaTransformFilterOption = {
+  filter: FilterMode
+  mipmap: MipmapMode
+}
+
+export type SkiaCubicFilterOption = {
+  B: number
+  C: number
+}
+
+export class SkiaFilterOptions extends Map<SkiaFilterQuality, SkiaCubicFilterOption | SkiaTransformFilterOption> {
+  static from (skia: CanvasKit) {
+    const options = new SkiaFilterOptions()
+    options.set(SkiaFilterQuality.None, {
+      filter: skia.FilterMode.Nearest,
+      mipmap: skia.MipmapMode.None
+    })
+    options.set(SkiaFilterQuality.Low, {
+      filter: skia.FilterMode.Linear,
+      mipmap: skia.MipmapMode.None
+    })
+    options.set(SkiaFilterQuality.Medium, {
+      filter: skia.FilterMode.Linear,
+      mipmap: skia.MipmapMode.Linear
+    })
+    options.set(SkiaFilterQuality.High, {
+      B: 1.0 / 3,
+      C: 1.0 / 3
+    })
+
+    return options
+  }
+}
+
 export type SkiaInitOption = {
   devicePixelRatio: number
 }
@@ -20,6 +54,9 @@ export type SkiaInitOption = {
 export class Skia {
   static s: CanvasKit
   static o: SkiaInitOption
+  static r: {
+    SkiaFilterOptions?: SkiaFilterOptions
+  } = {}
   static Init (uri: string, options?: SkiaInitOption) {
     Skia.o = { 
       devicePixelRatio: 1,
@@ -31,7 +68,10 @@ export class Skia {
           return uri
         }
       }).then((skia: CanvasKit) => {
-        return Skia.s =  skia
+        Skia.s =  skia
+        Skia.r.SkiaFilterOptions = SkiaFilterOptions.from(skia)
+
+        return Skia
       })
     )
   }
@@ -51,6 +91,10 @@ export class Skia {
 
   static get BlendMode () {
     return Skia.s.BlendMode
+  }
+
+  static get TileMode () {
+    return Skia.s.TileMode
   }
 
   static get ImageFilter () {
@@ -83,6 +127,10 @@ export class Skia {
 
   static get MakeSurface () {
     return Skia.s.MakeSurface
+  }
+
+  static SkiaFilterOptions (filterQuality: SkiaFilterQuality) {
+    return Skia.r.SkiaFilterOptions?.get(filterQuality) as (SkiaCubicFilterOption | SkiaTransformFilterOption)
   }
 
   public skia: CanvasKit

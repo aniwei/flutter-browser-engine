@@ -1,7 +1,7 @@
 import { SkiaFinalizationRegistry } from './SkiaFinalizationRegistry'
 import { RawSkia, SkiaObject } from './SkiaObject'
 
-export abstract class ManagedSkiaObject <T extends RawSkia<T>> extends SkiaObject<T> {
+export abstract class ManagedSkiaObject <T extends RawSkia<T>, P = unknown> extends SkiaObject<T> {
   rawSkia: T | null = null
 
   public get skia () {
@@ -12,16 +12,15 @@ export abstract class ManagedSkiaObject <T extends RawSkia<T>> extends SkiaObjec
     this.rawSkia = skia
   }
 
-  constructor (skia?: T) {
+  constructor (options?: P, skia?: T) {
     super()
-    skia = skia ?? this.create()
-    this.rawSkia = skia
+    this.rawSkia = skia ?? this.create(options)
 
-    SkiaFinalizationRegistry.registry(this, skia)
+    SkiaFinalizationRegistry.registry(this, this.skia)
   }
 
+  abstract create (options?: P): T
   abstract resurrect (): T
-  abstract create (): T
 
   didDelete () {
     this.rawSkia = null

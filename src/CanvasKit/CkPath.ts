@@ -49,13 +49,6 @@ export class CkPath extends ManagedSkiaObject<Path> {
 
   public cachedCommands: Float32Array | null = null
 
-
-  constructor () {
-    super()
-    this.fillType = Skia.FillType.Winding
-    this.skia.setFillType(this.fillType)
-  }
-
   addArc (
     oval: Rect, 
     startAngle: number, 
@@ -87,13 +80,10 @@ export class CkPath extends ManagedSkiaObject<Path> {
   }
 
   create (): Path {
-    const skPath = new Skia.Path()
+    this.skia = new Skia.Path()
+    this.fillType = Skia.FillType.Winding
 
-    if (this.fillType) {
-      skPath.setFillType(this.fillType)
-    }
-
-    return skPath
+    return this.skia
   }
 
   delete () {

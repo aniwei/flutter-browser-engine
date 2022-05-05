@@ -43,6 +43,12 @@ export class ImageDescriptor {
   public rowBytes: int
   public format: PixelFormat
 
+  constructor (
+    
+  ) {
+
+  }
+
   Never _throw(String parameter) {
     throw UnsupportedError(
         'ImageDescriptor.$parameter is not supported on web.');

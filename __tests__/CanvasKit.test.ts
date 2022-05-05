@@ -1,8 +1,8 @@
 import fs from 'fs'
 import path from 'path'
 import jimp from 'jimp'
-import { Skia } from '@Skia'
-import { CkPath, CkCanvas } from '@CanvasKit'
+import { Skia, SkiaFilterQuality } from '@Skia'
+import { CkPath, CkCanvas, CkPaint, CkBlurImageFilter, CkMatrixImageFilter } from '@CanvasKit'
 import { Canvas } from 'canvaskit-wasm'
 
 test(`Skia`, async () => {
@@ -13,6 +13,22 @@ test(`Skia`, async () => {
   const ckPath = new CkPath()
   const ckCanvas = new CkCanvas(suface?.getCanvas() as Canvas)
 
-  debugger;
   const svg = ckPath.toSvgString()
+  const paint = new CkPaint()
+
+  const imageFilter = new CkBlurImageFilter({
+    sigmaX: 0,
+    sigmaY: 0,
+    tileMode: Skia.TileMode.Clamp
+  })
+  const matrixImageFilter = new CkMatrixImageFilter({
+    matrix: Float32Array.from([
+      -1.0, 0, 0, 1.0, 0, // row
+      0, -1.0, 0, 1.0, 0, // row
+      0, 0, -1.0, 1.0, 0, // row
+      1.0, 1.0, 1.0, 1.0, 0
+    ]),
+    filterQuality: SkiaFilterQuality.Low
+  })
+  debugger
 })

@@ -3,6 +3,8 @@ import type { BlendMode, ColorFilter, ColorInt, MaskFilter, Paint, StrokeCap, St
 import type { CkManagedSkImageFilterConvertible } from './CkImageFilter'
 import type { CkShader } from './CkShader'
 
+const a = () => {}
+
 export class CkPaint extends ManagedSkiaObject<Paint> {
   static kDefaultPaintColor = 0xFF000000
   static kInvertColorMatrix = Float32Array.from([
@@ -140,9 +142,28 @@ export class CkPaint extends ManagedSkiaObject<Paint> {
   }
   public set colorFilter (colorFilter: ColorFilter) {
     if (this.colorFilter !== colorFilter) {
+      this.originalColorFilter = null
+
+      if (colorFilter === null) {
+        this.effectiveColorFilter = null
+      } else {
+        this.effectiveColorFilter // @TODO
+      }
+
+      if (this.invertColors) {
+        this.originalColorFilter = this.effectiveColorFilter
+
+        if (this.effectiveColorFilter === null) {
+          this.effectiveColorFilter = CkPaint.kInvertColorFilter
+        } else {
+          this.effectiveColorFilter // @TODO
+        }
+      } 
+
+
        // @TODO
 
-       this.skia.setColorFilter(colorFilter)
+       this.skia.setColorFilter(this.effectiveColorFilter.skia)
     }
   }
 
@@ -178,7 +199,7 @@ export class CkPaint extends ManagedSkiaObject<Paint> {
     super()
   }
 
-  resurrect(): Paint {
+  resurrect (): Paint {
     const paint = new Skia.Paint()
     paint.setBlendMode(this.blendMode)
     paint.setStyle(this.style)
@@ -196,14 +217,15 @@ export class CkPaint extends ManagedSkiaObject<Paint> {
     return paint
   }
 
-  create(): Paint {
-    const paint = new Skia.Paint()
-    paint.setAntiAlias(this.isAntiAlias)
-    paint.setColorInt(this.color)
-    return paint
+  create (): Paint {
+    this.skia = new Skia.Paint()
+    this.skia.setAntiAlias(this.isAntiAlias)
+    this.skia.setColorInt(this.color)
+
+    return this.skia
   }
 
-  delete() {
+  delete () {
     this.skia.delete()
   }
 }
