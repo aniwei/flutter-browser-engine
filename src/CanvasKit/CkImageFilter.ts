@@ -59,13 +59,13 @@ export class CkBlurImageFilter extends CkImageFilter {
 
   get modeString () {
     switch (this.tileMode) {
-      case ui.TileMode.clamp:
+      case Skia.TileMode.Clamp:
         return 'clamp'
-      case ui.TileMode.mirror:
+      case Skia.TileMode.Mirror:
         return 'mirror'
-      case ui.TileMode.repeated:
+      case Skia.TileMode.Repeat:
         return 'repeated'
-      case ui.TileMode.decal:
+      case Skia.TileMode.Decal:
         return 'decal'
     }
   }
