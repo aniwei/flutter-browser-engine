@@ -5,8 +5,6 @@ import type { BlendMode, ColorFilter, ColorInt, ImageFilter, MaskFilter, Paint, 
 import type { CkManagedSkImageFilterConvertible } from './CkImageFilter'
 import type { CkShader } from './CkShader'
 
-const a = () => {}
-
 export class CkPaint extends ManagedSkiaObject<Paint> {
   static kDefaultPaintColor = 0xFF000000
   static kInvertColorMatrix = Float32Array.from([
