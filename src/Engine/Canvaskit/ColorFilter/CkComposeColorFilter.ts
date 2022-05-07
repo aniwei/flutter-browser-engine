@@ -1,5 +1,4 @@
 import { invariant } from 'ts-invariant'
-import { SkColorFilter } from '@Skia'
 import { CanvasKitAPI } from '../CanvasKitAPI/CanvasKit'
 import { CkColorFilter } from './CkColorFilter'
 import { ManagedSkColorFilter } from './ManagedSkColorFilter'

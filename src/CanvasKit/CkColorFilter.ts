@@ -16,33 +16,29 @@ export abstract class CkColorFilter {
   abstract initRawColorFilter (): ColorFilter
 }
 
-export type ManagedSkiaColorFilterOptions = {
-  colorFilter: CkColorFilter
-}
-
 export class ManagedSkiaColorFilter extends ManagedSkiaObject<ColorFilter> {
-  static malloc(options: ManagedSkiaColorFilterOptions): ManagedSkiaColorFilter {
+  static malloc(colorFilter: CkColorFilter): ManagedSkiaColorFilter {
     const managedSkiaColorFilter = new ManagedSkiaColorFilter(
-      this.init(options), 
-      options
+      this.init(colorFilter), 
+      colorFilter,
     )
 
     return managedSkiaColorFilter
   }
 
-  static init(options: ManagedSkiaColorFilterOptions): ColorFilter {
-    return options.colorFilter.initRawColorFilter()
+  static init(colorFilter: CkColorFilter): ColorFilter {
+    return colorFilter.initRawColorFilter()
   }
 
   public colorFilter: CkColorFilter
 
-  constructor (skia, options: ManagedSkiaColorFilterOptions) {
+  constructor (skia, colorFilter: CkColorFilter) {
     super(skia)
-    this.colorFilter = options.colorFilter
+    this.colorFilter = colorFilter
   }
 
   resurrect () {
-    return ManagedSkiaColorFilter.init(this)
+    return ManagedSkiaColorFilter.init(this.colorFilter)
   }
 
   delete () {
@@ -69,6 +65,11 @@ export type CkBlendModeColorFilterOptions = {
 }
 
 export class CkBlendModeColorFilter extends CkColorFilter {
+  static malloc (options: CkBlendModeColorFilterOptions) {
+    const blendModeColorFilter = new CkBlendModeColorFilter(options)
+    return blendModeColorFilter
+  }
+
   public color: Color
   public blendMode: BlendMode
 
@@ -103,17 +104,18 @@ export class CkBlendModeColorFilter extends CkColorFilter {
 }
 
 
-export type CkMatrixColorFilterOptions = {
-  matrix: Float32Array
-}
-
 export class CkMatrixColorFilter extends CkColorFilter {
-  public matrix!: Float32Array
+  static malloc (matrix: Float32Array) {
+    const matrixColorFilter = new CkMatrixColorFilter(matrix)
+    return matrixColorFilter
+  }
 
-  constructor (options: CkMatrixColorFilterOptions) {
+  public matrix: Float32Array
+
+  constructor (matrix: Float32Array) {
     super()
 
-    this.matrix = options.matrix
+    this.matrix = matrix
   }
 
   initRawColorFilter () {
@@ -133,6 +135,10 @@ export class CkMatrixColorFilter extends CkColorFilter {
 
 
 export class CkLinearToSrgbGammaColorFilter extends CkColorFilter {
+  static malloc () {
+    return new CkLinearToSrgbGammaColorFilter()
+  }
+
   initRawColorFilter () {
     return Skia.ColorFilter.MakeLinearToSRGBGamma()
   }
@@ -153,8 +159,13 @@ export type CkComposeColorFilterOptions = {
 }
 
 export class CkComposeColorFilter extends CkColorFilter {
-  public outer!: ManagedSkiaColorFilter
-  public inner!: ManagedSkiaColorFilter
+  static malloc (options: CkComposeColorFilterOptions) {
+    const composeColorFilter = new CkComposeColorFilter(options)
+    return composeColorFilter
+  }
+
+  public outer: ManagedSkiaColorFilter
+  public inner: ManagedSkiaColorFilter
 
   constructor (options: CkComposeColorFilterOptions) {
     super()

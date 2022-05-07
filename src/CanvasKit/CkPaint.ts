@@ -1,9 +1,9 @@
-import { ManagedSkiaObject, Skia, SkiaFilterQuality } from '@Skia'
 import { setter } from '@Shared'
+import { ManagedSkiaObject, Skia, SkiaFilterQuality } from '@Skia'
+import { ManagedSkiaColorFilter, CkComposeColorFilter, CkMatrixColorFilter } from './CkColorFilter'
 import type { BlendMode, ColorFilter, ColorInt, ImageFilter, MaskFilter, Paint, PaintStyle, StrokeCap, StrokeJoin } from 'canvaskit-wasm'
 import type { CkManagedSkImageFilterConvertible } from './CkImageFilter'
 import type { CkShader } from './CkShader'
-import { ManagedSkiaColorFilter } from './CkColorFilter'
 
 const a = () => {}
 
@@ -16,7 +16,9 @@ export class CkPaint extends ManagedSkiaObject<Paint> {
     1.0, 1.0, 1.0, 1.0, 0
   ])
 
-  static kInvertColorFilter = null
+  static get kInvertColorFilter () {
+    return ManagedSkiaColorFilter.malloc(CkMatrixColorFilter.malloc(CkPaint.kInvertColorMatrix))
+  } 
 
   static malloc () {
     return new CkPaint(this.init())
@@ -76,7 +78,24 @@ export class CkPaint extends ManagedSkiaObject<Paint> {
   }) public color: ColorInt = CkPaint.kDefaultPaintColor
 
   @setter(function (this, invertColors: boolean) {
-    // @TODO
+    if (this.invertColors !== invertColors) {
+      if (!invertColors) {
+        this.effectiveColorFilter = this.originalColorFilter
+        this.originalColorFilter = null
+      } else {
+        this.originalColorFilter = this.effectiveColorFilter
+        if (this.effectiveColorFilter === null) {
+          this.effectiveColorFilter = CkPaint.kInvertColorFilter
+        } else {
+          this.effectiveColorFilter = ManagedSkiaColorFilter.malloc(
+            CkComposeColorFilter.malloc({
+              outer: CkPaint.kInvertColorFilter,
+              inner: this.effectiveColorFilter
+            })
+          )
+        }
+      }
+    }
   }) public invertColors: boolean = false
 
   @setter(function (this, shader: CkShader) {
@@ -139,7 +158,6 @@ export class CkPaint extends ManagedSkiaObject<Paint> {
     }
   }) public strokeMiterLimit: number = 0
 
-   // @TODO
   @setter(function (this, imageFilter: CkManagedSkImageFilterConvertible) {
     if (this.imageFilter !== imageFilter) {
       this._imageFilter = imageFilter
