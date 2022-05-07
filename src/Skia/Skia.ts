@@ -57,7 +57,7 @@ export class Skia {
   static r: {
     SkiaFilterOptions?: SkiaFilterOptions
   } = {}
-  static Init (uri: string, options?: SkiaInitOption) {
+  static malloc (uri: string, options?: SkiaInitOption) {
     Skia.o = { 
       devicePixelRatio: 1,
       ...options 

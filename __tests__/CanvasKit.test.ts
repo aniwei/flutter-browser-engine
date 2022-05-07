@@ -6,15 +6,15 @@ import { CkPath, CkCanvas, CkPaint, CkBlurImageFilter, CkMatrixImageFilter } fro
 import { Canvas } from 'canvaskit-wasm'
 
 test(`Skia`, async () => {
-  await Skia.Init(path.resolve(__dirname, 'canvaskit.wasm'))
+  await Skia.malloc(path.resolve(__dirname, 'canvaskit.wasm'))
 
-  const suface = Skia.MakeSurface(100, 100)
+  const surface = Skia.MakeSurface(100, 100)
 
   const ckPath = CkPath.malloc()
-  const ckCanvas = CkCanvas.malloc(suface?.getCanvas() as Canvas)
-
-  const svg = ckPath.toSvgString()
   const paint = CkPaint.malloc()
+  
+  const ckCanvas = CkCanvas.malloc(surface?.getCanvas() as Canvas)
+
 
   const imageFilter = CkBlurImageFilter.malloc({
     sigmaX: 0,
@@ -29,5 +29,20 @@ test(`Skia`, async () => {
     ]),
     filterQuality: SkiaFilterQuality.Low
   })
+
+  ckPath.moveTo(10, 10)
+  ckPath.lineTo(50, 50)
+  ckPath.lineTo(20, 10)
+  ckPath.lineTo(10, 20)
+
+  paint.style = Skia.PaintStyle.Fill
+
+  ckCanvas.drawPath(ckPath, paint)
+
+  surface?.flush()
+  const img = surface?.makeImageSnapshot();
+
+  const base64 = 'data:image/png;base64,' + Buffer.from(img?.encodeToBytes() as ArrayBuffer).toString('base64')
+
   debugger
 })

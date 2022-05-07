@@ -67,6 +67,30 @@ export class CkPath extends ManagedSkiaObject<Path> {
     this.skia.addArc(oval, startAngle * toDegree, sweepAngle * toDegree)  
   }
 
+  addOval (oval: Rect) {
+    this.skia.addOval(oval, false, 1)
+  }
+
+  addPath (
+    path,
+    offset: Float32Array,
+    matrix4
+  ) {
+
+  }
+
+  moveTo (x: number, y: number) {
+    this.skia.moveTo(x, y)
+  }
+
+  lineTo (x: number, y: number) {
+    this.skia.lineTo(x, y)
+  }
+
+  close () {
+    this.skia.close()
+  }
+
   transform (matrix: Float64Array): CkPath {
     const path = this.skia.copy()
     path.transform(

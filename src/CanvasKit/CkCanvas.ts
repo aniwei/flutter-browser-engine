@@ -159,7 +159,7 @@ export class CkCanvas {
     paint: CkPaint
   ) {
     const filterQuality = paint.filterQuality
-    if (filterQuality == ui.FilterQuality.high) {
+    if (filterQuality == SkiaFilterQuality.High) {
       this.skia.drawImageRectCubic(
         image.skia,
         src,
