@@ -1,5 +1,5 @@
 import { ManagedSkiaObject, Skia, SkiaFilterQuality } from '@Skia'
-import type { BlendMode, ColorFilter, ColorInt, MaskFilter, Paint, StrokeCap, StrokeJoin } from 'canvaskit-wasm'
+import type { BlendMode, ColorFilter, ColorInt, ImageFilter, MaskFilter, Paint, PaintStyle, StrokeCap, StrokeJoin } from 'canvaskit-wasm'
 import type { CkManagedSkImageFilterConvertible } from './CkImageFilter'
 import type { CkShader } from './CkShader'
 
@@ -16,7 +16,7 @@ export class CkPaint extends ManagedSkiaObject<Paint> {
 
   static kInvertColorFilter = null
 
-  public _blendMode: BlendMode = Skia.BlendMode.SrcOver
+  public _blendMode!: BlendMode
   public get blendMode () {
     return this._blendMode
   }
@@ -27,7 +27,7 @@ export class CkPaint extends ManagedSkiaObject<Paint> {
     }
   }
 
-  public _style
+  public _style!: PaintStyle
   public get style () {
     return this._style
   }
@@ -38,7 +38,7 @@ export class CkPaint extends ManagedSkiaObject<Paint> {
     }
   }
 
-  public _strokeWidth: number = 0.0
+  public _strokeWidth!: number
   public get strokeWidth () {
     return this._strokeWidth
   }
@@ -49,7 +49,7 @@ export class CkPaint extends ManagedSkiaObject<Paint> {
     }
   }
 
-  public _strokeCap: StrokeCap = Skia.StrokeCap.Butt
+  public _strokeCap!: StrokeCap
   public get strokeCap () {
     return this._strokeCap
   }
@@ -60,7 +60,7 @@ export class CkPaint extends ManagedSkiaObject<Paint> {
     }
   }
 
-  public _strokeJoin: StrokeJoin = Skia.StrokeJoin.Miter
+  public _strokeJoin!: StrokeJoin
   public get strokeJoin () {
     return this._strokeJoin
   }
@@ -71,7 +71,7 @@ export class CkPaint extends ManagedSkiaObject<Paint> {
     }
   }
 
-  public _isAntiAlias: boolean = true
+  public _isAntiAlias!: boolean
   public get isAntiAlias () {
     return this._isAntiAlias
   }
@@ -82,7 +82,7 @@ export class CkPaint extends ManagedSkiaObject<Paint> {
     }
   }
 
-  public _color: ColorInt = CkPaint.kDefaultPaintColor
+  public _color!: ColorInt
   public get color () {
     return this._color as ColorInt
   }
@@ -93,7 +93,7 @@ export class CkPaint extends ManagedSkiaObject<Paint> {
     }
   }
 
-  public _invertColors = false
+  public _invertColors!: boolean
   public get invertColors () {
     return this._invertColors
   }
@@ -101,7 +101,7 @@ export class CkPaint extends ManagedSkiaObject<Paint> {
     // @TODO
   }
 
-  public _shader: CkShader | null = null
+  public _shader!: CkShader | null
   public get shader () {
     return this.shader
   }
@@ -113,7 +113,7 @@ export class CkPaint extends ManagedSkiaObject<Paint> {
     }
   }
 
-  public _maskFilter: MaskFilter | null = null
+  public _maskFilter!: MaskFilter | null
   public get maskFilter () {
     return this._maskFilter as MaskFilter
   }
@@ -124,7 +124,7 @@ export class CkPaint extends ManagedSkiaObject<Paint> {
     }
   }
 
-  public _filterQuality: SkiaFilterQuality = SkiaFilterQuality.None
+  public _filterQuality!: SkiaFilterQuality
   public get filterQuality () {
     return this._filterQuality
   }
@@ -136,7 +136,7 @@ export class CkPaint extends ManagedSkiaObject<Paint> {
     }
   }
 
-  public _colorFilter: ColorFilter | null = null
+  public _colorFilter!: ColorFilter | null
   public get colorFilter () {
     return this._colorFilter as ColorFilter
   }
@@ -167,7 +167,7 @@ export class CkPaint extends ManagedSkiaObject<Paint> {
     }
   }
 
-  public _strokeMiterLimit: number = 0.0
+  public _strokeMiterLimit!: number
   public get strokeMiterLimit () {
     return this._strokeMiterLimit
   }
@@ -179,7 +179,7 @@ export class CkPaint extends ManagedSkiaObject<Paint> {
   }
 
    // @TODO
-  public _imageFilter: CkManagedSkImageFilterConvertible | null = null
+  public _imageFilter!: CkManagedSkImageFilterConvertible | null
   public get imageFilter () {
     return this._imageFilter as CkManagedSkImageFilterConvertible
   }
@@ -193,7 +193,7 @@ export class CkPaint extends ManagedSkiaObject<Paint> {
 
   public originalColorFilter // @TODO
   public effectiveColorFilter // @TODO
-  public managedImageFilter // @TODO
+  public managedImageFilter!: ManagedSkiaObject<ImageFilter> | null // @TODO
 
   constructor () {
     super()
@@ -217,11 +217,33 @@ export class CkPaint extends ManagedSkiaObject<Paint> {
     return paint
   }
 
-  create (): Paint {
-    this.skia = new Skia.Paint()
+  init (skia: Paint): Paint {
+    this._blendMode = Skia.BlendMode.SrcOver
+    this._style = Skia.PaintStyle.Fill
+    this._strokeWidth = 0.0
+    this._strokeCap = Skia.StrokeCap.Butt
+    this._strokeJoin = Skia.StrokeJoin.Miter
+    this._color = CkPaint.kDefaultPaintColor
+    this._isAntiAlias = true
+    this._invertColors = false
+    this._shader = null
+    this._maskFilter = null
+    this._filterQuality = SkiaFilterQuality.None
+    this._colorFilter = null
+    this._strokeMiterLimit = 0
+    this._imageFilter = null
+
+    this.managedImageFilter = null
+
+
     this.skia.setAntiAlias(this.isAntiAlias)
     this.skia.setColorInt(this.color)
+    
+    return skia
+  }
 
+  malloc (): Paint {
+    this.skia = new Skia.Paint()
     return this.skia
   }
 

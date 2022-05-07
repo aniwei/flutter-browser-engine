@@ -23,10 +23,9 @@ test(`Skia`, async () => {
   })
   const matrixImageFilter = new CkMatrixImageFilter({
     matrix: Float32Array.from([
-      -1.0, 0, 0, 1.0, 0, // row
-      0, -1.0, 0, 1.0, 0, // row
-      0, 0, -1.0, 1.0, 0, // row
-      1.0, 1.0, 1.0, 1.0, 0
+      0, 4, 12, // Row 1
+      1, 5, 13, // Row 2
+      3, 7, 15, // Row 3
     ]),
     filterQuality: SkiaFilterQuality.Low
   })

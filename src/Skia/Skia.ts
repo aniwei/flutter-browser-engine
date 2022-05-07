@@ -89,6 +89,14 @@ export class Skia {
     return Skia.s.Paint
   }
 
+  static get ColorFilter () {
+    return Skia.s.ColorFilter
+  }
+
+  static get PaintStyle () {
+    return Skia.s.PaintStyle
+  }
+
   static get BlendMode () {
     return Skia.s.BlendMode
   }
@@ -127,6 +135,10 @@ export class Skia {
 
   static get MakeSurface () {
     return Skia.s.MakeSurface
+  }
+
+  static get MakeBlend () {
+    return Skia.s.ColorFilter.MakeBlend
   }
 
   static SkiaFilterOptions (filterQuality: SkiaFilterQuality) {

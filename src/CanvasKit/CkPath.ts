@@ -75,29 +75,29 @@ export class CkPath extends ManagedSkiaObject<Path> {
     return CkPath.fromPath(path, this.fillType)
   }
 
-  toSvgString (): string {
-    return this.skia.toSVGString()
-  }
-
-  create (): Path {
-    this.skia = new Skia.Path()
+  init (skia: Path): Path {
     this.fillType = Skia.FillType.Winding
 
+    return skia
+  }
+
+  malloc (): Path {
+    this.skia = new Skia.Path()
     return this.skia
   }
 
   delete () {
-    this.cachedCommands = this.skia.toCmds()
-    this.skia?.delete()
-  }
-
-  didDelete () {
-    
+    this.cachedCommands = this.skia?.toCmds()
+    super.delete()
   }
 
   resurrect (): Path {
     const path = Skia.MakeFromCmds(this.cachedCommands as Float32Array)
     path?.setFillType(this.fillType)
     return path as Path
+  }
+
+  toSvgString (): string {
+    return this.skia.toSVGString()
   }
 }

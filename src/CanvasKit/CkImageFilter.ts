@@ -11,9 +11,7 @@ export abstract class CkImageFilter<T> extends ManagedSkiaObject<ImageFilter, T>
     return new CkBlurImageFilter(options)
   }
 
-  static color(
-    colorFilter: CkColorFilter
-  ) {
+  static color(colorFilter: CkColorFilter) {
     return new CkColorFilterImageFilter({ colorFilter })
   }
   
@@ -31,17 +29,13 @@ export abstract class CkImageFilter<T> extends ManagedSkiaObject<ImageFilter, T>
 
   abstract initSkiaObject (): ImageFilter
 
-  create (options?: T): ImageFilter {
+  malloc (options?: T): ImageFilter {
     return this.initSkiaObject()
   }
 
   resurrect (): ImageFilter {
     return this.initSkiaObject()
   } 
-
-  delete () {
-    this.rawSkia?.delete()
-  }
 }
 
 
@@ -73,12 +67,12 @@ export class CkBlurImageFilter<T extends CkBlurImageFilterOptions = CkBlurImageF
     super(options)
   }
 
-  create (options: T): ImageFilter {
+  malloc (options): ImageFilter {
     this.sigmaX = options.sigmaX
     this.sigmaY = options.sigmaY
     this.tileMode = options.tileMode
 
-    return super.create(options)
+    return super.malloc(options)
   }
 
   initSkiaObject () {
@@ -87,7 +81,7 @@ export class CkBlurImageFilter<T extends CkBlurImageFilterOptions = CkBlurImageF
       this.sigmaY,
       this.tileMode,
       null,
-    );
+    )
   }
 
   isEqual (other: CkBlurImageFilter) {
@@ -120,11 +114,11 @@ export class CkMatrixImageFilter<T extends CkMatrixImageFilterOptions = CkMatrix
     super(options)
   }
 
-  create (options: T) {
+  malloc (options: T) {
     this.filterQuality = options.filterQuality
     this.matrix = Float32Array.from(options.matrix)
 
-    return super.create(options)
+    return super.malloc(options)
   }
       
   initSkiaObject (): ImageFilter  {
@@ -161,10 +155,9 @@ export class CkColorFilterImageFilter<T extends CkColorFilterImageFilterOptions 
     super(options)
   }
 
-  create (options: T) {
+  malloc (options: T) {
     this.colorFilter = options.colorFilter
-
-    return super.create(options)
+    return super.malloc(options)
   }
 
   initSkiaObject (): ImageFilter {
@@ -173,9 +166,7 @@ export class CkColorFilterImageFilter<T extends CkColorFilterImageFilterOptions 
 
   isEqual (other: CkColorFilterImageFilter) {
     if (other instanceof CkColorFilterImageFilter) {
-      return (
-        this.colorFilter === other.colorFilter
-      )
+      return this.colorFilter === other.colorFilter
     }
 
     return false
