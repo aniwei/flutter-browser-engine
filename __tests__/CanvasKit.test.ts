@@ -10,18 +10,18 @@ test(`Skia`, async () => {
 
   const suface = Skia.MakeSurface(100, 100)
 
-  const ckPath = new CkPath()
+  const ckPath = CkPath.malloc()
   const ckCanvas = new CkCanvas(suface?.getCanvas() as Canvas)
 
   const svg = ckPath.toSvgString()
-  const paint = new CkPaint()
+  const paint = CkPaint.malloc()
 
-  const imageFilter = new CkBlurImageFilter({
+  const imageFilter = CkBlurImageFilter.malloc({
     sigmaX: 0,
     sigmaY: 0,
     tileMode: Skia.TileMode.Clamp
   })
-  const matrixImageFilter = new CkMatrixImageFilter({
+  const matrixImageFilter = CkMatrixImageFilter.malloc({
     matrix: Float32Array.from([
       0, 4, 12, // Row 1
       1, 5, 13, // Row 2

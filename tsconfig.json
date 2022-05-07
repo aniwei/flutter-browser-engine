@@ -23,7 +23,7 @@
     "build": true,
     "typeRoots": [".", "./node_modules/@types"],
     "baseUrl": "./",
-    "rootDir": "./src",
+    "rootDir": "./",
     "outDir": "dist",
     "paths": {
       "@UI": ["./src/UI/index.ts"],

@@ -1,12 +1,12 @@
+import { invariant } from 'ts-invariant'
 import { ManagedSkiaObject, Skia } from '@Skia'
 import { CkColorFilterImageFilter } from './CkImageFilter'
 import type { BlendMode, Color, ColorFilter, ImageFilter } from 'canvaskit-wasm'
-import invariant from 'ts-invariant'
 
 export abstract class CkColorFilter {
 
   public get imageFilter (): ManagedSkiaObject<ImageFilter> {
-    return new CkColorFilterImageFilter({ colorFilter: this })
+    return CkColorFilterImageFilter.malloc({ colorFilter: this })
   }
   
   initRawImageFilter (): ImageFilter  {
@@ -17,23 +17,32 @@ export abstract class CkColorFilter {
 }
 
 export type ManagedSkiaColorFilterOptions = {
-  ckColorFilter: CkColorFilter
+  colorFilter: CkColorFilter
 }
 
-export class ManagedSkiaColorFilter<T extends ManagedSkiaColorFilterOptions = ManagedSkiaColorFilterOptions> extends ManagedSkiaObject<ColorFilter, T> {
-  public colorFilter!: CkColorFilter
+export class ManagedSkiaColorFilter extends ManagedSkiaObject<ColorFilter> {
+  static malloc(options: ManagedSkiaColorFilterOptions): ManagedSkiaColorFilter {
+    const managedSkiaColorFilter = new ManagedSkiaColorFilter(
+      this.init(options), 
+      options
+    )
 
-  constructor (options: T) {
-    super()
-    this.colorFilter = options.ckColorFilter
+    return managedSkiaColorFilter
   }
 
-   malloc (options: T) {
-    return this.colorFilter.initRawColorFilter()
+  static init(options: ManagedSkiaColorFilterOptions): ColorFilter {
+    return options.colorFilter.initRawColorFilter()
+  }
+
+  public colorFilter: CkColorFilter
+
+  constructor (skia, options: ManagedSkiaColorFilterOptions) {
+    super(skia)
+    this.colorFilter = options.colorFilter
   }
 
   resurrect () {
-    return this.colorFilter.initRawColorFilter()
+    return ManagedSkiaColorFilter.init(this)
   }
 
   delete () {
@@ -59,11 +68,11 @@ export type CkBlendModeColorFilterOptions = {
   blendMode: BlendMode
 }
 
-export class CkBlendModeColorFilter<T extends CkBlendModeColorFilterOptions> extends CkColorFilter {
-  public color!: Color
-  public blendMode!: BlendMode
+export class CkBlendModeColorFilter extends CkColorFilter {
+  public color: Color
+  public blendMode: BlendMode
 
-  constructor (options: T) {
+  constructor (options: CkBlendModeColorFilterOptions) {
     super()
 
     this.color = options.color
@@ -77,7 +86,7 @@ export class CkBlendModeColorFilter<T extends CkBlendModeColorFilterOptions> ext
     )
   }
 
-  isEqual (other: CkBlendModeColorFilter<T>) {
+  isEqual (other: CkBlendModeColorFilter) {
     if (other instanceof CkBlendModeColorFilter) {
       return (
         other.color === this.color &&
@@ -98,10 +107,10 @@ export type CkMatrixColorFilterOptions = {
   matrix: Float32Array
 }
 
-export class CkMatrixColorFilter<T extends CkMatrixColorFilterOptions> extends CkColorFilter {
+export class CkMatrixColorFilter extends CkColorFilter {
   public matrix!: Float32Array
 
-  constructor (options: T) {
+  constructor (options: CkMatrixColorFilterOptions) {
     super()
 
     this.matrix = options.matrix
@@ -143,11 +152,11 @@ export type CkComposeColorFilterOptions = {
   inner: ManagedSkiaColorFilter
 }
 
-export class CkComposeColorFilter<T extends CkComposeColorFilterOptions> extends CkColorFilter {
+export class CkComposeColorFilter extends CkColorFilter {
   public outer!: ManagedSkiaColorFilter
   public inner!: ManagedSkiaColorFilter
 
-  constructor (options: T) {
+  constructor (options: CkComposeColorFilterOptions) {
     super()
 
     this.outer = options.outer
@@ -161,7 +170,7 @@ export class CkComposeColorFilter<T extends CkComposeColorFilterOptions> extends
     )
   }
 
-  isEqual (other: CkComposeColorFilter<T>) {
+  isEqual (other: CkComposeColorFilter) {
     if (other instanceof CkComposeColorFilter) {
       return (
         this.outer === other.outer &&
