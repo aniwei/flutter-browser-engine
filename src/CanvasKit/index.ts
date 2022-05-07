@@ -1,5 +1,6 @@
 export * from './CkPath'
 export * from './CkPaint'
+export * from './CkImage'
 export * from './CkCanvas'
 export * from './CkColorFilter'
 export * from './CkImageFilter'

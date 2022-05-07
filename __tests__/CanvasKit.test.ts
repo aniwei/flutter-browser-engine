@@ -11,7 +11,7 @@ test(`Skia`, async () => {
   const suface = Skia.MakeSurface(100, 100)
 
   const ckPath = CkPath.malloc()
-  const ckCanvas = new CkCanvas(suface?.getCanvas() as Canvas)
+  const ckCanvas = CkCanvas.malloc(suface?.getCanvas() as Canvas)
 
   const svg = ckPath.toSvgString()
   const paint = CkPaint.malloc()

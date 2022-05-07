@@ -125,6 +125,14 @@ export class Skia {
     return Skia.s.ClipOp
   }
 
+  static get MipmapMode () {
+    return Skia.s.MipmapMode
+  }
+
+  static get FilterMode () {
+    return Skia.s.FilterMode
+  }
+
   static get MakeFromCmds () {
     return Skia.s.Path.MakeFromCmds
   }
@@ -142,7 +150,7 @@ export class Skia {
   }
 
   static SkiaFilterOptions (filterQuality: SkiaFilterQuality) {
-    return Skia.r.SkiaFilterOptions?.get(filterQuality) as (SkiaCubicFilterOption | SkiaTransformFilterOption)
+    return Skia.r.SkiaFilterOptions?.get(filterQuality) as (SkiaCubicFilterOption & SkiaTransformFilterOption)
   }
 
   public skia: CanvasKit
