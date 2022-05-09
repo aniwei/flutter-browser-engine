@@ -57,7 +57,7 @@ export class Skia {
   static r: {
     SkiaFilterOptions?: SkiaFilterOptions
   } = {}
-  static Init (uri: string, options?: SkiaInitOption) {
+  static malloc (uri: string, options?: SkiaInitOption) {
     Skia.o = { 
       devicePixelRatio: 1,
       ...options 
@@ -89,6 +89,14 @@ export class Skia {
     return Skia.s.Paint
   }
 
+  static get ColorFilter () {
+    return Skia.s.ColorFilter
+  }
+
+  static get PaintStyle () {
+    return Skia.s.PaintStyle
+  }
+
   static get BlendMode () {
     return Skia.s.BlendMode
   }
@@ -117,6 +125,14 @@ export class Skia {
     return Skia.s.ClipOp
   }
 
+  static get MipmapMode () {
+    return Skia.s.MipmapMode
+  }
+
+  static get FilterMode () {
+    return Skia.s.FilterMode
+  }
+
   static get MakeFromCmds () {
     return Skia.s.Path.MakeFromCmds
   }
@@ -129,8 +145,12 @@ export class Skia {
     return Skia.s.MakeSurface
   }
 
+  static get MakeBlend () {
+    return Skia.s.ColorFilter.MakeBlend
+  }
+
   static SkiaFilterOptions (filterQuality: SkiaFilterQuality) {
-    return Skia.r.SkiaFilterOptions?.get(filterQuality) as (SkiaCubicFilterOption | SkiaTransformFilterOption)
+    return Skia.r.SkiaFilterOptions?.get(filterQuality) as (SkiaCubicFilterOption & SkiaTransformFilterOption)
   }
 
   public skia: CanvasKit

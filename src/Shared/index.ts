@@ -1,5 +1,5 @@
-export * from './Proxify'
 export * from './Error'
+export * from './props'
 
 export function baseClamp(number, lower, upper) {
   if (number === number) {

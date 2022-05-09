@@ -1,9 +1,10 @@
 import { FillType, Path, PathOp, Rect } from 'canvaskit-wasm'
 import { ManagedSkiaObject, Skia } from '@Skia'
+import { setter } from '@Shared' 
 
 export class CkPath extends ManagedSkiaObject<Path> {
   static from (other: CkPath) {
-    const path = new CkPath()
+    const path = CkPath.malloc()
     path.fillType = other.fillType
     path.skia = other.skia.copy()
 
@@ -11,10 +12,9 @@ export class CkPath extends ManagedSkiaObject<Path> {
   }
 
   static fromPath (skPath: Path, fillType: FillType) {
-    const path = new CkPath()
+    const path = this.malloc()
     path.fillType = fillType
     path.skia = skPath
-
     return path
   }
 
@@ -32,22 +32,31 @@ export class CkPath extends ManagedSkiaObject<Path> {
     return CkPath.fromPath(path, pathA.fillType)
   }
 
-  public _fillType!: FillType
-  public get fillType () { 
-    return this._fillType 
+  static malloc (): CkPath {
+    return new CkPath(this.init())
   }
-  public set fillType (fillType: FillType) { 
-    if (this.fillType !== fillType) {
-      this._fillType = fillType
-      this.skia.setFillType(fillType)
+
+  static init () {
+    return new Skia.Path()
+  }
+
+  @setter(function (this, value) {
+    if (this.fillType !== value) {
+      this.skia.setFillType(value)
+      this._fillType = value
     }
-  }
+  }) public fillType = Skia.FillType.Winding
 
   public get isEmpty () {
     return this.skia.isEmpty()
   }
 
   public cachedCommands: Float32Array | null = null
+
+  constructor (skia: Path) {
+    super(skia)
+    this.fillType = Skia.FillType.Winding
+  }
 
   addArc (
     oval: Rect, 
@@ -56,6 +65,30 @@ export class CkPath extends ManagedSkiaObject<Path> {
   ) {
     const toDegree = 180.0 / Math.PI
     this.skia.addArc(oval, startAngle * toDegree, sweepAngle * toDegree)  
+  }
+
+  addOval (oval: Rect) {
+    this.skia.addOval(oval, false, 1)
+  }
+
+  addPath (
+    path,
+    offset: Float32Array,
+    matrix4
+  ) {
+
+  }
+
+  moveTo (x: number, y: number) {
+    this.skia.moveTo(x, y)
+  }
+
+  lineTo (x: number, y: number) {
+    this.skia.lineTo(x, y)
+  }
+
+  close () {
+    this.skia.close()
   }
 
   transform (matrix: Float64Array): CkPath {
@@ -75,29 +108,18 @@ export class CkPath extends ManagedSkiaObject<Path> {
     return CkPath.fromPath(path, this.fillType)
   }
 
-  toSvgString (): string {
-    return this.skia.toSVGString()
-  }
-
-  create (): Path {
-    this.skia = new Skia.Path()
-    this.fillType = Skia.FillType.Winding
-
-    return this.skia
-  }
-
   delete () {
-    this.cachedCommands = this.skia.toCmds()
-    this.skia?.delete()
-  }
-
-  didDelete () {
-    
+    this.cachedCommands = this.skia?.toCmds()
+    super.delete()
   }
 
   resurrect (): Path {
     const path = Skia.MakeFromCmds(this.cachedCommands as Float32Array)
     path?.setFillType(this.fillType)
     return path as Path
+  }
+
+  toSvgString (): string {
+    return this.skia.toSVGString()
   }
 }

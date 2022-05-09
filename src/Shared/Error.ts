@@ -1,7 +1,3 @@
-export class ArgumentError extends Error {}
-
-export class StateError extends Error {}
-
 export class UnsupportedError extends Error {
 
   constructor (message?: string) {
@@ -16,8 +12,12 @@ export class UnsupportedError extends Error {
 export class UnimplementedError extends UnsupportedError {
   toString () {
     var message = this.message;
-    return (message != null)
-        ? `UnimplementedError: $message`
-        : `UnimplementedError`
+    return (message !== null) ? 
+      `UnimplementedError: ${this.message}` : 
+      `UnimplementedError`
   }
 }
+
+export class StateError extends Error {}
+
+export class ArgumentError extends Error {}

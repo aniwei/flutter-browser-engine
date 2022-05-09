@@ -1,3 +1,4 @@
+import { UnimplementedError } from '@Shared'
 import { ManagedSkiaObject, Skia, SkiaFilterQuality } from '@Skia'
 import type { ImageFilter, TileMode } from 'canvaskit-wasm'
 import type { CkColorFilter } from './CkColorFilter'
@@ -6,42 +7,32 @@ export abstract class CkManagedSkImageFilterConvertible {
   abstract imageFilter: ManagedSkiaObject<ImageFilter>
 }
 
-export abstract class CkImageFilter<T> extends ManagedSkiaObject<ImageFilter, T> implements CkManagedSkImageFilterConvertible {
-  static blur (options: CkBlurImageFilter) {
-    return new CkBlurImageFilter(options)
+export abstract class CkImageFilter extends ManagedSkiaObject<ImageFilter> implements CkManagedSkImageFilterConvertible {
+  static blur (options: CkBlurImageFilterOptions) {
+    return CkBlurImageFilter.malloc(options)
   }
 
-  static color(
-    colorFilter: CkColorFilter
-  ) {
-    return new CkColorFilterImageFilter({ colorFilter })
+  static color (options: CkColorFilterImageFilterOptions) {
+    return CkColorFilterImageFilter.malloc(options)
   }
   
-  static matrix(
-    matrix: Float32Array,
-    filterQuality: SkiaFilterQuality 
-  ) {
-    return new CkMatrixImageFilter({ matrix, filterQuality })
+  static matrix (options: CkMatrixImageFilterOptions) {
+    return CkMatrixImageFilter.malloc(options)
   }
 
+  static init (options): ImageFilter {
+    throw new UnimplementedError()
+  }
+
+  static malloc (options?): CkImageFilter {
+    throw new UnimplementedError()
+  } 
 
   public get imageFilter (): ManagedSkiaObject<ImageFilter> {
     return this
   }
 
-  abstract initSkiaObject (): ImageFilter
-
-  create (options?: T): ImageFilter {
-    return this.initSkiaObject()
-  }
-
-  resurrect (): ImageFilter {
-    return this.initSkiaObject()
-  } 
-
-  delete () {
-    this.rawSkia?.delete()
-  }
+  abstract resurrect (): ImageFilter
 }
 
 
@@ -51,16 +42,30 @@ export type CkBlurImageFilterOptions = {
   tileMode: TileMode 
 }
 
-export class CkBlurImageFilter<T extends CkBlurImageFilterOptions = CkBlurImageFilterOptions>  extends CkImageFilter<T> {
+export class CkBlurImageFilter extends CkImageFilter {
+  static malloc (options: CkBlurImageFilterOptions): CkImageFilter {
+    const blurImageFilter = new CkBlurImageFilter(this.init(options), options)
+    return blurImageFilter
+  }
+
+  static init (options: CkBlurImageFilterOptions): ImageFilter {
+    return Skia.ImageFilter.MakeBlur(
+      options.sigmaX,
+      options.sigmaY,
+      options.tileMode,
+      null
+    )
+  }
+
   get modeString () {
     switch (this.tileMode) {
-      case ui.TileMode.clamp:
+      case Skia.TileMode.Clamp:
         return 'clamp'
-      case ui.TileMode.mirror:
+      case Skia.TileMode.Mirror:
         return 'mirror'
-      case ui.TileMode.repeated:
+      case Skia.TileMode.Repeat:
         return 'repeated'
-      case ui.TileMode.decal:
+      case Skia.TileMode.Decal:
         return 'decal'
     }
   }
@@ -69,25 +74,15 @@ export class CkBlurImageFilter<T extends CkBlurImageFilterOptions = CkBlurImageF
   public sigmaY!: number 
   public tileMode!: TileMode
 
-  constructor (options: T) {
-    super(options)
-  }
+  constructor (
+    skia: ImageFilter, 
+    options: CkBlurImageFilterOptions
+  ) {
+    super(skia)
 
-  create (options: T): ImageFilter {
     this.sigmaX = options.sigmaX
     this.sigmaY = options.sigmaY
     this.tileMode = options.tileMode
-
-    return super.create(options)
-  }
-
-  initSkiaObject () {
-    return Skia.ImageFilter.MakeBlur(
-      this.sigmaX,
-      this.sigmaY,
-      this.tileMode,
-      null,
-    );
   }
 
   isEqual (other: CkBlurImageFilter) {
@@ -102,6 +97,10 @@ export class CkBlurImageFilter<T extends CkBlurImageFilterOptions = CkBlurImageF
     return false
   }
 
+  resurrect (): ImageFilter {
+    return CkBlurImageFilter.init(this)
+  }
+
   toString () {
     return `ImageFilter.blur(${this.sigmaX}, ${this.sigmaY}, ${this.modeString})`
   }
@@ -112,29 +111,40 @@ export type CkMatrixImageFilterOptions = {
   filterQuality: SkiaFilterQuality
 }
 
-export class CkMatrixImageFilter<T extends CkMatrixImageFilterOptions = CkMatrixImageFilterOptions> extends CkImageFilter<T> {
-  public matrix!: Float32Array
-  public filterQuality!: SkiaFilterQuality
+export class CkMatrixImageFilter extends CkImageFilter {
+  static malloc (options: CkMatrixImageFilterOptions): CkMatrixImageFilter {
+    const matrixImageFilter = new CkMatrixImageFilter(
+      CkMatrixImageFilter.init(options), 
+      options
+    )
 
-  constructor (options: T) {
-    super(options)
+    return matrixImageFilter
   }
 
-  create (options: T) {
-    this.filterQuality = options.filterQuality
-    this.matrix = Float32Array.from(options.matrix)
-
-    return super.create(options)
-  }
-      
-  initSkiaObject (): ImageFilter  {
+  static init (options: CkMatrixImageFilterOptions): ImageFilter {
     return Skia.ImageFilter.MakeMatrixTransform(
-      this.matrix,
-      Skia.SkiaFilterOptions(this.filterQuality),
+      options.matrix,
+      Skia.SkiaFilterOptions(options.filterQuality),
       null,
     )
   }
 
+  public matrix: Float32Array
+  public filterQuality: SkiaFilterQuality
+
+  constructor (
+    skia: ImageFilter, 
+    options: CkMatrixImageFilterOptions
+  ) {
+    super(skia)
+
+    this.matrix = options.matrix
+    this.filterQuality = options.filterQuality
+  }
+
+  resurrect (): ImageFilter {
+    return CkMatrixImageFilter.init(this)
+  }
   
   isEqual (other: CkMatrixImageFilter) {
     if (other instanceof CkMatrixImageFilter) {
@@ -154,28 +164,34 @@ export type CkColorFilterImageFilterOptions = {
   colorFilter: CkColorFilter, 
 }
 
-export class CkColorFilterImageFilter<T extends CkColorFilterImageFilterOptions = CkColorFilterImageFilterOptions> extends CkImageFilter<T> {
-  public colorFilter!: CkColorFilter
+export class CkColorFilterImageFilter extends CkImageFilter {
+  static malloc(options: CkColorFilterImageFilterOptions): CkImageFilter {
+    const colorFilterImageFilter = new CkColorFilterImageFilter(
+      CkColorFilterImageFilter.init(options),
+      options
+    )
+
+    return colorFilterImageFilter
+  }
+
+  static init (options: CkColorFilterImageFilterOptions): ImageFilter {
+    return options.colorFilter.initRawImageFilter()
+  }
+
+  public colorFilter: CkColorFilter
   
-  constructor (options: T) {
-    super(options)
-  }
-
-  create (options: T) {
+  constructor (skia: ImageFilter, options: CkColorFilterImageFilterOptions) {
+    super(skia)
     this.colorFilter = options.colorFilter
-
-    return super.create(options)
   }
 
-  initSkiaObject (): ImageFilter {
-    return this.colorFilter.initRawImageFilter() 
+  resurrect(): ImageFilter {
+    return CkColorFilterImageFilter.init(this)
   }
 
   isEqual (other: CkColorFilterImageFilter) {
     if (other instanceof CkColorFilterImageFilter) {
-      return (
-        this.colorFilter === other.colorFilter
-      )
+      return this.colorFilter === other.colorFilter
     }
 
     return false

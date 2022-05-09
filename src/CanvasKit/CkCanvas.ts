@@ -1,4 +1,7 @@
-import { Skia } from '@Skia'
+import { Skia, SkiaFilterQuality } from '@Skia'
+import type { CkImage } from './CkImage'
+import type { CkImageFilter, CkManagedSkImageFilterConvertible } from './CkImageFilter'
+import type { CkPaint } from './CkPaint'
 import type { BlendMode, Canvas, Color, ColorInt, InputIRect, Rect, RRect } from 'canvaskit-wasm'
 import type { CkPath } from './CkPath'
 
@@ -13,21 +16,25 @@ export class CkCanvas {
     return Skia.ClipOp.Intersect
   }
 
-  public skiaCanvas: Canvas
+  static malloc (skia: Canvas) {
+    return new CkCanvas(skia)
+  }
 
-  constructor (skiaCanvas: Canvas) {
-    this.skiaCanvas = skiaCanvas
+  public skia: Canvas
+
+  constructor (skia: Canvas) {
+    this.skia = skia
   }
 
   clear (color: Color) {
-    this.skiaCanvas.clear(color)
+    this.skia.clear(color)
   }
 
   clipPath (
     path: CkPath, 
     doAntiAlias: boolean
   ) {
-    this.skiaCanvas.clipPath(
+    this.skia.clipPath(
       path.skia, 
       CkCanvas.clipOpIntersect,
       doAntiAlias
@@ -38,7 +45,7 @@ export class CkCanvas {
     rrect: RRect, 
     doAntiAlias: boolean
   ) {
-    this.skiaCanvas.clipRRect(
+    this.skia.clipRRect(
       rrect,
       CkCanvas.clipOpIntersect,
       doAntiAlias,
@@ -50,10 +57,10 @@ export class CkCanvas {
     startAngle: number,
     sweepAngle: number,
     useCenter: boolean,
-    paint // @TODO
+    paint // 
   ) {
     const toDegree = 180 / Math.PI
-    this.skiaCanvas.drawArc(
+    this.skia.drawArc(
       oval,
       startAngle * toDegree,
       sweepAngle * toDegree,
@@ -63,14 +70,14 @@ export class CkCanvas {
   }
 
   drawAtlasRaw (
-    paint,
+    paint: CkPaint,
     atlas,
     rstTransforms: Float32Array,
     rects: Float32Array,
     colors: Uint32Array,
     blendMode: BlendMode
   ) {
-    this.skiaCanvas.drawAtlas(
+    this.skia.drawAtlas(
       atlas.skImage,
       rects,
       rstTransforms,
@@ -81,13 +88,13 @@ export class CkCanvas {
   }
 
   drawCircle (
-    offset, // @TODO
+    offset: Float32Array, // 
     radius: number,
-    paint // @TODO
+    paint // 
   ) {
-    this.skiaCanvas.drawCircle(
-      offset.dx,
-      offset.dy,
+    this.skia.drawCircle(
+      offset[0],
+      offset[1],
       radius,
       paint.skia
     )
@@ -97,62 +104,64 @@ export class CkCanvas {
     color: ColorInt, 
     blendMode: BlendMode
   ) {
-    this.skiaCanvas.drawColorInt(
+    this.skia.drawColorInt(
       color,
       blendMode
     )
   }
 
-  drawDRRect ( //@TODO
+  drawDRRect ( //
     outer: RRect, 
     inner: RRect, 
-    paint
+    paint: CkPaint
   ) {
-    this.skiaCanvas.drawDRRect(
+    this.skia.drawDRRect(
       outer,
       inner,
-      paint.skiaObject,
+      paint.skia,
     )
   }
 
-  drawImage ( // @TODO
-    image, 
+  drawImage ( // 
+    image: CkImage, 
     offset, 
-    paint
+    paint: CkPaint
   ) {
     const filterQuality = paint.filterQuality
     
-    if (filterQuality == ui.FilterQuality.high) {
-      this.skiaCanvas.drawImageCubic(
-        image.skImage,
+    if (filterQuality == SkiaFilterQuality.High) {
+      this.skia.drawImageCubic(
+        image.skia,
         offset.dx,
         offset.dy,
         CkCanvas.kMitchellNetravali_B,
         CkCanvas.kMitchellNetravali_C,
-        paint.skiaObject,
+        paint.skia,
       )
     } else {
-      this.skiaCanvas.drawImageOptions(
-        image.skImage,
+      this.skia.drawImageOptions(
+        image.skia,
         offset.dx,
         offset.dy,
-        filterQuality,
-        filterQuality,
+        filterQuality === SkiaFilterQuality.None ?
+          Skia.FilterMode.Nearest : Skia.FilterMode.Linear,
+        filterQuality === SkiaFilterQuality.Medium ? 
+          Skia.MipmapMode.Linear : Skia.MipmapMode.None,
         paint.skia,
       )
     }
   }
 
-  drawImageRect ( // @TODO
-    image, 
+  drawImageRect ( // 
+    image: CkImage, 
     src: Rect, 
     dst: Rect, 
-    paint
+    paint: CkPaint
   ) {
     const filterQuality = paint.filterQuality
-    if (filterQuality == ui.FilterQuality.high) {
-      this.skiaCanvas.drawImageRectCubic(
-        image.skImage,
+    if (filterQuality == SkiaFilterQuality.High) {
+      this.skia.drawImageRectCubic(
+        image.skia,
         src,
         dst,
         CkCanvas.kMitchellNetravali_B,
@@ -160,28 +169,31 @@ export class CkCanvas {
         paint.skia,
       )
     } else {
-      this.skiaCanvas.drawImageRectOptions(
-        image.skImage,
+      this.skia.drawImageRectOptions(
+        image.skia,
         src,
         dst,
-        filterQuality,
-        filterQuality,
+        filterQuality === SkiaFilterQuality.None ?
+          Skia.FilterMode.Nearest : Skia.FilterMode.Linear,
+        filterQuality === SkiaFilterQuality.Medium ? 
+          Skia.MipmapMode.Linear : Skia.MipmapMode.None,
         paint.skia,
       )
     }
   }
 
-  drawImageNine ( // @TODO
-    image, 
+  drawImageNine ( // 
+    image: CkImage, 
     center: InputIRect, 
     dst: Rect, 
-    paint
+    paint: CkPaint
   ) {
-    this.skiaCanvas.drawImageNine(
-      image.skImage,
+    this.skia.drawImageNine(
+      image.skia,
       center,
       dst,
-      paint.filterQuality,
+      paint.filterQuality === SkiaFilterQuality.None ?
+        Skia.FilterMode.Nearest : Skia.FilterMode.Linear,
       paint.skia,
     )
   }
@@ -189,9 +201,9 @@ export class CkCanvas {
   drawLine ( // @TODO
     pointA, 
     pointB, 
-    paint
+    paint: CkPaint
   ) {
-    this.skiaCanvas.drawLine(
+    this.skia.drawLine(
       pointA.dx,
       pointA.dy,
       pointB.dx,
@@ -200,25 +212,25 @@ export class CkCanvas {
     )
   }
 
-  drawOval ( // @TODO
+  drawOval ( // 
     rect: Rect, 
-    paint
+    paint: CkPaint
   ) {
-    this.skiaCanvas.drawOval(
+    this.skia.drawOval(
       rect,
-      paint.skiaObject,
+      paint.skia,
     )
   }
 
-  drawPaint (paint) {
-    this.skiaCanvas.drawPaint(paint.skia)
+  drawPaint (paint: CkPaint) {
+    this.skia.drawPaint(paint.skia)
   }
 
   drawParagraph (
     paragraph, 
     offset
   ) {
-    this.skiaCanvas.drawParagraph(
+    this.skia.drawParagraph(
       paragraph.skia,
       offset.dx,
       offset.dy,
@@ -228,21 +240,21 @@ export class CkCanvas {
 
   drawPath (
     path: CkPath , 
-    paint //@TODO
+    paint: CkPaint //
   ) {
-    this.skiaCanvas.drawPath(path.skia, paint.skia)
+    this.skia.drawPath(path.skia, paint.skia)
   }
 
-  drawPicture (picture) { // @TODO
-    this.skiaCanvas.drawPicture(picture.skia)
+  drawPicture (picture) { // 
+    this.skia.drawPicture(picture.skia)
   }
 
   drawPoints (
-    paint, //@TODO
+    paint: CkPaint, //
     pointMode: BlendMode, 
     points: Float32Array
   ) {
-    this.skiaCanvas.drawPoints(
+    this.skia.drawPoints(
       pointMode,
       points,
       paint.skia,
@@ -251,9 +263,9 @@ export class CkCanvas {
 
   drawRRect (
     rrect: RRect, 
-    paint //@TODO
+    paint: CkPaint 
   ) {
-    this.skiaCanvas.drawRRect(
+    this.skia.drawRRect(
       rrect,
       paint.skia,
     )
@@ -261,9 +273,9 @@ export class CkCanvas {
 
   drawRect (
     rect: Rect, 
-    paint //@TODO
+    paint: CkPaint 
   ) {
-    this.skiaCanvas.drawRect(rect, paint.skia)
+    this.skia.drawRect(rect, paint.skia)
   }
 
   drawShadow ( // @TODO
@@ -273,7 +285,7 @@ export class CkCanvas {
     transparentOccluder: boolean
   ) {
     this.drawSkiaShadow(
-      this.skiaCanvas, 
+      this.skia, 
       path, 
       color, 
       elevation, 
@@ -323,9 +335,9 @@ export class CkCanvas {
   drawVertices  (
     vertices, 
     blendMode: BlendMode, 
-    paint // @TODO
+    paint: CkPaint // @TODO
   ) {
-    this.skiaCanvas.drawVertices(
+    this.skia.drawVertices(
       vertices.skia,
       blendMode,
       paint.skia,
@@ -334,74 +346,73 @@ export class CkCanvas {
 
 
   restore () {
-    this.skiaCanvas.restore()
+    this.skia.restore()
   }
 
   restoreToCount (count: number) {
-    this.skiaCanvas.restoreToCount(count)
+    this.skia.restoreToCount(count)
   }
 
   rotate (radians: number) {
-    this.skiaCanvas.rotate(radians * 180.0 / Math.PI, 0.0, 0.0)
+    this.skia.rotate(radians * 180.0 / Math.PI, 0.0, 0.0)
   }
 
   save () {
-    return this.skiaCanvas.save()
+    return this.skia.save()
   }
 
   saveLayer (
     bounds: Rect, 
-    paint // @TODO
+    paint: CkPaint // @TODO
   ) {
-    this.skiaCanvas.saveLayer(
+    this.skia.saveLayer(
       paint?.skia,
       bounds,
       null
     );
   }
 
-  saveLayerWithoutBounds (paint) { // @TODO
-    this.skiaCanvas.saveLayer(paint?.skia, null, null)
+  saveLayerWithoutBounds (paint: CkPaint) { 
+    this.skia.saveLayer(paint?.skia, null, null)
   }
 
   saveLayerWithFilter (
     bounds: Rect, 
-    filter, //@TODO
-    paint //@TODO
+    filter: CkImageFilter, 
+    paint: CkPaint
   ) {
     // TODO
-    // final CkManagedSkImageFilterConvertible convertible =
-    //     filter as CkManagedSkImageFilterConvertible;
-    // return this.skiaCanvas.saveLayer(
-    //   paint?.skiaObject,
-    //   toSkRect(bounds),
-    //   convertible.imageFilter.skiaObject,
-    //   0,
-    // );
+    const convertible: CkManagedSkImageFilterConvertible = filter
+    return this.skia.saveLayer(
+      paint?.skia,
+      bounds,
+      convertible.imageFilter.skia,
+      0,
+    )
   }
 
   scale (
     sx: number, 
     sy: number
   ) {
-    this.skiaCanvas.scale(sx, sy)
+    this.skia.scale(sx, sy)
   }
 
   skew (
     sx: number, 
     sy: number
   ) {
-    this.skiaCanvas.skew(sx, sy)
+    this.skia.skew(sx, sy)
   }
 
   transform (matrix4: Float32Array) {
-    this.skiaCanvas.concat(matrix4)
+    this.skia.concat(matrix4)
   }
 
   translate (
     dx: number, 
     dy: number
   ) {
-    this.skiaCanvas.translate(dx, dy)
+    this.skia.translate(dx, dy)
   }
 }

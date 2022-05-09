@@ -1,8 +1,17 @@
+import { UnimplementedError } from '@Shared'
 import { SkiaFinalizationRegistry } from './SkiaFinalizationRegistry'
 import { RawSkia, SkiaObject } from './SkiaObject'
 
-export abstract class ManagedSkiaObject <T extends RawSkia<T>, P = unknown> extends SkiaObject<T> {
-  rawSkia: T | null = null
+
+
+export abstract class ManagedSkiaObject <T extends RawSkia<T>> extends SkiaObject<T> {
+  static malloc (options) { 
+    throw new UnimplementedError()
+  }
+
+  static init (options) {
+    throw new UnimplementedError()
+  }
 
   public get skia () {
     return this.rawSkia as T
@@ -12,20 +21,24 @@ export abstract class ManagedSkiaObject <T extends RawSkia<T>, P = unknown> exte
     this.rawSkia = skia
   }
 
-  constructor (options?: P, skia?: T) {
-    super()
-    this.rawSkia = skia ?? this.create(options)
+  rawSkia: T | null = null
 
+  constructor (skia: T) {
+    super()
+    this.rawSkia = skia
     SkiaFinalizationRegistry.registry(this, this.skia)
   }
 
-  abstract create (options?: P): T
   abstract resurrect (): T
-
+  
   didDelete () {
     if (this.rawSkia !== null) {
       this.rawSkia = null
     }
+  }
+  
+  delete () {
+    this.rawSkia?.delete()
   }
 }
 
