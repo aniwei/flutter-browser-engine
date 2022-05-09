@@ -23,7 +23,9 @@ export abstract class ManagedSkiaObject <T extends RawSkia<T>, P = unknown> exte
   abstract resurrect (): T
 
   didDelete () {
-    this.rawSkia = null
+    if (this.rawSkia !== null) {
+      this.rawSkia = null
+    }
   }
 }
 
