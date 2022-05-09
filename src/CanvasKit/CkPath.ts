@@ -87,6 +87,11 @@ export class CkPath extends ManagedSkiaObject<Path> {
     this.skia.lineTo(x, y)
   }
 
+  reset () {
+    this.fillType = Skia.FillType.Winding
+    this.skia.reset()
+  }
+
   close () {
     this.skia.close()
   }

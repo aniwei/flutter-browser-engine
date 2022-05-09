@@ -1,4 +1,5 @@
 import { setter } from '@Shared'
+import { Color } from '@UI'
 import { ManagedSkiaObject, Skia, SkiaFilterQuality } from '@Skia'
 import { ManagedSkiaColorFilter, CkComposeColorFilter, CkMatrixColorFilter } from './CkColorFilter'
 import type { BlendMode, ColorFilter, ColorInt, ImageFilter, MaskFilter, Paint, PaintStyle, StrokeCap, StrokeJoin } from 'canvaskit-wasm'
@@ -6,7 +7,7 @@ import type { CkManagedSkImageFilterConvertible } from './CkImageFilter'
 import type { CkShader } from './CkShader'
 
 export class CkPaint extends ManagedSkiaObject<Paint> {
-  static kDefaultPaintColor = 0xFF000000
+  static kDefaultPaintColor = new Color(0xFF000000)
   static kInvertColorMatrix = Float32Array.from([
     -1.0, 0, 0, 1.0, 0, // row
     0, -1.0, 0, 1.0, 0, // row
@@ -19,7 +20,7 @@ export class CkPaint extends ManagedSkiaObject<Paint> {
   } 
 
   static malloc () {
-    return new CkPaint(this.init())
+    return new CkPaint(CkPaint.init())
   }
 
   static init () {
@@ -68,12 +69,12 @@ export class CkPaint extends ManagedSkiaObject<Paint> {
     }
   }) public isAntiAlias: boolean = true
 
-  @setter(function (this, color: ColorInt) {
+  @setter(function (this, color: Color) {
     if (this.color !== color) {
       this._color = color
       this.skia.setColorInt(color)
     }
-  }) public color: ColorInt = CkPaint.kDefaultPaintColor
+  }) public color: Color = CkPaint.kDefaultPaintColor
 
   @setter(function (this, invertColors: boolean) {
     if (this.invertColors !== invertColors) {
