@@ -4,6 +4,7 @@ import { CkCanvas, CkPaint, CkPath } from '@CanvasKit'
 import { Color, Rect, TextDirection } from '@UI'
 import { BorderSide, BorderStyle, paintBorder, ShapeBorder } from './Border'
 import { EdgeInsets, EdgeInsetsGeometry } from './EdgeInsets'
+import { BorderRadius } from './BorderRadius'
 
 export enum BoxShape {
   Rectangle,
@@ -20,15 +21,29 @@ export abstract class BoxBorder extends ShapeBorder {
     invariant(side.style !== BorderStyle.None)
     const paint = CkPaint.malloc()
     paint.color = side.color
+
+    const outer = borderRadius.toRRect(rect)
+    const width = side.width
+    if (width === 0.0) {
+      paint.style = Skia.PaintStyle.Stroke
+      paint.strokeWidth = 0.0
+      canvas.drawRRect(outer, paint)
+    } else {
+      const inner = outer.deflate(width)
+      canvas.drawDRRect(outer, inner, paint)
+    }
   }
 
   static paintUniformBorderWithCircle (
     canvas: CkCanvas,
     rect: Rect,
-    side,
-    borderRadius
+    side
   ) {
-
+    invariant(side.style !== BorderStyle.None)
+    const width = side.width
+    const paint = side.toPaint()
+    const radius = (rect.shortestSide - width) / 2.0
+    canvas.drawCircle(rect.center, radius, paint)
   }
 
   static paintUniformBorderWithRectangle (
@@ -37,9 +52,9 @@ export abstract class BoxBorder extends ShapeBorder {
     side,
   ) {
     invariant(side.style !== BorderStyle.None)
+    const width = side.width
     const paint = side.toPaint()
-
-    canvas.drawRect(rect.deflate(side.width / 2), paint)
+    canvas.drawRect(rect.deflate(width / 2.0), paint)
   }
 
   static lerp (
@@ -49,14 +64,81 @@ export abstract class BoxBorder extends ShapeBorder {
   ) {
     invariant(t !== null)
 
+    if (
+      a instanceof Border &&
+      b instanceof Border
+    ) {
+      return Border.lerp(a, b, t)
+    }
 
+    if (
+      a instanceof BorderDirectional &&
+      b instanceof BorderDirectional
+    ) {
+      return BorderDirectional.lerp(a, b, t)
+    }
+
+    if (
+      b instanceof Border && 
+      a instanceof BorderDirectional
+    ) {
+      const c = b
+      b = a
+      a = c
+      t = 1.0 - t;
+    }
+
+    if (
+      a instanceof Border && 
+      b instanceof BorderDirectional
+    ) {
+      if (
+        b.start === BorderSide.None && 
+        b.end === BorderSide.None
+      ) {
+        return new Border(
+          BorderSide.lerp(a.top, b.top, t),
+          BorderSide.lerp(a.right, BorderSide.None, t),
+          BorderSide.lerp(a.bottom, b.bottom, t),
+          BorderSide.lerp(a.left, BorderSide.None, t),
+        )
+      }
+      if (
+        a.left == BorderSide.None && 
+        a.right == BorderSide.None
+      ) {
+        return new BorderDirectional(
+          BorderSide.lerp(a.top, b.top, t),
+          BorderSide.lerp(BorderSide.None, b.start, t),
+          BorderSide.lerp(BorderSide.None, b.end, t),
+          BorderSide.lerp(a.bottom, b.bottom, t),
+        )
+      }
+      
+      if (t < 0.5) {
+        return new Border(
+          BorderSide.lerp(a.top, b.top, t),
+          BorderSide.lerp(a.right, BorderSide.None, t * 2.0),
+          BorderSide.lerp(a.bottom, b.bottom, t),
+          BorderSide.lerp(a.left, BorderSide.None, t * 2.0),
+        )
+      }
+      return new BorderDirectional(
+        BorderSide.lerp(a.top, b.top, t),
+        BorderSide.lerp(BorderSide.None, b.start, (t - 0.5) * 2.0),
+        BorderSide.lerp(BorderSide.None, b.end, (t - 0.5) * 2.0),
+        BorderSide.lerp(a.bottom, b.bottom, t),
+      )
+    }
   }
 
   abstract top: BorderSide
   abstract bottom: BorderSide
   abstract isUniform: boolean
 
-  abstract add (other: ShapeBorder, reverse: boolean): BoxBorder | null
+  add (other: ShapeBorder, reverse: boolean): BoxBorder | null {
+    return null
+  }
 
   abstract paint (
     canvas: CkCanvas,
@@ -68,9 +150,25 @@ export abstract class BoxBorder extends ShapeBorder {
 
   getInnerPath (
     rect: Rect, 
-    textDirection: TextDirection
+    textDirection: TextDirection | null
   ): CkPath {
-      
+    invariant(textDirection !== null, 'The textDirection argument to $runtimeType.getInnerPath must not be null.')
+    const path = CkPath.malloc()
+
+    path.addRect(this.dimensions.resolve(textDirection).deflateRect(rect))
+
+    return path
+  }
+
+  getOuterPath (
+    rect: Rect, 
+    textDirection: TextDirection | null
+  ): CkPath {
+    invariant(textDirection !== null, 'The textDirection argument to $runtimeType.getOuterPath must not be null.')
+    const path = CkPath.malloc()
+    path.addRect(rect)
+    
+    return path
   }
 }
 
@@ -133,6 +231,30 @@ export class Border extends BoxBorder {
     )
   }
 
+  static lerp(
+    a: Border | null, 
+    b: Border | null, 
+    t: number
+  ): Border | null {
+    invariant(t !== null)
+
+    if (a === null && b === null) {
+      return null
+    }
+    if (a === null) {
+      return b!.scale(t)
+    }
+    if (b === null) {
+      return a.scale(1.0 - t)
+    }
+    return new Border(
+      BorderSide.lerp(a.top, b.top, t),
+      BorderSide.lerp(a.right, b.right, t),
+      BorderSide.lerp(a.bottom, b.bottom, t),
+      BorderSide.lerp(a.left, b.left, t),
+    )
+  }
+
   public get dimensions (): EdgeInsetsGeometry {
     return EdgeInsets.fromLTRB(
       this.left.width,
@@ -147,6 +269,41 @@ export class Border extends BoxBorder {
   public bottom: BorderSide
   public left: BorderSide
 
+  public get isUniform () {
+    return (
+      this.colorIsUniform && 
+      this.widthIsUniform && 
+      this.styleIsUniform
+    )
+  }
+
+  public get colorIsUniform () {
+    const topColor = this.top.color
+    return (
+      this.right.color === topColor &&
+      this.bottom.color === topColor &&
+      this.left.color === topColor
+    )
+  }
+
+  public get widthIsUniform () {
+    const topWidth = this.top.width
+    return (
+      this.right.width === topWidth &&
+      this.bottom.width === topWidth &&
+      this.left.width === topWidth
+    )
+  }
+
+  public get styleIsUniform () {
+    const topStyle = this.top.style
+    return (
+      this.right.style === topStyle &&
+      this.bottom.style === topStyle &&
+      this.left.style === topStyle
+    )
+  }
+
   constructor (
     top: BorderSide = BorderSide.None,
     right: BorderSide = BorderSide.None,
@@ -154,10 +311,10 @@ export class Border extends BoxBorder {
     left: BorderSide = BorderSide.None
   ) {
     super()
-    this.top = BorderSide.None
-    this.right = BorderSide.None
-    this.bottom = BorderSide.None
-    this.left = BorderSide.None
+    this.top = top
+    this.right = right
+    this.bottom = bottom
+    this.left = left
   }
 
   getInnerPath(
@@ -176,8 +333,51 @@ export class Border extends BoxBorder {
 
   }
 
-  scale (t: number) {
-      
+  add (
+    other: ShapeBorder, 
+    reversed = false
+  ): Border | null {
+    if (
+      other instanceof Border &&
+      BorderSide.canMerge(this.top, other.top) &&
+      BorderSide.canMerge(this.right, other.right) &&
+      BorderSide.canMerge(this.bottom, other.bottom) &&
+      BorderSide.canMerge(this.left, other.left)
+    ) {
+      return Border.merge(this, other)
+    }
+
+    return null
+  }
+
+  scale (t: number): Border {
+    return new Border(
+      this.top.scale(t),
+      this.right.scale(t),
+      this.bottom.scale(t),
+      this.left.scale(t),
+    )
+  }
+
+  lerpFrom (
+    a: ShapeBorder | null, 
+    t: number
+  ): ShapeBorder | null {
+    if (a instanceof Border) {
+      return Border.lerp(a, this, t)
+    }
+
+    return super.lerpFrom(a, t)
+  }
+
+  lerpTo (
+    b: ShapeBorder | null, 
+    t: number
+  ): ShapeBorder | null {
+    if (b instanceof Border) {
+      return Border.lerp(this, b, t)
+    }
+    return super.lerpTo(b, t)
   }
 
   paint (
@@ -455,9 +655,9 @@ export class BorderDirectional extends BoxBorder {
       canvas, 
       rect,
       this.top, 
-      this.left, 
+      this.right, 
       this.bottom, 
-      this.right
+      this.left
     )
   }
 

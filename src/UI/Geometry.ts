@@ -449,7 +449,7 @@ export class Size extends OffsetBase {
 }
 
 export class Radius {
-  static zero = Radius.circular(0)
+  static Zero = Radius.circular(0)
   static circular (radius: number) {
     return Radius.elliptical(radius, radius)
   }
