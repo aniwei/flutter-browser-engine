@@ -312,7 +312,7 @@ export abstract class EdgeInsetsGeometry {
 ///  * [EdgeInsetsDirectional], which (for properties and arguments that accept
 ///    the type [EdgeInsetsGeometry]) allows the horizontal insets to be
 ///    specified in a [TextDirection]-aware manner.
-class EdgeInsets extends EdgeInsetsGeometry {
+export class EdgeInsets extends EdgeInsetsGeometry {
   /// Creates insets from offsets from the left, top, right, and bottom.
   const EdgeInsets.fromLTRB(this.left, this.top, this.right, this.bottom);
 

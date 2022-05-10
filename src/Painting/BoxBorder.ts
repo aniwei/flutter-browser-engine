@@ -113,7 +113,9 @@ export class Border extends BoxBorder {
   }
 
   public get dimensions (): EdgeInsetsGeometry {
+    return EdgeInsets.fromLTRB(
 
+    )
   }
 
   public top: BorderSide
@@ -132,6 +134,26 @@ export class Border extends BoxBorder {
     this.right = BorderSide.None
     this.bottom = BorderSide.None
     this.left = BorderSide.None
+  }
+
+  getInnerPath(
+    rect: Rect, 
+    textDirection: any
+  ): CkPath {
+    const path = CkPath.malloc()
+    path.addArc(this.dimensions.resolve(textDirection).deflateRect(rect))
+    return path
+  }
+
+  getOuterPath (
+    rect: Rect, 
+    textDirection: TextDirection
+  ): CkPath {
+
+  }
+
+  scale (t: number) {
+      
   }
 
   paint (
@@ -211,40 +233,40 @@ export function paintBorder (
   }
 
   switch (bottom.style) {
-    case BorderStyle.solid:
-      paint.color = bottom.color;
-      path.reset();
-      path.moveTo(rect.right, rect.bottom);
-      path.lineTo(rect.left, rect.bottom);
+    case BorderStyle.Solid:
+      paint.color = bottom.color
+      path.reset()
+      path.moveTo(rect.right, rect.bottom)
+      path.lineTo(rect.left, rect.bottom)
       if (bottom.width == 0.0) {
-        paint.style = PaintingStyle.stroke;
+        paint.style = Skia.PaintStyle.Stroke
       } else {
-        paint.style = PaintingStyle.fill;
-        path.lineTo(rect.left + left.width, rect.bottom - bottom.width);
-        path.lineTo(rect.right - right.width, rect.bottom - bottom.width);
+        paint.style = Skia.PaintStyle.Fill
+        path.lineTo(rect.left + left.width, rect.bottom - bottom.width)
+        path.lineTo(rect.right - right.width, rect.bottom - bottom.width)
       }
-      canvas.drawPath(path, paint);
-      break;
-    case BorderStyle.none:
-      break;
+      canvas.drawPath(path, paint)
+      break
+    case BorderStyle.None:
+      break
   }
 
   switch (left.style) {
-    case BorderStyle.solid:
-      paint.color = left.color;
-      path.reset();
-      path.moveTo(rect.left, rect.bottom);
-      path.lineTo(rect.left, rect.top);
+    case BorderStyle.Solid:
+      paint.color = left.color
+      path.reset()
+      path.moveTo(rect.left, rect.bottom)
+      path.lineTo(rect.left, rect.top)
       if (left.width == 0.0) {
-        paint.style = PaintingStyle.stroke;
+        paint.style = Skia.PaintStyle.Stroke
       } else {
-        paint.style = PaintingStyle.fill;
-        path.lineTo(rect.left + left.width, rect.top + top.width);
-        path.lineTo(rect.left + left.width, rect.bottom - bottom.width);
+        paint.style = Skia.PaintStyle.Fill
+        path.lineTo(rect.left + left.width, rect.top + top.width)
+        path.lineTo(rect.left + left.width, rect.bottom - bottom.width)
       }
-      canvas.drawPath(path, paint);
-      break;
-    case BorderStyle.none:
-      break;
+      canvas.drawPath(path, paint)
+      break
+    case BorderStyle.None:
+      break
   }
 }
