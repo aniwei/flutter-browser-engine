@@ -133,6 +133,10 @@ export class Skia {
     return Skia.s.FilterMode
   }
 
+  static get TextDirection () {
+    return Skia.s.TextDirection
+  }
+
   static get MakeFromCmds () {
     return Skia.s.Path.MakeFromCmds
   }

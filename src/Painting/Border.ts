@@ -1,41 +1,15 @@
+import { invariant } from 'ts-invariant'
+import { TextDirection } from 'canvaskit-wasm'
 import { CkCanvas, CkPaint, CkPath } from '@CanvasKit'
 import { Color, lerpDouble, Rect } from '@UI'
 import { Skia } from '@Skia'
 import { Paint } from './Paint'
-import invariant from 'ts-invariant'
+import { EdgeInsetsGeometry } from './EdgeInsets'
 
 export enum BorderStyle {
   None,
   Solid
 }
-
-export abstract class ShapeBorder {
-  public dimensions
-  
-  abstract scale (t: number)
-
-  abstract getOuterPath(
-    rect: Rect, 
-    textDirection?
-  ): CkPath
-  
-  abstract getInnerPath(
-    rect: Rect, 
-    textDirection
-  ): CkPath 
-  
-  abstract paint (
-    canvas: CkCanvas, 
-    rect: Rect, 
-    textDirection
-  )
-
-  
-  toString () {
-    return `[Painting ShapeBorder]`
-  }
-}
-
 
 export class BorderSide implements Paint {
   static None = new BorderSide(
@@ -207,5 +181,190 @@ export class BorderSide implements Paint {
 
   toString () {
     return `BorderSide(${this.color}, ${this.width}, ${this.style})`
+  }
+}
+
+export abstract class ShapeBorder {
+  static lerp(
+    a: ShapeBorder | null, 
+    b: ShapeBorder | null, 
+    t: number
+  ): ShapeBorder | null {
+    invariant(t !== null)
+
+    let result: ShapeBorder | null = null
+
+    if (b !== null) {
+      result = b.lerpFrom(a, t)
+    }
+    if (result == null && a != null) {
+      result = a.lerpTo(b, t)
+    }
+
+    return result ?? (t < 0.5 ? a : b)
+  }
+
+
+  abstract dimensions: EdgeInsetsGeometry
+  
+  abstract getOuterPath(
+    rect: Rect, 
+    textDirection?: TextDirection | null
+  ): CkPath
+  
+  abstract getInnerPath(
+    rect: Rect, 
+    textDirection?: TextDirection
+  ): CkPath 
+  
+  abstract paint (
+    canvas: CkCanvas, 
+    rect: Rect, 
+    textDirection?: TextDirection
+  )
+
+  abstract scale (t: number): ShapeBorder
+
+  // @sTODO
+  add (other: ShapeBorder, reversed?: boolean): ShapeBorder {
+    return this.add(other) ?? other.add(this, reversed)
+  }
+
+  lerpFrom (a: ShapeBorder | null, t: number) {
+    if (a === null) {
+      return this.scale(t)
+    }
+
+    return null
+  }
+
+  lerpTo (b: ShapeBorder | null, t: number) {
+    if (b === null) {
+      return this.scale(1.0 - t)
+    }
+
+    return null
+  }
+  
+  toString () {
+    return `[Painting ShapeBorder]`
+  }
+}
+
+export abstract class OutlinedBorder extends ShapeBorder {
+  public side: BorderSide
+
+  constructor (side: BorderSide) {
+    super()
+
+    invariant(side !== null)
+    this.side = side
+  }
+   
+  abstract copyWith (side: BorderSide | null): OutlinedBorder
+}
+
+
+export function paintBorder (
+  canvas: CkCanvas,
+  rect: Rect, 
+  top: BorderSide = BorderSide.None,
+  right: BorderSide = BorderSide.None,
+  bottom: BorderSide = BorderSide.None,
+  left: BorderSide = BorderSide.None,
+) {
+  invariant(canvas !== null)
+  invariant(rect !== null)
+  invariant(top !== null)
+  invariant(right !== null)
+  invariant(bottom !== null)
+  invariant(left !== null)
+
+  const paint = CkPaint.malloc()
+  paint.strokeWidth = 0.0
+
+  const path = CkPath.malloc()
+
+  switch (top.style) {
+    case BorderStyle.Solid: {
+      paint.color = top.color
+      path.reset()
+
+      path.moveTo(rect.left, rect.top)
+      path.lineTo(rect.right, rect.top)
+
+      if (top.width == 0.0) {
+        paint.style = Skia.PaintStyle.Stroke
+      } else {
+        paint.style =  Skia.PaintStyle.Fill
+        path.lineTo(rect.right - right.width, rect.top + top.width)
+        path.lineTo(rect.left + left.width, rect.top + top.width)
+      }
+      canvas.drawPath(path, paint)
+      break
+    }
+    case BorderStyle.None:
+      break
+  }
+
+  switch (right.style) {
+    case BorderStyle.Solid: {
+
+      paint.color = right.color
+      path.reset()
+      path.moveTo(rect.right, rect.top)
+      path.lineTo(rect.right, rect.bottom)
+      
+      if (right.width === 0.0)  {
+        paint.style = Skia.PaintStyle.Stroke
+      } else {
+        paint.style = Skia.PaintStyle.Fill
+        path.lineTo(rect.right - right.width, rect.bottom - bottom.width)
+        path.lineTo(rect.right - right.width, rect.top + top.width)
+      }
+      
+      canvas.drawPath(path, paint)
+      break
+    }
+    case BorderStyle.None:
+      break
+  }
+
+  switch (bottom.style) {
+    case BorderStyle.Solid:
+      paint.color = bottom.color
+      path.reset()
+      path.moveTo(rect.right, rect.bottom)
+      path.lineTo(rect.left, rect.bottom)
+      if (bottom.width == 0.0) {
+        paint.style = Skia.PaintStyle.Stroke
+      } else {
+        paint.style = Skia.PaintStyle.Fill
+        path.lineTo(rect.left + left.width, rect.bottom - bottom.width)
+        path.lineTo(rect.right - right.width, rect.bottom - bottom.width)
+      }
+      canvas.drawPath(path, paint)
+      break
+    case BorderStyle.None:
+      break
+  }
+
+  switch (left.style) {
+    case BorderStyle.Solid:
+      paint.color = left.color
+      path.reset()
+      path.moveTo(rect.left, rect.bottom)
+      path.lineTo(rect.left, rect.top)
+      if (left.width == 0.0) {
+        paint.style = Skia.PaintStyle.Stroke
+      } else {
+        paint.style = Skia.PaintStyle.Fill
+        path.lineTo(rect.left + left.width, rect.top + top.width)
+        path.lineTo(rect.left + left.width, rect.bottom - bottom.width)
+      }
+      canvas.drawPath(path, paint)
+      break
+    case BorderStyle.None:
+      break
   }
 }

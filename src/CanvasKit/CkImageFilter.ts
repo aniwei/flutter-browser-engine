@@ -44,17 +44,13 @@ export type CkBlurImageFilterOptions = {
 
 export class CkBlurImageFilter extends CkImageFilter {
   static malloc (options: CkBlurImageFilterOptions): CkImageFilter {
-    const blurImageFilter = new CkBlurImageFilter(this.init(options), options)
-    return blurImageFilter
-  }
-
-  static init (options: CkBlurImageFilterOptions): ImageFilter {
-    return Skia.ImageFilter.MakeBlur(
+    const blurImageFilter = new CkBlurImageFilter(Skia.ImageFilter.MakeBlur(
       options.sigmaX,
       options.sigmaY,
       options.tileMode,
       null
-    )
+    ), options)
+    return blurImageFilter
   }
 
   get modeString () {
@@ -114,19 +110,15 @@ export type CkMatrixImageFilterOptions = {
 export class CkMatrixImageFilter extends CkImageFilter {
   static malloc (options: CkMatrixImageFilterOptions): CkMatrixImageFilter {
     const matrixImageFilter = new CkMatrixImageFilter(
-      CkMatrixImageFilter.init(options), 
+      Skia.ImageFilter.MakeMatrixTransform(
+        options.matrix,
+        Skia.SkiaFilterOptions(options.filterQuality),
+        null,
+      ), 
       options
     )
 
     return matrixImageFilter
-  }
-
-  static init (options: CkMatrixImageFilterOptions): ImageFilter {
-    return Skia.ImageFilter.MakeMatrixTransform(
-      options.matrix,
-      Skia.SkiaFilterOptions(options.filterQuality),
-      null,
-    )
   }
 
   public matrix: Float32Array
@@ -167,15 +159,11 @@ export type CkColorFilterImageFilterOptions = {
 export class CkColorFilterImageFilter extends CkImageFilter {
   static malloc(options: CkColorFilterImageFilterOptions): CkImageFilter {
     const colorFilterImageFilter = new CkColorFilterImageFilter(
-      CkColorFilterImageFilter.init(options),
+      options.colorFilter.initRawImageFilter(),
       options
     )
 
     return colorFilterImageFilter
-  }
-
-  static init (options: CkColorFilterImageFilterOptions): ImageFilter {
-    return options.colorFilter.initRawImageFilter()
   }
 
   public colorFilter: CkColorFilter

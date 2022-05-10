@@ -1,6 +1,7 @@
-import { Size } from '@UI'
 import invariant from 'ts-invariant'
+import { lerpDouble, Offset, Rect, Size, TextDirection } from '@UI'
 import { Axis } from '.'
+import { clamp } from '@Shared'
 
 export abstract class EdgeInsetsGeometry {
   static infinity = MixedEdgeInsets.fromLRSETB(
@@ -12,12 +13,53 @@ export abstract class EdgeInsetsGeometry {
     Number.POSITIVE_INFINITY,
   )
 
-  abstract bottom
-  abstract end
-  abstract left
-  abstract right
-  abstract start
-  abstract top
+  static lerp(
+    a: EdgeInsetsGeometry | null, 
+    b: EdgeInsetsGeometry| null, 
+    t: number
+  ): EdgeInsetsGeometry | null {
+    invariant(t !== null)
+    if (a === null && b === null) {
+      return null
+    }
+    if (a === null) {
+      return b! * t
+    }
+
+    if (b === null) {
+      return a * (1.0 - t)
+    }
+
+    if (
+      a instanceof EdgeInsets && 
+      b instanceof EdgeInsets
+    ) {
+      return EdgeInsets.lerp(a, b, t)
+    }
+
+    if (
+      a instanceof EdgeInsetsDirectional && 
+      b instanceof EdgeInsetsDirectional
+    ) {
+      return EdgeInsetsDirectional.lerp(a, b, t)
+    }
+
+    return MixedEdgeInsets.fromLRSETB(
+      lerpDouble(a.left, b.left, t)!,
+      lerpDouble(a.right, b.right, t)!,
+      lerpDouble(a.start, b.start, t)!,
+      lerpDouble(a.end, b.end, t)!,
+      lerpDouble(a.top, b.top, t)!,
+      lerpDouble(a.bottom, b.bottom, t)!,
+    );
+  }
+
+  abstract bottom: number
+  abstract end: number
+  abstract left: number
+  abstract right: number
+  abstract start: number
+  abstract top: number
 
   get isNonNegative (): boolean {
     return (
@@ -58,7 +100,7 @@ export abstract class EdgeInsetsGeometry {
   } 
 
   get flipped () {
-    MixedEdgeInsets.fromLRSETB(
+    return MixedEdgeInsets.fromLRSETB(
       this.right, 
       this.left, 
       this.end, 
@@ -111,12 +153,12 @@ export abstract class EdgeInsetsGeometry {
     max: EdgeInsetsGeometry
   ) {
     return MixedEdgeInsets.fromLRSETB(
-      this.left.clamp(min.left, max.left),
-      this.right.clamp(min.right, max.right),
-      this.start.clamp(min.start, max.start),
-      this.end.clamp(min.end, max.end),
-      this.top.clamp(min.top, max.top),
-      this.bottom.clamp(min.bottom, max.bottom),
+      clamp(this.left, min.left, max.left),
+      clamp(this.right, min.right, max.right),
+      clamp(this.start, min.start, max.start),
+      clamp(this.end, min.end, max.end),
+      clamp(this.top, min.top, max.top),
+      clamp(this.bottom, min.bottom, max.bottom),
     );
   }
 
@@ -153,41 +195,7 @@ export abstract class EdgeInsetsGeometry {
   /// [EdgeInsets] and [EdgeInsetsDirectional] objects.
   EdgeInsetsGeometry operator %(double other);
 
-  /// Linearly interpolate between two [EdgeInsetsGeometry] objects.
-  ///
-  /// If either is null, this function interpolates from [EdgeInsets.zero], and
-  /// the result is an object of the same type as the non-null argument.
-  ///
-  /// If [lerp] is applied to two objects of the same type ([EdgeInsets] or
-  /// [EdgeInsetsDirectional]), an object of that type will be returned (though
-  /// this is not reflected in the type system). Otherwise, an object
-  /// representing a combination of both is returned. That object can be turned
-  /// into a concrete [EdgeInsets] using [resolve].
-  ///
-  /// {@macro dart.ui.shadow.lerp}
-  static EdgeInsetsGeometry? lerp(EdgeInsetsGeometry? a, EdgeInsetsGeometry? b, double t) {
-    assert(t != null);
-    if (a == null && b == null)
-      return null;
-    if (a == null)
-      return b! * t;
-    if (b == null)
-      return a * (1.0 - t);
-    if (a is EdgeInsets && b is EdgeInsets)
-      return EdgeInsets.lerp(a, b, t);
-    if (a is EdgeInsetsDirectional && b is EdgeInsetsDirectional)
-      return EdgeInsetsDirectional.lerp(a, b, t);
-    return MixedEdgeInsets.fromLRSETB(
-      ui.lerpDouble(a.this.left, b.this.left, t)!,
-      ui.lerpDouble(a.this.right, b.this.right, t)!,
-      ui.lerpDouble(a.this.start, b.this.start, t)!,
-      ui.lerpDouble(a.this.end, b.this.end, t)!,
-      ui.lerpDouble(a.this.top, b.this.top, t)!,
-      ui.lerpDouble(a.this.bottom, b.this.bottom, t)!,
-    );
-  }
-
-  EdgeInsets resolve(TextDirection? direction);
+  abstract resolve (direction: TextDirection): EdgeInsets
 
   isEqual (Object other) {
     if (other instanceof EdgeInsetsGeometry) {
@@ -203,62 +211,32 @@ export abstract class EdgeInsetsGeometry {
   }
 }
 
-/// An immutable set of offsets in each of the four cardinal directions.
-///
-/// Typically used for an offset from each of the four sides of a box. For
-/// example, the padding inside a box can be represented using this class.
-///
-/// The [EdgeInsets] class specifies offsets in terms of visual edges, left,
-/// top, right, and bottom. These values are not affected by the
-/// [TextDirection]. To support both left-to-right and right-to-left layouts,
-/// consider using [EdgeInsetsDirectional], which is expressed in terms of
-/// this.start_, top, this.end_, and bottom, where start and end are resolved in terms
-/// of a [TextDirection] (typically obtained from the ambient [Directionality]).
-///
-/// {@tool snippet}
-///
-/// Here are some examples of how to create [EdgeInsets] instances:
-///
-/// Typical eight-pixel margin on all sides:
-///
-/// ```dart
-/// const EdgeInsets.all(8.0)
-/// ```
-/// {@end-tool}
-/// {@tool snippet}
-///
-/// Eight pixel margin above and below, no horizontal margins:
-///
-/// ```dart
-/// const EdgeInsets.symmetric(vertical: 8.0)
-/// ```
-/// {@end-tool}
-/// {@tool snippet}
-///
-/// Left margin indent of 40 pixels:
-///
-/// ```dart
-/// const EdgeInsets.only(left: 40.0)
-/// ```
-/// {@end-tool}
-///
-/// See also:
-///
-///  * [Padding], a widget that accepts [EdgeInsets] to describe its margins.
-///  * [EdgeInsetsDirectional], which (for properties and arguments that accept
-///    the type [EdgeInsetsGeometry]) allows the horizontal insets to be
-///    specified in a [TextDirection]-aware manner.
 export class EdgeInsets extends EdgeInsetsGeometry {
+  static fromWindowPadding (
+    padding, 
+    devicePixelRatio
+  ) {
+    return EdgeInsets.fromLTRB(
+      padding.left / devicePixelRatio,
+      padding.top / devicePixelRatio,
+      padding.right / devicePixelRatio,
+      padding.bottom / devicePixelRatio
+    )
+  }
+
+  static Zero = EdgeInsets.only()
   static fromLTRB(
     left: number, 
     top: number, 
     right: number,  
     bottom: number
   ) { 
-    this.left = left
-    this.top = top, 
-    this.right = right
-    this.bottom = bottom
+    return new EdgeInsets(
+      left
+      top, 
+      right
+      bottom
+    )
   }
 
   static all (value: number) {
@@ -286,20 +264,18 @@ export class EdgeInsets extends EdgeInsetsGeometry {
     )
   }
 
-  /// Creates insets that match the given window padding.
-  ///
-  /// If you need the current system padding or view insets in the context of a
-  /// widget, consider using [MediaQuery.of] to obtain these values rather than
-  /// using the value from [dart:ui.window], so that you get notified of
-  /// changes.
-  EdgeInsets.fromWindowPadding(ui.WindowPadding padding, double devicePixelRatio)
-    : left = padding.left / devicePixelRatio,
-      top = padding.top / devicePixelRatio,
-      right = padding.right / devicePixelRatio,
-      bottom = padding.bottom / devicePixelRatio;
-
-  /// An [EdgeInsets] with zero offsets in each direction.
-  static const EdgeInsets zero = EdgeInsets.only();
+  constructor (
+    left: number, 
+    top: number, 
+    right: number,  
+    bottom: number
+  ) {
+    super()
+    this.left = left 
+    this.top = top
+    this.right = right
+    this.bottom = bottom
+  }
 
   /// The offset from the left.
   final double left;
@@ -331,55 +307,40 @@ export class EdgeInsets extends EdgeInsetsGeometry {
   @override
   double get this.end => 0.0;
 
-  /// An Offset describing the vector from the top left of a rectangle to the
-  /// top left of that rectangle inset by this object.
-  Offset get topLeft => Offset(left, top);
+  
+  get topLeft () {
+    return new Offset(this.left, this.top)
+  } 
+  get topRight () {
+    return new Offset(-this.right, this.top)
+  } 
+  get bottomLeft () {
+    return new Offset(this.left, -this.bottom)
+  } 
+  get bottomRight () {
+    return new Offset(-this.right, -this.bottom)
+  } 
 
-  /// An Offset describing the vector from the top right of a rectangle to the
-  /// top right of that rectangle inset by this object.
-  Offset get topRight => Offset(-right, top);
+  get flipped () {
+    return EdgeInsets.fromLTRB(this.right, this.bottom, this.left, this.top)
+  } 
 
-  /// An Offset describing the vector from the bottom left of a rectangle to the
-  /// bottom left of that rectangle inset by this object.
-  Offset get bottomLeft => Offset(left, -bottom);
-
-  /// An Offset describing the vector from the bottom right of a rectangle to the
-  /// bottom right of that rectangle inset by this object.
-  Offset get bottomRight => Offset(-right, -bottom);
-
-  /// An [EdgeInsets] with top and bottom as well as left and right flipped.
-  @override
-  EdgeInsets get flipped => EdgeInsets.fromLTRB(right, bottom, left, top);
-
-  /// Returns a new rect that is bigger than the given rect in each direction by
-  /// the amount of inset in each direction. Specifically, the left edge of the
-  /// rect is moved left by [left], the top edge of the rect is moved up by
-  /// [top], the right edge of the rect is moved right by [right], and the
-  /// bottom edge of the rect is moved down by [bottom].
-  ///
-  /// See also:
-  ///
-  ///  * [inflateSize], to inflate a [Size] rather than a [Rect].
-  ///  * [deflateRect], to deflate a [Rect] rather than inflating it.
-  Rect inflateRect(Rect rect) {
-    return Rect.fromLTRB(rect.left - left, rect.top - top, rect.right + right, rect.bottom + bottom);
+  inflateRect (rect: Rect) {
+    return Rect.fromLTRB(
+      rect.left - this.left, 
+      rect.top - this.top, 
+      rect.right + this.right, 
+      rect.bottom + this.bottom
+    )
   }
 
-  /// Returns a new rect that is smaller than the given rect in each direction by
-  /// the amount of inset in each direction. Specifically, the left edge of the
-  /// rect is moved right by [left], the top edge of the rect is moved down by
-  /// [top], the right edge of the rect is moved left by [right], and the
-  /// bottom edge of the rect is moved up by [bottom].
-  ///
-  /// If the argument's [Rect.size] is smaller than [collapsedSize], then the
-  /// resulting rectangle will have negative dimensions.
-  ///
-  /// See also:
-  ///
-  ///  * [deflateSize], to deflate a [Size] rather than a [Rect].
-  ///  * [inflateRect], to inflate a [Rect] rather than deflating it.
-  Rect deflateRect(Rect rect) {
-    return Rect.fromLTRB(rect.left + left, rect.top + top, rect.right - right, rect.bottom - bottom);
+  deflateRect (rect: Rect) {
+    return Rect.fromLTRB(
+      rect.left + this.left, 
+      rect.top + this.top, 
+      rect.right - this.right, 
+      rect.bottom - this.bottom
+    )
   }
 
   subtract (other: EdgeInsetsGeometry): EdgeInsetsGeometry  {
@@ -398,8 +359,10 @@ export class EdgeInsets extends EdgeInsetsGeometry {
     return super.add(other)
   }
 
-  @override
-  EdgeInsetsGeometry clamp(EdgeInsetsGeometry min, EdgeInsetsGeometry max) {
+  clamp (
+    min: EdgeInsetsGeometry, 
+    max: EdgeInsetsGeometry
+  ) {
     return EdgeInsets.fromLTRB(
       this.left.clamp(min.left, max.left),
       this.top.clamp(min.top, max.top),
@@ -729,15 +692,15 @@ class EdgeInsetsDirectional extends EdgeInsetsGeometry {
   EdgeInsets resolve(TextDirection? direction) {
     assert(direction != null);
     switch (direction!) {
-      case TextDirection.rtl:
+      case TextDirection.Rtl:
         return EdgeInsets.fromLTRB(end, top, start, bottom);
-      case TextDirection.ltr:
+      case TextDirection.Ltr:
         return EdgeInsets.fromLTRB(start, top, end, bottom);
     }
   }
 }
 
-class MixedEdgeInsets extends EdgeInsetsGeometry {
+export class MixedEdgeInsets extends EdgeInsetsGeometry {
   static fromLRSETB(
     left: number, 
     right: number, 
@@ -764,6 +727,23 @@ class MixedEdgeInsets extends EdgeInsetsGeometry {
   public top: number
   public bottom: number
 
+  constructor (
+    left: number,
+    right: number,
+    start: number,
+    end: number,
+    top: number,
+    bottom: number
+  ) {
+    super()
+    this.left = left
+    this.right = right
+    this.start = start
+    this.end = end
+    this.top = top
+    this.bottom = bottom
+  }
+
     
   get isNonNegative () {
     return (
@@ -776,20 +756,29 @@ class MixedEdgeInsets extends EdgeInsetsGeometry {
     )
   }
 
-  @override
-  MixedEdgeInsets operator -() {
+  subtract (other?) {
+    if (other === undefined) {
+      return MixedEdgeInsets.fromLRSETB(
+        -this.left,
+        -this.right,
+        -this.start,
+        -this.end,
+        -this.top,
+        -this.bottom,
+      )
+    }
+
     return MixedEdgeInsets.fromLRSETB(
-      -this.left,
-      -this.right,
-      -this.start,
-      -this.end,
-      -this.top,
-      -this.bottom,
-    );
+      this.left - other,
+      this.right - other,
+      this.start - other,
+      this.end - other,
+      this.top - other,
+      this.bottom - other,
+    )
   }
 
-  @override
-  MixedEdgeInsets operator *(double other) {
+  multiply (other: number ) {
     return MixedEdgeInsets.fromLRSETB(
       this.left * other,
       this.right * other,
@@ -800,8 +789,7 @@ class MixedEdgeInsets extends EdgeInsetsGeometry {
     );
   }
 
-  @override
-  MixedEdgeInsets operator /(double other) {
+  divide (other: number) {
     return MixedEdgeInsets.fromLRSETB(
       this.left / other,
       this.right / other,
@@ -812,41 +800,30 @@ class MixedEdgeInsets extends EdgeInsetsGeometry {
     );
   }
 
-  @override
-  MixedEdgeInsets operator ~/(double other) {
-    return MixedEdgeInsets.fromLRSETB(
-      Math.floor(this.left / other),
-      Math.floor(this.right / other),
-      Math.floor(this.start / other),
-      Math.floor(this.end / other),
-      Math.floor(this.top / other),
-      Math.floor(this.bottom / other),
-    )
-  }
-
-  @override
-  MixedEdgeInsets operator %(double other) {
+  mod (other: number) {
     return MixedEdgeInsets.fromLRSETB(
       this.left % other,
       this.right % other,
       this.start % other,
       this.end % other,
       this.top % other,
-      this.bottom % other,
-    );
+      this.bottom % other
+    )
   }
 
-  resolve (direction: TextDirection | null): EdgeInsets  {
+  resolve (
+    direction: TextDirection | null
+  ): EdgeInsets {
     invariant(direction !== null)
-    switch (direction!) {
-      case TextDirection.rtl:
+    switch (direction) {
+      case TextDirection.Rtl:
         return EdgeInsets.fromLTRB(
           this.end + this.left,
           this.top, 
           this.start + this.right, 
           this.bottom
         )
-      case TextDirection.ltr:
+      case TextDirection.Ltr:
         return EdgeInsets.fromLTRB(
           this.start + this.left, 
           this.top, 

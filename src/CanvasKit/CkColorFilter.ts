@@ -17,18 +17,16 @@ export abstract class CkColorFilter {
 }
 
 export class ManagedSkiaColorFilter extends ManagedSkiaObject<ColorFilter> {
-  static malloc(colorFilter: CkColorFilter): ManagedSkiaColorFilter {
+  static malloc (colorFilter: CkColorFilter): ManagedSkiaColorFilter {
     const managedSkiaColorFilter = new ManagedSkiaColorFilter(
-      this.init(colorFilter), 
+      colorFilter.initRawColorFilter(), 
       colorFilter,
     )
 
     return managedSkiaColorFilter
   }
 
-  static init(colorFilter: CkColorFilter): ColorFilter {
-    return colorFilter.initRawColorFilter()
-  }
+  
 
   public colorFilter: CkColorFilter
 
@@ -38,7 +36,7 @@ export class ManagedSkiaColorFilter extends ManagedSkiaObject<ColorFilter> {
   }
 
   resurrect () {
-    return ManagedSkiaColorFilter.init(this.colorFilter)
+    return this.colorFilter.initRawColorFilter()
   }
 
   delete () {
@@ -65,7 +63,7 @@ export type CkBlendModeColorFilterOptions = {
 }
 
 export class CkBlendModeColorFilter extends CkColorFilter {
-  static malloc (options: CkBlendModeColorFilterOptions) {
+  static init (options: CkBlendModeColorFilterOptions) {
     const blendModeColorFilter = new CkBlendModeColorFilter(options)
     return blendModeColorFilter
   }
@@ -135,7 +133,7 @@ export class CkMatrixColorFilter extends CkColorFilter {
 
 
 export class CkLinearToSrgbGammaColorFilter extends CkColorFilter {
-  static malloc () {
+  static init () {
     return new CkLinearToSrgbGammaColorFilter()
   }
 

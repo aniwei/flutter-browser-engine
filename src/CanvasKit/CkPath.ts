@@ -12,7 +12,7 @@ export class CkPath extends ManagedSkiaObject<Path> {
   }
 
   static fromPath (skPath: Path, fillType: FillType) {
-    const path = this.malloc()
+    const path = CkPath.malloc()
     path.fillType = fillType
     path.skia = skPath
     return path
@@ -33,11 +33,7 @@ export class CkPath extends ManagedSkiaObject<Path> {
   }
 
   static malloc (): CkPath {
-    return new CkPath(this.init())
-  }
-
-  static init () {
-    return new Skia.Path()
+    return new CkPath(new Skia.Path())
   }
 
   @setter(function (this, value) {

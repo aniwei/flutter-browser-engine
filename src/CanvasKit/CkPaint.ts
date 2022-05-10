@@ -2,7 +2,7 @@ import { setter } from '@Shared'
 import { Color } from '@UI'
 import { ManagedSkiaObject, Skia, SkiaFilterQuality } from '@Skia'
 import { ManagedSkiaColorFilter, CkComposeColorFilter, CkMatrixColorFilter } from './CkColorFilter'
-import type { BlendMode, ColorFilter, ColorInt, ImageFilter, MaskFilter, Paint, PaintStyle, StrokeCap, StrokeJoin } from 'canvaskit-wasm'
+import type { BlendMode, ColorFilter, ImageFilter, MaskFilter, Paint, PaintStyle, StrokeCap, StrokeJoin } from 'canvaskit-wasm'
 import type { CkManagedSkImageFilterConvertible } from './CkImageFilter'
 import type { CkShader } from './CkShader'
 
@@ -20,11 +20,7 @@ export class CkPaint extends ManagedSkiaObject<Paint> {
   } 
 
   static malloc () {
-    return new CkPaint(CkPaint.init())
-  }
-
-  static init () {
-    return new Skia.Paint()
+    return new CkPaint(new Skia.Paint())
   }
 
   @setter(function (this, blendMode: BlendMode) {
@@ -180,7 +176,7 @@ export class CkPaint extends ManagedSkiaObject<Paint> {
   }
 
   resurrect (): Paint {
-    const paint = CkPaint.init()
+    const paint = new Skia.Paint()
     paint.setBlendMode(this.blendMode)
     paint.setStyle(this.style)
     paint.setStrokeWidth(this.strokeWidth)
