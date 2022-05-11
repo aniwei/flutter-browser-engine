@@ -223,7 +223,7 @@ export abstract class ShapeBorder {
     textDirection?: TextDirection
   )
 
-  abstract scale (t: number): ShapeBorder
+  abstract scale (t: number)
 
   // @sTODO
   add (other: ShapeBorder, reversed?: boolean): ShapeBorder | null {

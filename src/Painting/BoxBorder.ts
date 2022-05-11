@@ -317,22 +317,6 @@ export class Border extends BoxBorder {
     this.left = left
   }
 
-  getInnerPath(
-    rect: Rect, 
-    textDirection: TextDirection
-  ): CkPath {
-    const path = CkPath.malloc()
-    path.addArc(this.dimensions.resolve(textDirection).deflateRect(rect))
-    return path
-  }
-
-  getOuterPath (
-    rect: Rect, 
-    textDirection: TextDirection
-  ): CkPath {
-
-  }
-
   add (
     other: ShapeBorder, 
     reversed = false
@@ -362,9 +346,9 @@ export class Border extends BoxBorder {
   lerpFrom (
     a: ShapeBorder | null, 
     t: number
-  ): ShapeBorder | null {
+  ) {
     if (a instanceof Border) {
-      return Border.lerp(a, this, t)
+      return Border.lerp(a, this, t) as ShapeBorder
     }
 
     return super.lerpFrom(a, t)
@@ -375,7 +359,7 @@ export class Border extends BoxBorder {
     t: number
   ): ShapeBorder | null {
     if (b instanceof Border) {
-      return Border.lerp(this, b, t)
+      return Border.lerp(this, b, t) as ShapeBorder
     }
     return super.lerpTo(b, t)
   }
@@ -406,8 +390,9 @@ export class BorderDirectional extends BoxBorder {
     }
 
     if (a === null) {
-      return b?.scale(t)
+      return b ? b.scale(t) : null
     }
+
     if (b === null) {
       return a.scale(1.0 - t)
     }
@@ -571,7 +556,7 @@ export class BorderDirectional extends BoxBorder {
     t: number
   ): ShapeBorder | null {
     if (a instanceof BorderDirectional) {
-      return BorderDirectional.lerp(a, this, t)
+      return BorderDirectional.lerp(a, this, t) as ShapeBorder
     }
 
     return super.lerpFrom(a, t)
