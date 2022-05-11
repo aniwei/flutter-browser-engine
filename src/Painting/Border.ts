@@ -226,8 +226,8 @@ export abstract class ShapeBorder {
   abstract scale (t: number): ShapeBorder
 
   // @sTODO
-  add (other: ShapeBorder, reversed?: boolean): ShapeBorder {
-    return this.add(other) ?? other.add(this, reversed)
+  add (other: ShapeBorder, reversed?: boolean): ShapeBorder | null {
+    return null
   }
 
   lerpFrom (a: ShapeBorder | null, t: number) {

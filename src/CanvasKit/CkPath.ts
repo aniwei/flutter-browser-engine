@@ -75,6 +75,12 @@ export class CkPath extends ManagedSkiaObject<Path> {
 
   }
 
+  addRect (
+    rect: Rect
+  ) {
+
+  }
+
   moveTo (x: number, y: number) {
     this.skia.moveTo(x, y)
   }
