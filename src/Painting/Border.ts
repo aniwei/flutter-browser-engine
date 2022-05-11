@@ -209,12 +209,12 @@ export abstract class ShapeBorder {
   
   abstract getOuterPath(
     rect: Rect, 
-    textDirection?: TextDirection | null
+    textDirection: TextDirection | null
   ): CkPath
   
   abstract getInnerPath(
     rect: Rect, 
-    textDirection?: TextDirection
+    textDirection: TextDirection | null
   ): CkPath 
   
   abstract paint (

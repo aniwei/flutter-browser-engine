@@ -68,7 +68,7 @@ export abstract class BoxBorder extends ShapeBorder {
 
   getInnerPath (
     rect: Rect, 
-    textDirection: TextDirection
+    textDirection: TextDirection | null
   ): CkPath {
       
   }
