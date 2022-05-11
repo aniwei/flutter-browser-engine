@@ -1,8 +1,9 @@
 import { invariant } from 'ts-invariant'
 import { TextDirection } from 'canvaskit-wasm'
 import { CkCanvas, CkPaint, CkPath } from '@CanvasKit'
-import { Color, lerpDouble, Rect } from '@UI'
+import { Color, Rect } from '@UI'
 import { Skia } from '@Skia'
+import { lerpDouble } from '@Math'
 import { Paint } from './Paint'
 import { EdgeInsetsGeometry } from './EdgeInsets'
 

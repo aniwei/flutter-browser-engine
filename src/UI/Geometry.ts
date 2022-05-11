@@ -1,16 +1,9 @@
 import { invariant } from 'ts-invariant'
+import { lerpDouble } from '@Math'
 
 const GIANT_SCALAR = 1.0E+9
 const POSITIVE_INFINITY = Number.POSITIVE_INFINITY
 const NEGATIVE_INFINITY = Number.NEGATIVE_INFINITY
-
-export function lerpDouble (
-  a: number,
-  b: number,
-  t: number
-) {
-  return a * (1.0 - t) + b * t
-}
 
 export abstract class OffsetBase extends Float32Array {
   public get dx () {
@@ -123,7 +116,7 @@ export class Offset extends OffsetBase {
     )
   }
 
-  plus (offset: Offset): Offset {
+  add (offset: Offset): Offset {
     return new Offset(
       this.dx + offset.dx, 
       this.dy + offset.dy
@@ -258,7 +251,6 @@ export class Size extends OffsetBase {
         )
       }
     }
-
   }
 
   public width: number

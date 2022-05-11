@@ -33,6 +33,7 @@
       "@CanvasKit": ["src/CanvasKit/index.ts"],
       "@CanvasKitAPI": ["src/Engine/CanvasKit/CanvasKitAPI/index.ts"],
       "@Types": ["./src/Types/index.ts"],
+      "@Math": ["./src/Math/index.ts"],
       "@Shared": ["./src/Shared/index.ts"],
       "@Engine": ["./src/Engine/index.ts"],
       "@Rendering": ["./src/Rendering/index.ts"]
