@@ -1,23 +1,9 @@
+import invariant from 'ts-invariant'
 import { Skia } from '@Skia'
 import { Color, Offset, Rect } from '@UI'
 import { TextDirection, TileMode } from 'canvaskit-wasm'
-import { lerpDouble } from 'src/Math'
-import { listEquals } from 'src/Math/list'
-import invariant from 'ts-invariant'
+import { lerpDouble, listEquals } from '@Math'
 import { Alignment, AlignmentGeometry } from './Alignment'
-
-export class ColorsAndStops {
-  public colors: Color[]
-  public stops: number[]
-  
-  constructor(
-    colors: Color[], 
-    stops: number[]
-  ) {
-    this.colors = colors
-    this.stops = stops
-  }
-}
 
 function sample(
   colors: Color[], 
@@ -75,6 +61,19 @@ function interpolateColorsAndStops (
 }
 
 
+export class ColorsAndStops {
+  public colors: Color[]
+  public stops: number[]
+  
+  constructor(
+    colors: Color[], 
+    stops: number[]
+  ) {
+    this.colors = colors
+    this.stops = stops
+  }
+}
+
 export abstract class GradientTransform {
   abstract transform (
     bounds: Rect, 
@@ -123,7 +122,7 @@ export class GradientRotation extends GradientTransform {
   }
 }
 
-abstract class Gradient {
+export abstract class Gradient {
   static lerp (
     a: Gradient | null, 
     b: Gradient | null, 
@@ -229,6 +228,7 @@ export class LinearGradient extends Gradient {
     tileMode: TileMode = Skia.TileMode.Clamp,
     transform: GradientTransform | null
   ) {
+    invariant(begin !== null)
     invariant(end !== null)
     invariant(tileMode !== null)
 
@@ -268,18 +268,26 @@ export class LinearGradient extends Gradient {
     );
   }
 
-  @override
-  Gradient? lerpFrom(Gradient? a, double t) {
-    if (a == null || (a is LinearGradient))
-      return LinearGradient.lerp(a as LinearGradient?, this, t);
-    return super.lerpFrom(a, t);
+  lerpFrom (
+    a: Gradient | null, 
+    t: number
+  ): Gradient | null {
+    if (a == null || (a instanceof LinearGradient)) {
+      return LinearGradient.lerp(a as LinearGradient, this, t)
+    }
+
+    return super.lerpFrom(a, t)
   }
 
-  @override
-  Gradient? lerpTo(Gradient? b, double t) {
-    if (b == null || (b is LinearGradient))
-      return LinearGradient.lerp(this, b as LinearGradient?, t);
-    return super.lerpTo(b, t);
+  lerpTo (
+    b: Gradient | null, 
+    t: number
+  ): Gradient | null {
+    if (b === null || (b instanceof LinearGradient)) {
+      return LinearGradient.lerp(this, b as LinearGradient, t)
+    }
+
+    return super.lerpTo(b, t)
   }
 
   
