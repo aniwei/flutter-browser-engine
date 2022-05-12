@@ -1,8 +1,9 @@
-import { CkCanvas, CkPath } from '@CanvasKit';
-import { UnsupportedError } from '@Shared';
-import { Offset, Rect, Size, TextDirection } from '@UI';
-import invariant from 'ts-invariant';
-import { EdgeInsets } from './EdgeInsets';
+import invariant from 'ts-invariant'
+import { CkCanvas, CkPath } from '@CanvasKit'
+import { UnsupportedError } from '@Shared'
+import { Offset, Rect, Size } from '@UI'
+import { TextDirection } from 'canvaskit-wasm'
+import { EdgeInsets, EdgeInsetsGeometry } from './EdgeInsets'
 
 type VoidCallback = { (): void }
 
@@ -29,11 +30,13 @@ export abstract class Decoration {
       return b
     }
 
-    return b.lerpFrom(a, t)
-        ?? a.lerpTo(b, t)
-        ?? (t < 0.5 ? (a.lerpTo(null, t * 2.0) ?? a) : (b.lerpFrom(null, (t - 0.5) * 2.0) ?? b));
+    return b.lerpFrom(a, t) ?? a.lerpTo(b, t) ?? (
+      t < 0.5 ? 
+        (a.lerpTo(null, t * 2.0) ?? a) : 
+        (b.lerpFrom(null, (t - 0.5) * 2.0) ?? b)
+    )
   }
-  public get padding (): EdgeInsetsGeometry {
+  public get padding (): EdgeInsetsGeometry | null {
     return EdgeInsets.Zero
   }
 
@@ -41,10 +44,6 @@ export abstract class Decoration {
     return false
   }
  
-  toStringShort () {
-    return `Decoration`
-  }
-
   debugAssertIsValid () {
     return true
   } 
@@ -72,14 +71,14 @@ export abstract class Decoration {
     return true
   }
 
-  abstract createBoxPainter (onChanged: VoidCallback )
+  abstract createBoxPainter ( onChanged: VoidCallback )
 
   
   getClipPath (
     rect: Rect, 
     textDirection: TextDirection
   ): CkPath  {
-    throw new UnsupportedError(``)
+    throw new UnsupportedError()
   }
 }
 

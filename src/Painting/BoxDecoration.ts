@@ -1,11 +1,13 @@
-import { CkCanvas, CkPath } from '@CanvasKit';
-import { Color, Offset, Rect, TextDirection } from '@UI';
-import { BlendMode } from 'canvaskit-wasm';
-import invariant from 'ts-invariant';
-import { BorderRadiusGeometry } from './BorderRadius';
-import { BoxBorder, BoxShape } from './BoxBorder';
-import { BoxShadow } from './BoxShadow';
-import { ImageConfiguration } from './ImageProvider';
+import invariant from 'ts-invariant'
+import { CkCanvas, CkPath } from '@CanvasKit'
+import { Color, Offset, Rect } from '@UI'
+import { BlendMode } from 'canvaskit-wasm'
+import { BorderRadiusGeometry } from './BorderRadius'
+import { BoxBorder, BoxShape } from './BoxBorder'
+import { BoxShadow } from './BoxShadow'
+import { EdgeInsetsGeometry } from './EdgeInsets'
+import { ImageConfiguration } from './ImageProvider'
+import { Decoration } from './Decoration'
 
 export class BoxDecoration extends Decoration {
   public color: Color | null

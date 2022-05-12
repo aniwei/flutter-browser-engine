@@ -849,7 +849,7 @@ export class Rect extends Float32Array {
 }
 
 export class RRect extends Float32Array {
-  static Zero = new RRect()
+  static Zero = RRect.raw()
   static fromLTRBXY (
     left: number, 
     top: number, 
@@ -904,7 +904,7 @@ export class RRect extends Float32Array {
     radiusX: number,
     radiusY: number
   ) {
-    return new RRect(
+    return RRect.raw(
       rect.top,
       rect.left,
       rect.right,
@@ -925,7 +925,7 @@ export class RRect extends Float32Array {
     rect: Rect,
     radius: Radius
   ) {
-    return new RRect(
+    return RRect.raw(
       rect.top,
       rect.left,
       rect.right,
@@ -937,57 +937,11 @@ export class RRect extends Float32Array {
       radius.x,
       radius.y,
       radius.x,
-      radius.y
+      radius.y,
+      radius.x === radius.y
     )
   }
 
-  static raw(
-    left: number = 0.0,
-    top: number = 0.0,
-    right: number = 0.0,
-    bottom: number = 0.0,
-    tlRadiusX: number = 0.0,
-    tlRadiusY: number = 0.0,
-    trRadiusX: number = 0.0,
-    trRadiusY: number = 0.0,
-    brRadiusX: number = 0.0,
-    brRadiusY: number = 0.0,
-    blRadiusX: number = 0.0,
-    blRadiusY: number = 0.0,
-    uniformRadii: boolean = false,
-  ) {
-
-    invariant(left !== null)
-    invariant(top !== null)
-    invariant(right !== null)
-    invariant(bottom !== null)
-    invariant(tlRadiusX !== null)
-    invariant(tlRadiusY !== null)
-    invariant(trRadiusX !== null)
-    invariant(trRadiusY !== null)
-    invariant(brRadiusX !== null)
-    invariant(brRadiusY !== null)
-    invariant(blRadiusX !== null)
-    invariant(blRadiusY !== null)
-
-    this.left = left
-    this.top = top
-    this.right = right
-    this.bottom = bottom
-    this.tlRadiusX = tlRadiusX
-    this.tlRadiusY = tlRadiusY
-    this.trRadiusX = trRadiusX
-    this.trRadiusY = trRadiusY
-    this.brRadiusX = brRadiusX
-    this.brRadiusY = brRadiusY
-    this.blRadiusX = blRadiusX
-    this.blRadiusY = blRadiusY
-    this.uniformRadii = uniformRadii
-    
-    this.webOnlyUniformRadii = uniformRadii
-  }
-
-  // TODO
   static fromRectAndCorners (
     rect: Rect,
     topLeft: Radius = Radius.Zero,
@@ -1017,6 +971,52 @@ export class RRect extends Float32Array {
         topLeft.x === bottomRight.x &&
         topLeft.x === bottomRight.y
       )
+    )
+  }
+
+  static raw(
+    left: number = 0.0,
+    top: number = 0.0,
+    right: number = 0.0,
+    bottom: number = 0.0,
+    tlRadiusX: number = 0.0,
+    tlRadiusY: number = 0.0,
+    trRadiusX: number = 0.0,
+    trRadiusY: number = 0.0,
+    blRadiusX: number = 0.0,
+    blRadiusY: number = 0.0,
+    brRadiusX: number = 0.0,
+    brRadiusY: number = 0.0,
+    uniformRadii: boolean = false,
+  ) {
+
+    invariant(left !== null)
+    invariant(top !== null)
+    invariant(right !== null)
+    invariant(bottom !== null)
+    invariant(tlRadiusX !== null)
+    invariant(tlRadiusY !== null)
+    invariant(trRadiusX !== null)
+    invariant(trRadiusY !== null)
+    invariant(brRadiusX !== null)
+    invariant(brRadiusY !== null)
+    invariant(blRadiusX !== null)
+    invariant(blRadiusY !== null)
+
+    return new RRect(
+      left,
+      top,
+      right,
+      bottom,
+      tlRadiusX,
+      tlRadiusY,
+      trRadiusX,
+      trRadiusY,
+      brRadiusX,
+      brRadiusY,
+      blRadiusX,
+      blRadiusY,
+      uniformRadii,
     )
   }
 
@@ -1093,6 +1093,7 @@ export class RRect extends Float32Array {
     this[11] = value
   }
   public uniformRadii: boolean = false
+  public webOnlyUniformRadii: boolean
 
   public get tlRadius () {
     return Radius.elliptical(this.tlRadiusX, this.tlRadiusY)
@@ -1169,6 +1170,7 @@ export class RRect extends Float32Array {
     ])
 
     this.uniformRadii = uniformRadii
+    this.webOnlyUniformRadii = uniformRadii
   }
 
   getMin (

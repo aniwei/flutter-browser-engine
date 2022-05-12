@@ -5,6 +5,7 @@ import { Color, Rect } from '@UI'
 import { BorderSide, BorderStyle, paintBorder, ShapeBorder } from './Border'
 import { EdgeInsets, EdgeInsetsDirectional, EdgeInsetsGeometry } from './EdgeInsets'
 import { BorderRadius } from './BorderRadius'
+import { TextDirection } from 'canvaskit-wasm'
 
 export enum BoxShape {
   Rectangle,

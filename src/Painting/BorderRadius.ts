@@ -1,3 +1,4 @@
+import { Skia } from '@Skia'
 import { Radius, Rect, RRect } from '@UI'
 import { TextDirection } from 'canvaskit-wasm'
 import invariant from 'ts-invariant'
@@ -20,14 +21,34 @@ export abstract class BorderRadiusGeometry {
     return a.add(b.subtract(a).multiply(t))
   }
 
-  abstract topLeft: Radius
-  abstract topRight: Radius
-  abstract bottomLeft: Radius
-  abstract bottomRight: Radius
-  abstract topStart: Radius
-  abstract topEnd: Radius
-  abstract bottomStart: Radius
-  abstract bottomEnd: Radius
+  public topLeft: Radius
+  public topRight: Radius
+  public bottomLeft: Radius
+  public bottomRight: Radius
+  public topStart: Radius
+  public topEnd: Radius
+  public bottomStart: Radius
+  public bottomEnd: Radius
+
+  constructor (
+    topLeft: Radius,
+    topRight: Radius,
+    bottomLeft: Radius,
+    bottomRight: Radius,
+    topStart: Radius,
+    topEnd: Radius,
+    bottomStart: Radius,
+    bottomEnd: Radius,
+  ) {
+    this.topLeft = topLeft
+    this.topRight = topRight
+    this.bottomLeft = bottomLeft
+    this.bottomRight = bottomRight
+    this.topStart = topStart
+    this.topEnd = topEnd
+    this.bottomStart = bottomStart
+    this.bottomEnd = bottomEnd
+  }
 
   add (other: BorderRadiusGeometry): BorderRadiusGeometry {
     return new MixedBorderRadius(
@@ -55,9 +76,10 @@ export abstract class BorderRadiusGeometry {
     )
   }
 
-  abstract multiply (other: number): BorderRadius
-  abstract divide (other: number): BorderRadius
-  abstract modulo (other: number): BorderRadius
+  abstract opposite (): BorderRadiusGeometry
+  abstract multiply (other: number): BorderRadiusGeometry
+  abstract divide (other: number): BorderRadiusGeometry
+  abstract modulo (other: number): BorderRadiusGeometry
   abstract resolve (direction: TextDirection | null): BorderRadius
 
   isEqual (other: BorderRadiusGeometry) {
@@ -124,14 +146,14 @@ export class BorderRadius extends BorderRadiusGeometry {
   }
 
   static circular (radius: number) {
-    return this.all(Radius.circular(radius))
+    return BorderRadius.all(Radius.circular(radius))
   }
 
   static vertical (
     top: Radius = Radius.Zero,
     bottom: Radius = Radius.Zero,
   ) {
-    return this.only(
+    return BorderRadius.only(
       top,
       top,
       bottom,
@@ -143,7 +165,7 @@ export class BorderRadius extends BorderRadiusGeometry {
     left: Radius = Radius.Zero,
     right: Radius = Radius.Zero,
   ) {
-    this.only(
+    BorderRadius.only(
       left,
       right,
       left,
@@ -165,35 +187,22 @@ export class BorderRadius extends BorderRadiusGeometry {
     )
   }
 
-  public topLeft: Radius
-  public topRight: Radius
-  public bottomLeft: Radius
-  public bottomRight: Radius
-
-  public get topStart () {
-    return Radius.Zero
-  }
-  public get topEnd () {
-    return Radius.Zero
-  }
-  public get bottomStart () {
-    return Radius.Zero
-  }
-  public get bottomEnd () {
-    return Radius.Zero
-  }
-
   constructor (
     topLeft: Radius,
     topRight: Radius,
     bottomLeft: Radius,
     bottomRight: Radius,
   ) {
-    super()
-    this.topLeft = topLeft
-    this.topRight = topRight
-    this.bottomLeft = bottomLeft
-    this.bottomRight = bottomRight
+    super(
+      topLeft,
+      topRight,
+      bottomLeft,
+      bottomRight,
+      Radius.Zero,
+      Radius.Zero,
+      Radius.Zero,
+      Radius.Zero,
+    )
   }
 
   
@@ -208,52 +217,77 @@ export class BorderRadius extends BorderRadiusGeometry {
       topRight ?? this.topRight,
       bottomLeft ?? this.bottomLeft,
       bottomRight ?? this.bottomRight,
-    );
+    )
   }
 
   toRRect (rect: Rect ): RRect {
     return RRect.fromRectAndCorners(
       rect,
-      topLeft,
-      topRight,
-      bottomLeft,
-      bottomRight,
+      this.topLeft,
+      this.topRight,
+      this.bottomLeft,
+      this.bottomRight,
     )
   }
 
-  subtract (other: BorderRadiusGeometry | number): BorderRadiusGeometry {
-    if (other instanceof BorderRadius) {
-      return BorderRadius.only(
-       this.topLeft - other.topLeft,
-       this.topRight - other.topRight,
-       this.bottomLeft - other.bottomLeft,
-       this.bottomRight - other.bottomRight,
-      )
-    } else if (typeof other === 'number') {
+  opposite (): BorderRadius {
+    return BorderRadius.only(
+      this.topLeft.opposite(),
+      this.topRight.opposite(),
+      this.bottomLeft.opposite(),
+      this.bottomRight.opposite(),
+    )
+  }
 
-    }
-
-    return super.subtract(other)
+  subtract (other: BorderRadiusGeometry): BorderRadiusGeometry {
+    return BorderRadius.only(
+      this.topLeft.subtract(other.topLeft),
+      this.topRight.subtract(other.topRight),
+      this.bottomLeft.subtract(other.bottomLeft),
+      this.bottomRight.subtract(other.bottomRight),
+    )
   }
 
   add (other: BorderRadiusGeometry): BorderRadiusGeometry {
-    if (other instanceof BorderRadius) {
-      return BorderRadius.only(
-        this.topLeft + other.topLeft,
-        this.topRight + other.topRight,
-        this.bottomLeft + other.bottomLeft,
-        this.bottomRight + other.bottomRight,
-       )
-    }
+    return BorderRadius.only(
+      this.topLeft.add(other.topLeft),
+      this.topRight.add(other.topRight),
+      this.bottomLeft.add(other.bottomLeft),
+      this.bottomRight.add(other.bottomRight),
+    )
+  }
 
-    return super.add(other)
+  multiply (other: number): BorderRadius {
+    return BorderRadius.only(
+      this.topLeft.multiply(other),
+      this.topRight.multiply(other),
+      this.bottomLeft.multiply(other),
+      this.bottomRight.multiply(other),
+    )
+  }
+
+  divide (other: number): BorderRadius {
+    return BorderRadius.only(
+      this.topLeft.divide(other),
+      this.topRight.divide(other),
+      this.bottomLeft.divide(other),
+      this.bottomRight.divide(other),
+    )
+  }
+
+  modulo (other: number): BorderRadius {
+    return BorderRadius.only(
+      this.topLeft.modulo(other),
+      this.topRight.modulo(other),
+      this.bottomLeft.modulo(other),
+      this.bottomRight.modulo(other),
+    )
   }
   
   resolve (direction: TextDirection | null) {
     return this
   }
 }
-
 
 export class BorderRadiusDirectional extends BorderRadiusGeometry {
   static Zero = BorderRadiusDirectional.all(Radius.Zero)
@@ -269,18 +303,18 @@ export class BorderRadiusDirectional extends BorderRadiusGeometry {
       return null
     }
     if (a === null) {
-      return b! * t
+      return b!.multiply(t)
     }
 
     if (b === null) {
-      return a * (1.0 - t)
+      return a.multiply(1.0 - t)
     }
 
     return BorderRadiusDirectional.only(
-      topStart: Radius.lerp(a.topStart, b.topStart, t)!,
-      topEnd: Radius.lerp(a.topEnd, b.topEnd, t)!,
-      bottomStart: Radius.lerp(a.bottomStart, b.bottomStart, t)!,
-      bottomEnd: Radius.lerp(a.bottomEnd, b.bottomEnd, t)!,
+      Radius.lerp(a.topStart, b.topStart, t)!,
+      Radius.lerp(a.topEnd, b.topEnd, t)!,
+      Radius.lerp(a.bottomStart, b.bottomStart, t)!,
+      Radius.lerp(a.bottomEnd, b.bottomEnd, t)!,
     )
   }
 
@@ -335,101 +369,91 @@ export class BorderRadiusDirectional extends BorderRadiusGeometry {
     )
   }
 
-  public topStart: Radius
-  public topEnd: Radius
-  public bottomStart: Radius
-  public bottomEnd: Radius
-
-  public get topLeft () {
-    return Radius.Zero
-  }
-  public get topRight () {
-    return Radius.Zero
-  }
-  public get bottomLeft () {
-    return Radius.Zero
-  }
-  public get bottomRight () {
-    return Radius.Zero
-  }
-
   constructor (
-    topStart: Radius = Radius.Zero,
-    topEnd: Radius = Radius.Zero,
-    bottomStart: Radius = Radius.Zero,
-    bottomEnd: Radius = Radius.Zero,
+    topStart: Radius,
+    topEnd: Radius,
+    bottomStart: Radius,
+    bottomEnd: Radius,
   ) { 
-    super()
-
-    this.topStart = topStart 
-    this.topEnd = topEnd 
-    this.bottomStart = bottomStart
-    this.bottomEnd = bottomEnd
+    super(
+      Radius.Zero,
+      Radius.Zero,
+      Radius.Zero,
+      Radius.Zero,
+      topStart,
+      topEnd,
+      bottomStart,
+      bottomEnd,
+    )
   }
 
-  subtract (other?: BorderRadiusGeometry | number): BorderRadiusGeometry  {
-    if (
-      other === undefined ||
-      typeof other === 'number'
-    ) {
-      return BorderRadiusDirectional.only(
-        this.topStart.subtract(other as Radius),
-        this.topEnd.subtract(other as Radius),
-        this.bottomStart.subtract(other as Radius),
-        this.bottomEnd.subtract(other as Radius),
-      )
-    } else if (typeof other === 'numger') {
-      return BorderRadiusDirectional.only(
-        this.topStart - other,
-        this.topEnd - other,
-        this.bottomStart - other,
-        this.bottomEnd - other,
-      );
-    } else if (other instanceof BorderRadiusDirectional) {
-      return BorderRadiusDirectional.only(
-        this.topStart - other.topStart,
-        this.topEnd - other.topEnd,
-        this.bottomStart - other.bottomStart,
-        this.bottomEnd - other.bottomEnd,
-      )
-    } 
-
-    return super.subtract(other)
+  opposite (): BorderRadiusGeometry {
+    return BorderRadiusDirectional.only(
+      this.topStart.opposite(),
+      this.topEnd.opposite(),
+      this.bottomStart.opposite(),
+      this.bottomEnd.opposite(),
+    )
   }
 
+  subtract (other: BorderRadiusGeometry): BorderRadiusGeometry  {
+    return BorderRadiusDirectional.only(
+      this.topStart.subtract(other.topStart),
+      this.topEnd.subtract(other.topEnd),
+      this.bottomStart.subtract(other.bottomStart),
+      this.bottomEnd.subtract(other.bottomEnd),
+    )
+  }
+
+  multiply (other: number): BorderRadiusGeometry  {
+    return BorderRadiusDirectional.only(
+      this.topStart.multiply(other),
+      this.topEnd.multiply(other),
+      this.bottomStart.multiply(other),
+      this.bottomEnd.multiply(other),
+    )
+  }
+
+  divide (other: number): BorderRadiusGeometry  {
+    return BorderRadiusDirectional.only(
+      this.topStart.divide(other),
+      this.topEnd.divide(other),
+      this.bottomStart.divide(other),
+      this.bottomEnd.divide(other),
+    )
+  }
+
+  modulo (other: number): BorderRadiusGeometry  {
+    return BorderRadiusDirectional.only(
+      this.topStart.modulo(other),
+      this.topEnd.modulo(other),
+      this.bottomStart.modulo(other),
+      this.bottomEnd.modulo(other),
+    )
+  }
   
-  resolve (direction: TextDirection | null): BorderRadius  {
+  resolve (direction: TextDirection | null): BorderRadius {
     invariant(direction !== null)
 
-    switch (direction) {
-      case TextDirection.Rtl:
-        return BorderRadius.only(
-          this.topEnd,
-          this.topStart,
-          this.bottomEnd,
-          this.bottomStart,
-        )
-      case TextDirection.Ltr:
-        return BorderRadius.only(
-          this.topStart,
-          this.topEnd,
-          this.bottomStart,
-          this.bottomEnd,
-        )
+    if (direction === Skia.TextDirection.RTL) {
+      return BorderRadius.only(
+        this.topEnd,
+        this.topStart,
+        this.bottomEnd,
+        this.bottomStart,
+      )
+    } else {
+      return BorderRadius.only(
+        this.topStart,
+        this.topEnd,
+        this.bottomStart,
+        this.bottomEnd,
+      )
     }
   }
 }
 
 export class MixedBorderRadius extends BorderRadiusGeometry {
-  public topLeft: Radius
-  public topRight: Radius
-  public bottomLeft: Radius
-  public bottomRight: Radius
-  public topStart: Radius
-  public topEnd: Radius
-  public bottomStart: Radius
-  public bottomEnd: Radius
-
   constructor (
     topLeft: Radius,
     topRight: Radius,
@@ -440,35 +464,113 @@ export class MixedBorderRadius extends BorderRadiusGeometry {
     bottomStart: Radius,
     bottomEnd: Radius,
   ) {
-    super()
+    super(
+      topLeft,
+      topRight,
+      bottomLeft,
+      bottomRight,
+      topStart,
+      topEnd,
+      bottomStart,
+      bottomEnd,
+    )
+  }
 
-    this.topLeft = topLeft
-    this.topRight = topRight
-    this.bottomLeft = bottomLeft
-    this.bottomRight = bottomRight
-    this.topStart = topStart
-    this.topEnd = topEnd
-    this.bottomStart = bottomStart
-    this.bottomEnd = bottomEnd
+  opposite (): MixedBorderRadius {
+    return new MixedBorderRadius(
+      this.topLeft.opposite(),
+      this.topRight.opposite(),
+      this.bottomLeft.opposite(),
+      this.bottomRight.opposite(),
+      this.topStart.opposite(),
+      this.topEnd.opposite(),
+      this.bottomStart.opposite(),
+      this.bottomEnd.opposite(),
+    )
+  }
+
+  add (other: MixedBorderRadius): MixedBorderRadius {
+    return new MixedBorderRadius(
+      this.topLeft.add(other.topLeft),
+      this.topRight.add(other.topRight),
+      this.bottomLeft.add(other.bottomLeft),
+      this.bottomRight.add(other.bottomRight),
+      this.topStart.add(other.topStart),
+      this.topEnd.add(other.topEnd),
+      this.bottomStart.add(other.bottomStart),
+      this.bottomEnd.add(other.bottomEnd),
+    )
+  }
+
+  subtract (other: MixedBorderRadius): MixedBorderRadius {
+    return new MixedBorderRadius(
+      this.topLeft.subtract(other.topLeft),
+      this.topRight.subtract(other.topRight),
+      this.bottomLeft.subtract(other.bottomLeft),
+      this.bottomRight.subtract(other.bottomRight),
+      this.topStart.subtract(other.topStart),
+      this.topEnd.subtract(other.topEnd),
+      this.bottomStart.subtract(other.bottomStart),
+      this.bottomEnd.subtract(other.bottomEnd),
+    )
+  }
+
+  multiply (other: number): MixedBorderRadius {
+    return new MixedBorderRadius(
+      this.topLeft.multiply(other),
+      this.topRight.multiply(other),
+      this.bottomLeft.multiply(other),
+      this.bottomRight.multiply(other),
+      this.topStart.multiply(other),
+      this.topEnd.multiply(other),
+      this.bottomStart.multiply(other),
+      this.bottomEnd.multiply(other),
+    )
+  }
+
+  divide (other: number): MixedBorderRadius {
+    return new MixedBorderRadius(
+      this.topLeft.divide(other),
+      this.topRight.divide(other),
+      this.bottomLeft.divide(other),
+      this.bottomRight.divide(other),
+      this.topStart.divide(other),
+      this.topEnd.divide(other),
+      this.bottomStart.divide(other),
+      this.bottomEnd.divide(other),
+    )
+  }
+
+  modulo (other: number): MixedBorderRadius {
+    return new MixedBorderRadius(
+      this.topLeft.modulo(other),
+      this.topRight.modulo(other),
+      this.bottomLeft.modulo(other),
+      this.bottomRight.modulo(other),
+      this.topStart.modulo(other),
+      this.topEnd.modulo(other),
+      this.bottomStart.modulo(other),
+      this.bottomEnd.modulo(other),
+    )
   }
   
   resolve (direction: TextDirection | null): BorderRadius {
     invariant(direction !== null)
-    switch (direction!) {
-      case TextDirection.Rtl:
-        return BorderRadius.only(
-          this.topLeft.plus(this.topEnd),
-          this.topRight.plus(this.topStart),
-          this.bottomLeft.plus(this.bottomEnd),
-          this.bottomRight.plus(this.bottomStart),
-        )
-      case TextDirection.Ltr:
-        return BorderRadius.only(
-          this.topLeft.plus(this.topStart),
-          this.topRight.plus(this.topEnd),
-          this.bottomLeft.plus(this.bottomStart),
-          this.bottomRight.plus(this.bottomEnd),
-        )
+
+    if (direction === Skia.TextDirection.RTL) {
+      return BorderRadius.only(
+        this.topLeft.add(this.topEnd),
+        this.topRight.add(this.topStart),
+        this.bottomLeft.add(this.bottomEnd),
+        this.bottomRight.add(this.bottomStart),
+      )
+    } else {
+      return BorderRadius.only(
+        this.topLeft.add(this.topStart),
+        this.topRight.add(this.topEnd),
+        this.bottomLeft.add(this.bottomStart),
+        this.bottomRight.add(this.bottomEnd),
+      )
     }
   }
 }
