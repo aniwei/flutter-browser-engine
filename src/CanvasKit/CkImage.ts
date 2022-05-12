@@ -13,12 +13,12 @@ export class CkImage {
     return this.box.skia
   }
 
-  public get width () {
-    return this.skia.width
+  public get width (): number {
+    return this.skia.width()
   }
 
-  public get height () {
-    return this.skia.height
+  public get height (): number {
+    return this.skia.height()
   }
 
   public box: SkiaObjectBox<Image>
