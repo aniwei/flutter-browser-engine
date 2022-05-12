@@ -99,7 +99,8 @@ export class BorderSide implements Paint {
       )
     }
 
-    let colorA, colorB
+    let colorA: Color
+    let colorB: Color
 
     switch (a.style) {
       case BorderStyle.Solid:
@@ -168,6 +169,7 @@ export class BorderSide implements Paint {
 
   toPaint (): CkPaint {
     const paint = CkPaint.malloc()
+
     switch (this.style) {
       case BorderStyle.Solid: {
         paint.color = this.color
@@ -222,7 +224,7 @@ export abstract class ShapeBorder {
     if (b !== null) {
       result = b.lerpFrom(a, t)
     }
-    if (result == null && a != null) {
+    if (result === null && a !== null) {
       result = a.lerpTo(b, t)
     }
 
@@ -353,7 +355,7 @@ export class CompoundBorder extends ShapeBorder {
   }
   
   add (
-    other: CompoundBorder, 
+    other: ShapeBorder, 
     reversed: boolean = false
   ) {
     if (!(other instanceof CompoundBorder)) {
@@ -370,9 +372,12 @@ export class CompoundBorder extends ShapeBorder {
       }
     }
 
-    const mergedBorders: ShapeBorder[] = [ ...this.borders ] 
+    const mergedBorders: ShapeBorder[] = [ 
+      ...(reversed ? this.borders : []),
+      ...(other instanceof CompoundBorder ? other.borders : [other]),
+      ...(reversed ? [] : this.borders),
+    ] 
 
-    // TODO
     return new CompoundBorder(mergedBorders)
   }
 
@@ -382,7 +387,6 @@ export class CompoundBorder extends ShapeBorder {
     )
   }
 
-  
   lerpFrom (
     a: ShapeBorder | null, 
     t: number
@@ -410,7 +414,7 @@ export class CompoundBorder extends ShapeBorder {
     textDirection: TextDirection | null
   ) {
     for (let index = 0; index < this.borders.length - 1; index += 1) {
-      rect = this.borders[index].dimensions.resolve(textDirection).deflateRect(rect)
+      rect = this.borders[index].dimensions.resolve(textDirection as TextDirection).deflateRect(rect)
     }
     
     return this.borders[this.borders.length - 1].getInnerPath(rect, textDirection)
@@ -430,7 +434,7 @@ export class CompoundBorder extends ShapeBorder {
   ) {
     for (const border of this.borders) {
       border.paint(canvas, rect, textDirection)
-      rect = border.dimensions.resolve(textDirection).deflateRect(rect)
+      rect = border.dimensions.resolve(textDirection as TextDirection).deflateRect(rect)
     }
   }
 

@@ -1,7 +1,7 @@
 import invariant from 'ts-invariant'
 import { Skia } from '@Skia'
 import { CkCanvas, CkPaint, CkPath } from '@CanvasKit'
-import { Color, Rect, TextDirection } from '@UI'
+import { Color, Rect } from '@UI'
 import { BorderSide, BorderStyle, paintBorder, ShapeBorder } from './Border'
 import { EdgeInsets, EdgeInsetsDirectional, EdgeInsetsGeometry } from './EdgeInsets'
 import { BorderRadius } from './BorderRadius'

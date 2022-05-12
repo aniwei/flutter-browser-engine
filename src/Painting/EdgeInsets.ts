@@ -1,7 +1,10 @@
 import invariant from 'ts-invariant'
-import { Offset, Rect, Size, TextDirection } from '@UI'
+import { Offset, Rect, Size } from '@UI'
 import { clamp, lerpDouble } from '@Math'
+import { TextDirection } from 'canvaskit-wasm'
 import { Axis } from '.'
+import { Skia } from '@Skia'
+
 
 const POSITIVE_INFINITY = Number.POSITIVE_INFINITY
 
@@ -590,21 +593,20 @@ export class EdgeInsetsDirectional extends EdgeInsetsGeometry {
   resolve (direction: TextDirection | null): EdgeInsets {
     invariant(direction !== null)
 
-    switch (direction) {
-      case TextDirection.Rtl:
-        return EdgeInsets.fromLTRB(
-          this.end, 
-          this.top, 
-          this.start, 
-          this.bottom
-        )
-      case TextDirection.Ltr:
-        return EdgeInsets.fromLTRB(
-          this.start, 
-          this.top, 
-          this.end, 
-          this.bottom
-        )
+    if (direction === Skia.TextDirection.RTL) {
+      return EdgeInsets.fromLTRB(
+        this.end, 
+        this.top, 
+        this.start, 
+        this.bottom
+      )
+    } else {
+      return EdgeInsets.fromLTRB(
+        this.start, 
+        this.top, 
+        this.end, 
+        this.bottom
+      )
     }
   }
 }
@@ -709,21 +711,21 @@ export class MixedEdgeInsets extends EdgeInsetsGeometry {
     direction: TextDirection | null
   ): EdgeInsets {
     invariant(direction !== null)
-    switch (direction) {
-      case TextDirection.Rtl:
-        return EdgeInsets.fromLTRB(
-          this.end + this.left,
-          this.top, 
-          this.start + this.right, 
-          this.bottom
-        )
-      case TextDirection.Ltr:
-        return EdgeInsets.fromLTRB(
-          this.start + this.left, 
-          this.top, 
-          this.end + this.right, 
-          this.bottom
-        )
+
+    if (direction === Skia.TextDirection.RTL) {
+      return EdgeInsets.fromLTRB(
+        this.end + this.left,
+        this.top, 
+        this.start + this.right, 
+        this.bottom
+      )
+    } else {
+      return EdgeInsets.fromLTRB(
+        this.start + this.left, 
+        this.top, 
+        this.end + this.right, 
+        this.bottom
+      )
     }
   }
 }

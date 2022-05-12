@@ -116,6 +116,13 @@ export class Offset extends OffsetBase {
     )
   }
 
+  opposite () {
+    return new Offset(
+      -this.dx,
+      -this.dy,
+    )
+  }
+
   add (offset: Offset): Offset {
     return new Offset(
       this.dx + offset.dx, 
@@ -123,14 +130,7 @@ export class Offset extends OffsetBase {
     )
   }
 
-  subtract (offset?: Offset): Offset {
-    if (typeof offset === 'undefined') {
-      return new Offset(
-        -this.dx, 
-        -this.dy
-      )
-    }
-
+  subtract (offset: Offset): Offset {
     return new Offset(
       this.dx - offset.dx, 
       this.dy - offset.dy
@@ -151,17 +151,10 @@ export class Offset extends OffsetBase {
     )
   }
 
-  floor (operand: number): Offset {
+  modulo (operand: number): Offset {
     return new Offset(
       Math.floor(this.dx / operand),
       Math.floor(this.dy / operand)
-    )
-  }
-
-  ceil (operand: number): Offset {
-    return new Offset(
-      Math.ceil(this.dx / operand),
-      Math.ceil(this.dy / operand)
     )
   }
 
@@ -310,21 +303,21 @@ export class Size extends OffsetBase {
     this.height = height
   }
 
-  plus (size: Size): Size {
+  opposite (): Size {
+    return new Size(
+      -this.dx,
+      -this.dy,
+    )
+  }
+
+  add (size: Size): Size {
     return new Size(
       this.dx + size.dx, 
       this.dy + size.dy
     )
   }
 
-  subtract (size?: Size): Size {
-    if (typeof size === 'undefined') {
-      return new Size(
-        -this.dx, 
-        -this.dy
-      )
-    }
-
+  subtract (size: Size): Size {
     return new Size(
       this.dx + size.dx, 
       this.dy + size.dy
@@ -442,6 +435,38 @@ export class Size extends OffsetBase {
 
 export class Radius {
   static Zero = Radius.circular(0)
+
+  static lerp(
+    a: Radius | null, 
+    b: Radius | null, 
+    t: number
+  ): Radius | null {
+    invariant(t !== null)
+    if (b === null) {
+      if (a === null) {
+        return null
+      } else {
+        const k = 1.0 - t
+        return Radius.elliptical(
+          a.x * k, 
+          a.y * k
+        )
+      }
+    } else {
+      if (a === null) {
+        return Radius.elliptical(
+          b.x * t, 
+          b.y * t
+        )
+      } else {
+        return Radius.elliptical(
+          lerpDouble(a.x, b.x, t),
+          lerpDouble(a.y, b.y, t),
+        )
+      }
+    }
+  }
+
   static circular (radius: number) {
     return Radius.elliptical(radius, radius)
   }
@@ -458,24 +483,34 @@ export class Radius {
     this.y = y
   }
 
-  plus (radius: Radius): Radius {
-    return Radius.elliptical(this.x + radius.x, this.y + radius.y)
+  opposite (): Radius {
+    return Radius.elliptical(-this.x, -this.y)
   }
 
-  subtract (radius?: Radius): Radius {
-    if (typeof radius === 'undefined') {
-      return Radius.elliptical(-this.x, -this.y)
-    }
-
-    return Radius.elliptical(this.x - radius.x, this.y - radius.y)
+  add (radius: Radius): Radius {
+    return Radius.elliptical(
+      this.x + radius.x, 
+      this.y + radius.y
+    )
   }
 
-  multiply (radius: Radius): Radius {
-    return Radius.elliptical(this.x * radius.x, this.y * radius.y)
+  subtract (radius: Radius): Radius {
+    return Radius.elliptical(
+      this.x - radius.x, 
+      this.y - radius.y
+    )
   }
 
-  divide (radius: Radius): Radius {
-    return Radius.elliptical(this.x / radius.x, this.y / radius.y)
+  multiply (radius: number): Radius {
+    return Radius.elliptical(this.x * radius, this.y * radius)
+  }
+
+  divide (radius: number): Radius {
+    return Radius.elliptical(this.x / radius, this.y / radius)
+  }
+
+  modulo (radius: number): Radius {
+    return Radius.elliptical(this.x & radius, this.y % radius)
   }
 
   isEqual (radius: Radius) {
@@ -906,11 +941,83 @@ export class RRect extends Float32Array {
     )
   }
 
+  static raw(
+    left: number = 0.0,
+    top: number = 0.0,
+    right: number = 0.0,
+    bottom: number = 0.0,
+    tlRadiusX: number = 0.0,
+    tlRadiusY: number = 0.0,
+    trRadiusX: number = 0.0,
+    trRadiusY: number = 0.0,
+    brRadiusX: number = 0.0,
+    brRadiusY: number = 0.0,
+    blRadiusX: number = 0.0,
+    blRadiusY: number = 0.0,
+    uniformRadii: boolean = false,
+  ) {
+
+    invariant(left !== null)
+    invariant(top !== null)
+    invariant(right !== null)
+    invariant(bottom !== null)
+    invariant(tlRadiusX !== null)
+    invariant(tlRadiusY !== null)
+    invariant(trRadiusX !== null)
+    invariant(trRadiusY !== null)
+    invariant(brRadiusX !== null)
+    invariant(brRadiusY !== null)
+    invariant(blRadiusX !== null)
+    invariant(blRadiusY !== null)
+
+    this.left = left
+    this.top = top
+    this.right = right
+    this.bottom = bottom
+    this.tlRadiusX = tlRadiusX
+    this.tlRadiusY = tlRadiusY
+    this.trRadiusX = trRadiusX
+    this.trRadiusY = trRadiusY
+    this.brRadiusX = brRadiusX
+    this.brRadiusY = brRadiusY
+    this.blRadiusX = blRadiusX
+    this.blRadiusY = blRadiusY
+    this.uniformRadii = uniformRadii
+    
+    this.webOnlyUniformRadii = uniformRadii
+  }
+
   // TODO
   static fromRectAndCorners (
     rect: Rect,
+    topLeft: Radius = Radius.Zero,
+    topRight: Radius = Radius.Zero,
+    bottomRight: Radius = Radius.Zero,
+    bottomLeft: Radius = Radius.Zero,
   ) {
-
+    return RRect.raw(
+      rect.top,
+      rect.left,
+      rect.right,
+      rect.bottom,
+      topLeft.x,
+      topLeft.y,
+      topRight.x,
+      topRight.y,
+      bottomLeft.x,
+      bottomLeft.y,
+      bottomRight.x,
+      bottomRight.y,
+      (
+        topLeft.x === topLeft.y &&
+        topLeft.x === topRight.x &&
+        topLeft.x === topRight.y &&
+        topLeft.x === bottomLeft.x &&
+        topLeft.x === bottomLeft.y &&
+        topLeft.x === bottomRight.x &&
+        topLeft.x === bottomRight.y
+      )
+    )
   }
 
   public get left () {

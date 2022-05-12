@@ -1,5 +1,6 @@
-import { Radius, RRect, TextDirection } from "@UI";
-import invariant from "ts-invariant";
+import { Radius, Rect, RRect } from '@UI'
+import { TextDirection } from 'canvaskit-wasm'
+import invariant from 'ts-invariant'
 
 export abstract class BorderRadiusGeometry {
   static lerp (
@@ -16,7 +17,7 @@ export abstract class BorderRadiusGeometry {
     a ??= BorderRadius.Zero
     b ??= BorderRadius.Zero
 
-    return a.add((b.subtract(a)) * t)
+    return a.add(b.subtract(a).multiply(t))
   }
 
   abstract topLeft: Radius
@@ -28,46 +29,35 @@ export abstract class BorderRadiusGeometry {
   abstract bottomStart: Radius
   abstract bottomEnd: Radius
 
-  
-  subtract (other: BorderRadiusGeometry | number ): BorderRadiusGeometry  {
-    if (typeof other === 'number') {
-      return new MixedBorderRadius(
-        this.topLeft - other.topLeft,
-        this.topRight - other.topRight,
-        this.bottomLeft - other.bottomLeft,
-        this.bottomRight - other.bottomRight,
-        this.topStart - other.topStart,
-        this.topEnd - other.topEnd,
-        this.bottomStart - other.bottomStart,
-        this.bottomEnd - other.bottomEnd,
-      )
-    }
-
+  add (other: BorderRadiusGeometry): BorderRadiusGeometry {
     return new MixedBorderRadius(
-      this.topLeft - other.topLeft,
-      this.topRight - other.topRight,
-      this.bottomLeft - other.bottomLeft,
-      this.bottomRight - other.bottomRight,
-      this.topStart - other.topStart,
-      this.topEnd - other.topEnd,
-      this.bottomStart - other.bottomStart,
-      this.bottomEnd - other.bottomEnd,
+      this.topLeft.add(other.topLeft),
+      this.topRight.add(other.topRight),
+      this.bottomLeft.add(other.bottomLeft),
+      this.bottomRight.add(other.bottomRight),
+      this.topStart.add(other.topStart),
+      this.topEnd.add(other.topEnd),
+      this.bottomStart.add(other.bottomStart),
+      this.bottomEnd.add(other.bottomEnd),
     )
   }
 
-  add (other: BorderRadiusGeometry | number ): BorderRadiusGeometry {
+  subtract (other: BorderRadiusGeometry): BorderRadiusGeometry  {
     return new MixedBorderRadius(
-      this.topLeft + other.topLeft,
-      this.topRight + other.topRight,
-      this.bottomLeft + other.bottomLeft,
-      this.bottomRight + other.bottomRight,
-      this.topStart + other.topStart,
-      this.topEnd + other.topEnd,
-      this.bottomStart + other.bottomStart,
-      this.bottomEnd + other.bottomEnd,
+      this.topLeft.subtract(other.topLeft),
+      this.topRight.subtract(other.topRight),
+      this.bottomLeft.subtract(other.bottomLeft),
+      this.bottomRight.subtract(other.bottomRight),
+      this.topStart.subtract(other.topStart),
+      this.topEnd.subtract(other.topEnd),
+      this.bottomStart.subtract(other.bottomStart),
+      this.bottomEnd.subtract(other.bottomEnd),
     )
   }
 
+  abstract multiply (other: number): BorderRadius
+  abstract divide (other: number): BorderRadius
+  abstract modulo (other: number): BorderRadius
   abstract resolve (direction: TextDirection | null): BorderRadius
 
   isEqual (other: BorderRadiusGeometry) {
@@ -118,11 +108,11 @@ export class BorderRadius extends BorderRadiusGeometry {
     }
 
     if (a === null) {
-      return b * t
+      return b!.multiply(t)
     }
 
     if (b == null) {
-      return a * (1.0 - t)
+      return a.multiply(1.0 - t)
     }
 
     return BorderRadius.only(
