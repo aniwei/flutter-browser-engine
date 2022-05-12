@@ -1,7 +1,5 @@
 import invariant from 'ts-invariant'
-import { lerpInt } from './Lerp'
-import { clampInt } from 'src/Shared/Util'
-import { clamp } from '@Shared'
+import { clamp, clampInt, lerpInt } from '@Math'
 
 export function scaleAlpha (
   a: Color, 

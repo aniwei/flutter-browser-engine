@@ -31,7 +31,7 @@
       "@Skia": ["src/Skia/index.ts"],
       "@Layer": ["src/Engine/CanvasKit/Layer/index.ts"],
       "@CanvasKit": ["src/CanvasKit/index.ts"],
-      "@CanvasKitAPI": ["src/Engine/CanvasKit/CanvasKitAPI/index.ts"],
+      "@Painting": ["src/Painting/index.ts"],
       "@Types": ["./src/Types/index.ts"],
       "@Math": ["./src/Math/index.ts"],
       "@Shared": ["./src/Shared/index.ts"],

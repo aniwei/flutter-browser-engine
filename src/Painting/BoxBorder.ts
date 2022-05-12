@@ -3,7 +3,7 @@ import { Skia } from '@Skia'
 import { CkCanvas, CkPaint, CkPath } from '@CanvasKit'
 import { Color, Rect, TextDirection } from '@UI'
 import { BorderSide, BorderStyle, paintBorder, ShapeBorder } from './Border'
-import { EdgeInsets, EdgeInsetsGeometry } from './EdgeInsets'
+import { EdgeInsets, EdgeInsetsDirectional, EdgeInsetsGeometry } from './EdgeInsets'
 import { BorderRadius } from './BorderRadius'
 
 export enum BoxShape {
@@ -136,10 +136,6 @@ export abstract class BoxBorder extends ShapeBorder {
   abstract bottom: BorderSide
   abstract isUniform: boolean
 
-  add (other: ShapeBorder, reverse: boolean): BoxBorder | null {
-    return null
-  }
-
   abstract paint (
     canvas: CkCanvas,
     rect: Rect, 
@@ -147,6 +143,13 @@ export abstract class BoxBorder extends ShapeBorder {
     shape?: BoxShape,
     borderRadius?
   )
+
+  add (
+    other: ShapeBorder, 
+    reverse: boolean = false
+  ) {
+    return null
+  }
 
   getInnerPath (
     rect: Rect, 
@@ -319,8 +322,8 @@ export class Border extends BoxBorder {
 
   add (
     other: ShapeBorder, 
-    reversed = false
-  ): Border | null {
+    reversed: boolean = false
+  ) {
     if (
       other instanceof Border &&
       BorderSide.canMerge(this.top, other.top) &&
@@ -486,7 +489,7 @@ export class BorderDirectional extends BoxBorder {
   add (
     other: ShapeBorder, 
     reversed: boolean = false
-  ): BorderDirectional | Border | null {
+  ) {
     if (other instanceof BorderDirectional) {
       const typedOther = other
       if (
@@ -556,7 +559,7 @@ export class BorderDirectional extends BoxBorder {
     t: number
   ): ShapeBorder | null {
     if (a instanceof BorderDirectional) {
-      return BorderDirectional.lerp(a, this, t) as ShapeBorder
+      return BorderDirectional.lerp(a, this, t)
     }
 
     return super.lerpFrom(a, t)

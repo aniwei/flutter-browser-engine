@@ -3,9 +3,9 @@ import { TextDirection } from 'canvaskit-wasm'
 import { CkCanvas, CkPaint, CkPath } from '@CanvasKit'
 import { Color, Rect } from '@UI'
 import { Skia } from '@Skia'
-import { lerpDouble } from '@Math'
+import { lerpDouble, listEquals } from '@Math'
 import { Paint } from './Paint'
-import { EdgeInsetsGeometry } from './EdgeInsets'
+import { EdgeInsets, EdgeInsetsGeometry } from './EdgeInsets'
 
 export enum BorderStyle {
   None,
@@ -25,6 +25,22 @@ export class BorderSide implements Paint {
   ) {
     invariant(a !== null)
     invariant(b !== null)
+
+    const aIsNone = a.style === BorderStyle.None && a.width === 0.0
+    const bIsNone = b.style === BorderStyle.None && b.width === 0.0
+
+    if (aIsNone && bIsNone) {
+      return BorderSide.None
+    }
+    if (aIsNone) {
+      return b
+    }
+    if (bIsNone) {
+      return a
+    }
+    
+    invariant(a.color === b.color)
+    invariant(a.style === b.style)
 
     return new BorderSide(
       a.color,
@@ -118,6 +134,11 @@ export class BorderSide implements Paint {
     width: number = 1.0,
     style: BorderStyle = BorderStyle.Solid,
   ) {
+    invariant(color !== null)
+    invariant(width !== null)
+    invariant(width >= 0.0)
+    invariant(style !== null)
+
     this.width = width
     this.style = style
     this.color = color
@@ -157,6 +178,9 @@ export class BorderSide implements Paint {
       }
 
       case BorderStyle.None: {
+        paint.color = new Color(0x00000000)
+        paint.strokeWidth = 0.0
+        paint.style = Skia.PaintStyle.Stroke
         break
       }
     }
@@ -221,13 +245,16 @@ export abstract class ShapeBorder {
   abstract paint (
     canvas: CkCanvas, 
     rect: Rect, 
-    textDirection?: TextDirection
+    textDirection: TextDirection | null
   )
 
   abstract scale (t: number)
 
   // @sTODO
-  add (other: ShapeBorder, reversed?: boolean): ShapeBorder | null {
+  add (
+    other: ShapeBorder, 
+    reversed: boolean = false
+  ): ShapeBorder | null {
     return null
   }
 
@@ -263,6 +290,164 @@ export abstract class OutlinedBorder extends ShapeBorder {
   }
    
   abstract copyWith (side: BorderSide | null): OutlinedBorder
+}
+
+export class CompoundBorder extends ShapeBorder {
+  static lerp(
+    a: ShapeBorder | null, 
+    b: ShapeBorder | null, 
+    t: number
+  ) {
+    invariant(t !== null)
+    invariant(a instanceof CompoundBorder || b instanceof CompoundBorder)
+    
+    const aList: (ShapeBorder | null)[] = a instanceof CompoundBorder ? a.borders : [a]
+    const bList: (ShapeBorder | null)[] = b instanceof CompoundBorder ? b.borders : [b]
+
+    const results: ShapeBorder[] = []
+
+    const length = Math.max(aList.length, bList.length)
+
+    for (let index = 0; index < length; index += 1) {
+      const localA = index < aList.length ? aList[index] : null
+      const localB = index < bList.length ? bList[index] : null
+
+      if (localA !== null && localB !== null) {
+        const localResult = localA.lerpTo(localB, t) ?? localB.lerpFrom(localA, t)
+        if (localResult !== null) {
+          results.push(localResult)
+          continue
+        }
+      }
+      
+      if (localB !== null) {
+        results.push(localB.scale(t))
+      }
+      if (localA !== null) {
+        results.push(localA.scale(1.0 - t))
+      }
+    }
+    return new CompoundBorder(results)
+  }
+
+  public borders: ShapeBorder[]
+
+  get dimensions () : EdgeInsetsGeometry {
+    return this.borders.reduce((
+      previousValue: EdgeInsetsGeometry, 
+      border: ShapeBorder
+    ) => {
+      return previousValue.add(border.dimensions);
+    }, EdgeInsets.Zero)
+  }
+
+
+  constructor (borders: ShapeBorder[]) {
+    super()
+
+    invariant(borders !== null)
+    invariant(borders.length >= 2)
+    invariant(!borders.every((border: ShapeBorder) => border instanceof CompoundBorder))
+
+    this.borders = borders
+  }
+  
+  add (
+    other: CompoundBorder, 
+    reversed: boolean = false
+  ) {
+    if (!(other instanceof CompoundBorder)) {
+      const ours = reversed ? 
+        this.borders[this.borders.length - 1] : 
+        this.borders[0]
+
+      const merged = ours.add(other, reversed) ?? other.add(ours, !reversed)
+      
+      if (merged !== null) {
+        const result: ShapeBorder[] = [...this.borders]
+        result[reversed ? result.length - 1 : 0] = merged
+        return new CompoundBorder(result)
+      }
+    }
+
+    const mergedBorders: ShapeBorder[] = [ ...this.borders ] 
+
+    // TODO
+    return new CompoundBorder(mergedBorders)
+  }
+
+  scale (t: number) {
+    return new CompoundBorder(
+      this.borders.map((border: ShapeBorder) => border.scale(t))
+    )
+  }
+
+  
+  lerpFrom (
+    a: ShapeBorder | null, 
+    t: number
+  ) {
+    return CompoundBorder.lerp(
+      a, 
+      this, 
+      t
+    )
+  }
+
+  lerpTo (
+    b: ShapeBorder | null, 
+    t: number
+  ) {
+    return CompoundBorder.lerp(
+      this, 
+      b, 
+      t
+    )
+  }
+
+  getInnerPath (
+    rect: Rect, 
+    textDirection: TextDirection | null
+  ) {
+    for (let index = 0; index < this.borders.length - 1; index += 1) {
+      rect = this.borders[index].dimensions.resolve(textDirection).deflateRect(rect)
+    }
+    
+    return this.borders[this.borders.length - 1].getInnerPath(rect, textDirection)
+  }
+
+  getOuterPath (
+    rect: Rect, 
+    textDirection: TextDirection | null
+  ) {
+    return this.borders[0].getOuterPath(rect, textDirection)
+  }
+
+  paint (
+    canvas: CkCanvas, 
+    rect: Rect, 
+    textDirection: TextDirection | null
+  ) {
+    for (const border of this.borders) {
+      border.paint(canvas, rect, textDirection)
+      rect = border.dimensions.resolve(textDirection).deflateRect(rect)
+    }
+  }
+
+  isEqual (other: ShapeBorder) {
+    if (other === this) {
+      return true
+    }
+    
+    return (
+      other instanceof CompoundBorder && 
+      listEquals<ShapeBorder>(other.borders, this.borders)
+    )
+  }
+
+  toString () {
+    return ``
+  }
 }
 
 
