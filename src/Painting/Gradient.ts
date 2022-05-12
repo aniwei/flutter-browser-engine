@@ -547,16 +547,17 @@ export class SweepGradient extends Gradient {
   }
 
   public center: AlignmentGeometry
-  public startAngle: double
-  public endAngle: double
+  public startAngle: number
+  public endAngle: number
   public tileMode: TileMode
 
   constructor (
     center: AlignmentGeometry,
-    startAngle: double,
-    endAngle: double,
+    startAngle: number,
+    endAngle: number,
     tileMode: TileMode,
   ) {
+    super()
     this.center = center
     this.startAngle = startAngle
     this.endAngle = endAngle
