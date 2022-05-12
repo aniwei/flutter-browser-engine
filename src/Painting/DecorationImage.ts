@@ -4,6 +4,7 @@ import { Skia } from '@Skia'
 import { Offset, Rect, Size } from '@UI'
 import { ColorFilter, TextDirection } from 'canvaskit-wasm'
 import { Alignment, AlignmentGeometry } from './Alignment'
+import { BoxFit } from './BoxFit'
 
 export enum ImageRepeat {
   Repeat,

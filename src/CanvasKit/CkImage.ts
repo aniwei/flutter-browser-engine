@@ -5,8 +5,8 @@ export class CkImage {
   static malloc (skia: Image) {
     return new CkImage(skia)
   }
-  static cloneOf () {
-
+  static cloneOf (box: SkiaObjectBox<Image>) {
+    
   }
 
   public get skia () {
@@ -27,6 +27,21 @@ export class CkImage {
 
   constructor (skia: Image) {
     this.box = new SkiaObjectBox(skia)
+  }
+
+  dispose () {
+    this.disposed = true
+  }
+
+  clone (): CkImage  {
+    return CkImage.cloneOf(this.box)
+  }
+
+  isCloneOf (other: CkImage) {
+    return (
+      other instanceof CkImage && 
+      other.skia.isAliasOf(this.skia)
+    )
   }
 
   toString (): string {
