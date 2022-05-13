@@ -1,29 +1,29 @@
-import { Skia, SkiaFilterQuality } from '@Skia'
+import { Skia, SkiaClipOp, SkiaFilterQuality } from '@Skia'
 import type { SkiaBlendMode, SkiaCanvas } from '@Skia'
+import type { RRect, Rect, Color } from './Geometry'
 import type { CkImage } from './CkImage'
 import type { CkImageFilter, CkManagedSkImageFilterConvertible } from './CkImageFilter'
 import type { CkPaint } from './CkPaint'
-import type { BlendMode, Canvas, Color, ColorInt, InputIRect, Rect, RRect } from 'canvaskit-wasm'
 import type { CkPath } from './CkPath'
 
-export class CkCanvas {
+export class Canvas {
   static kMitchellNetravali_B = 1.0 / 3.0
   static kMitchellNetravali_C = 1.0 / 3.0
   static kNone_ShadowFlag = 0x00
   static kTransparentOccluder_ShadowFlag = 0x01
   static kDirectionalLight_ShadowFlag = 0x04
 
-  static get clipOpIntersect () {
+  static get clipOpIntersect (): SkiaClipOp {
     return Skia.ClipOp.Intersect
   }
 
-  static malloc (skia: Canvas) {
-    return new CkCanvas(skia)
+  static malloc (skia: SkiaCanvas) {
+    return new Canvas(skia)
   }
 
-  public skia: Canvas
+  public skia: SkiaCanvas
 
-  constructor (skia: Canvas) {
+  constructor (skia: SkiaCanvas) {
     this.skia = skia
   }
 
@@ -37,7 +37,7 @@ export class CkCanvas {
   ) {
     this.skia.clipPath(
       path.skia, 
-      CkCanvas.clipOpIntersect,
+      Canvas.clipOpIntersect,
       doAntiAlias
     )
   }
@@ -48,7 +48,7 @@ export class CkCanvas {
   ) {
     this.skia.clipRRect(
       rrect,
-      CkCanvas.clipOpIntersect,
+      Canvas.clipOpIntersect,
       doAntiAlias,
     )
   }
@@ -76,7 +76,7 @@ export class CkCanvas {
     rstTransforms: Float32Array,
     rects: Float32Array,
     colors: Uint32Array,
-    blendMode: BlendMode
+    blendMode: SkiaBlendMode
   ) {
     this.skia.drawAtlas(
       atlas.skImage,
@@ -102,8 +102,8 @@ export class CkCanvas {
   }
 
   drawColor (
-    color: ColorInt, 
-    blendMode: BlendMode
+    color: Color, 
+    blendMode: SkiaBlendMode
   ) {
     this.skia.drawColorInt(
       color,
@@ -135,8 +135,8 @@ export class CkCanvas {
         image.skia,
         offset.dx,
         offset.dy,
-        CkCanvas.kMitchellNetravali_B,
-        CkCanvas.kMitchellNetravali_C,
+        Canvas.kMitchellNetravali_B,
+        Canvas.kMitchellNetravali_C,
         paint.skia,
       )
     } else {

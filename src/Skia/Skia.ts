@@ -23,6 +23,31 @@ export type SkiaCubicFilterOption = {
   C: number
 }
 
+export type {
+  Canvas as SkiaCanvas,
+  FilterMode as SkiaFilterMode,
+  MipmapMode as SkiaMipmapMode,
+  ColorFilter as SkiaColorFilter,
+  Image as SkiaImage,
+  ImageFilter as SkiaImageFilter,
+  MaskFilter as SkiaMaskFilter,
+  Paint as SkiaPaint,
+  Path as SkiaPath,
+  Shader as SkiaShader,
+  Camera as SkiaCamera,
+  DecorationStyle as SkiaDecorationStyle,
+  BlurStyle as SkiaBlurStyle,
+  PaintStyle as SkiaPaintStyle,
+  BlendMode as SkiaBlendMode,
+  TileMode as SkiaTileMode,
+  ImageFilter as SkiaImageFIlter,
+  FillType as SkiaFillType,
+  StrokeCap as SkiaStrokeCap,
+  StrokeJoin as SkiaStrokeJoin,
+  ClipOp as SkiaClipOp,
+  TextDirection as SkiaTextDirection,
+} from 'canvaskit-wasm'
+
 export class SkiaFilterOptions extends Map<SkiaFilterQuality, SkiaCubicFilterOption | SkiaTransformFilterOption> {
   static from (skia: CanvasKit) {
     const options = new SkiaFilterOptions()

@@ -243,8 +243,7 @@ export class BoxDecoration extends Decoration {
   }
 }
 
-/// An object that paints a [BoxDecoration] into a canvas.
-class BoxDecorationPainter extends BoxPainter {
+export class BoxDecorationPainter extends BoxPainter {
   BoxDecorationPainter(this._decoration, VoidCallback? onChanged)
     : assert(_decoration != null),
       super(onChanged);
@@ -274,66 +273,99 @@ class BoxDecorationPainter extends BoxPainter {
     return _cachedBackgroundPaint!;
   }
 
-  void _paintBox(Canvas canvas, Rect rect, Paint paint, TextDirection? textDirection) {
-    switch (_decoration.shape) {
-      case BoxShape.circle:
-        assert(_decoration.borderRadius == null);
-        final Offset center = rect.center;
-        final double radius = rect.shortestSide / 2.0;
-        canvas.drawCircle(center, radius, paint);
-        break;
-      case BoxShape.rectangle:
-        if (_decoration.borderRadius == null) {
-          canvas.drawRect(rect, paint);
+  paintBox (
+    canvas: CkCanvas, 
+    rect: Rect , 
+    paint: CkPaint, 
+    textDirection: TextDirection
+  ) {
+    switch (this.decoration.shape) {
+      case BoxShape.Circle: {
+        invariant(this.decoration.borderRadius === null)
+
+        const center = rect.center
+        const radius = rect.shortestSide / 2.0
+        canvas.drawCircle(center, radius, paint)
+        break
+      }
+      case BoxShape.Rectangle: {
+        if (this.decoration.borderRadius === null) {
+          canvas.drawRect(rect, paint)
         } else {
-          canvas.drawRRect(_decoration.borderRadius!.resolve(textDirection).toRRect(rect), paint);
+          canvas.drawRRect(this.decoration.borderRadius!.resolve(textDirection).toRRect(rect), paint)
         }
-        break;
+        break
+      }
     }
   }
 
-  void _paintShadows(Canvas canvas, Rect rect, TextDirection? textDirection) {
-    if (_decoration.boxShadow == null)
-      return;
-    for (final BoxShadow boxShadow in _decoration.boxShadow!) {
-      final Paint paint = boxShadow.toPaint();
-      final Rect bounds = rect.shift(boxShadow.offset).inflate(boxShadow.spreadRadius);
-      _paintBox(canvas, bounds, paint, textDirection);
+  paintShadows (
+    canvas: Canvas , 
+    rect: Rect, 
+    textDirection: TextDirection | null
+  ) {
+    if (this.decoration.boxShadow === null) {
+      return
+    }
+
+    for (const boxShadow of this.decoration.boxShadow!) {
+      const paint = boxShadow.toPaint()
+      const bounds = rect.shift(boxShadow.offset).inflate(boxShadow.spreadRadius)
+      this.paintBox(canvas, bounds, paint, textDirection)
     }
   }
 
-  void _paintBackgroundColor(Canvas canvas, Rect rect, TextDirection? textDirection) {
-    if (_decoration.color != null || _decoration.gradient != null)
-      _paintBox(canvas, rect, _getBackgroundPaint(rect, textDirection), textDirection);
+  paintBackgroundColor (
+    canvas: CkCanvas, 
+    rect: Rect, 
+    textDirection: TextDirection | null
+  ) {
+    if (
+      this.decoration.color !== null || 
+      this._decoration.gradient !=- null
+    ) {
+      this.paintBox(canvas, rect, this.getBackgroundPaint(rect, textDirection), textDirection)
+    }
   }
 
   DecorationImagePainter? _imagePainter;
-  void _paintBackgroundImage(Canvas canvas, Rect rect, ImageConfiguration configuration) {
-    if (_decoration.image == null)
-      return;
-    _imagePainter ??= _decoration.image!.createPainter(onChanged!);
-    Path? clipPath;
-    switch (_decoration.shape) {
-      case BoxShape.circle:
-        assert(_decoration.borderRadius == null);
-        final Offset center = rect.center;
-        final double radius = rect.shortestSide / 2.0;
-        final Rect square = Rect.fromCircle(center: center, radius: radius);
-        clipPath = Path()..addOval(square);
-        break;
-      case BoxShape.rectangle:
-        if (_decoration.borderRadius != null)
-          clipPath = Path()..addRRect(_decoration.borderRadius!.resolve(configuration.textDirection).toRRect(rect));
-        break;
+  paintBackgroundImage (
+    canvas: CkCanvas, 
+    rect: Rect, 
+    configuration: ImageConfiguration
+  ) {
+    if (this.decoration.image == null) {
+      return
     }
-    _imagePainter!.paint(canvas, rect, clipPath, configuration);
+    this.imagePainter ??= this.decoration.image!.createPainter(this.onChanged!)
+    let clipPath: Path | null
+    switch (this.decoration.shape) {
+      case BoxShape.Circle: {
+        invariant(this.decoration.borderRadius === null)
+        const center = rect.center
+        const radius = rect.shortestSide / 2.0
+        const square = Rect.fromCircle(center, radius)
+        clipPath = CkPath.malloc()
+        clipPath.addOval(square)
+        break
+      }
+
+      case BoxShape.Cectangle: {
+        if (this.decoration.borderRadius !== null) {
+          clipPath = Path().malloc()
+          clipPath.addRRect(this.decoration.borderRadius!.resolve(configuration.textDirection).toRRect(rect))
+        }
+        break
+      }
+    }
+    
+    this.imagePainter!.paint(canvas, rect, clipPath, configuration)
   }
 
   dispose () {
     this._imagePainter?.dispose()
     super.dispose()
   }
-
 
   paint (
     canvas: CkCanvas, 
