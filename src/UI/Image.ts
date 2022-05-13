@@ -1,6 +1,17 @@
 import { SkiaObjectBox, SkiaImage } from '@Skia'
+import { ImageByteFormat } from './Painting'
 
-export class Image {
+export interface IImage {
+  width: number
+  height: number
+  toByteData (format: ImageByteFormat): Promise<any>
+  dispose ()
+   
+  clone (): Image
+  isCloneOf (other: Image ): boolean
+}
+
+export class Image implements IImage {
   static malloc (skia: SkiaImage) {
     return new Image(skia)
   }
@@ -21,11 +32,16 @@ export class Image {
   }
 
   public box: SkiaObjectBox<SkiaImage>
-  // TODO
-  // public videoFrame: VideoFrame | null = null
+  public disposed: boolean
 
   constructor (skia: SkiaImage) {
     this.box = new SkiaObjectBox(skia)
+    this.disposed = false
+  }
+
+  
+  toByteData(format: ImageByteFormat): Promise<any> {
+    throw new Error('Method not implemented.')
   }
 
   dispose () {

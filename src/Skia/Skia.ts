@@ -179,6 +179,10 @@ export class Skia {
     return Skia.s.ColorFilter.MakeBlend
   }
 
+  static get Malloc () {
+    return Skia.s.Malloc
+  }
+
   public skia: CanvasKit
 
   constructor (skia: CanvasKit) {

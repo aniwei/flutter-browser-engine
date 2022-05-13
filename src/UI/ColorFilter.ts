@@ -1,5 +1,5 @@
 import { invariant } from 'ts-invariant'
-import { ManagedSkiaObject, Skia, SkiaColorFilter, SkiaImageFilter, SkiaBlendMode } from '@Skia'
+import { ManagedSkiaObject, Skia, SkiaColorFilter, SkiaImageFilter, SkiaBlendMode, toSkiaSharedColor } from '@Skia'
 import { ColorFilterImageFilter } from './ImageFilter'
 import { Color } from './Painting'
 
@@ -17,7 +17,7 @@ export abstract class ColorFilter {
 }
 
 export class ManagedSkiaColorFilter extends ManagedSkiaObject<SkiaColorFilter> {
-  static malloc (colorFilter: SkiaColorFilter): ManagedSkiaColorFilter {
+  static malloc (colorFilter: ColorFilter): ManagedSkiaColorFilter {
     const managedSkiaColorFilter = new ManagedSkiaColorFilter(
       colorFilter.initRawColorFilter(), 
       colorFilter,
@@ -25,8 +25,6 @@ export class ManagedSkiaColorFilter extends ManagedSkiaObject<SkiaColorFilter> {
 
     return managedSkiaColorFilter
   }
-
-  
 
   public colorFilter: ColorFilter
 
@@ -80,7 +78,7 @@ export class BlendModeColorFilter extends ColorFilter {
 
   initRawColorFilter () {
     return Skia.ColorFilter.MakeBlend(
-      this.color,
+      toSkiaSharedColor(this.color) as Float32Array,
       this.blendMode
     )
   }
