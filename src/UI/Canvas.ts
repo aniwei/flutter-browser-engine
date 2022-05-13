@@ -1,10 +1,11 @@
 import { Skia, SkiaClipOp, SkiaFilterQuality } from '@Skia'
 import type { SkiaBlendMode, SkiaCanvas } from '@Skia'
-import type { RRect, Rect, Color } from './Geometry'
+import type { RRect, Rect } from './Geometry'
+import type { Color } from './Painting'
 import type { CkImage } from './CkImage'
-import type { CkImageFilter, CkManagedSkImageFilterConvertible } from './CkImageFilter'
-import type { CkPaint } from './CkPaint'
-import type { CkPath } from './CkPath'
+import type { ImageFilter, CkManagedSkImageFilterConvertible } from './ImageFilter'
+import type { Paint } from './Paint'
+import type { Path } from './Path'
 
 export class Canvas {
   static kMitchellNetravali_B = 1.0 / 3.0
@@ -32,7 +33,7 @@ export class Canvas {
   }
 
   clipPath (
-    path: CkPath, 
+    path: Path, 
     doAntiAlias: boolean
   ) {
     this.skia.clipPath(
@@ -71,7 +72,7 @@ export class Canvas {
   }
 
   drawAtlasRaw (
-    paint: CkPaint,
+    paint: Paint,
     atlas,
     rstTransforms: Float32Array,
     rects: Float32Array,
@@ -114,7 +115,7 @@ export class Canvas {
   drawDRRect ( //
     outer: RRect, 
     inner: RRect, 
-    paint: CkPaint
+    paint: Paint
   ) {
     this.skia.drawDRRect(
       outer,
@@ -126,7 +127,7 @@ export class Canvas {
   drawImage ( // 
     image: CkImage, 
     offset, 
-    paint: CkPaint
+    paint: Paint
   ) {
     const filterQuality = paint.filterQuality
     
@@ -157,7 +158,7 @@ export class Canvas {
     image: CkImage, 
     src: Rect, 
     dst: Rect, 
-    paint: CkPaint
+    paint: Paint
   ) {
     const filterQuality = paint.filterQuality
     if (filterQuality == SkiaFilterQuality.High) {
@@ -165,8 +166,8 @@ export class Canvas {
         image.skia,
         src,
         dst,
-        CkCanvas.kMitchellNetravali_B,
-        CkCanvas.kMitchellNetravali_C,
+        Canvas.kMitchellNetravali_B,
+        Canvas.kMitchellNetravali_C,
         paint.skia,
       )
     } else {
@@ -185,9 +186,9 @@ export class Canvas {
 
   drawImageNine ( // 
     image: CkImage, 
-    center: InputIRect, 
+    center: Rect, 
     dst: Rect, 
-    paint: CkPaint
+    paint: Paint
   ) {
     this.skia.drawImageNine(
       image.skia,
@@ -202,7 +203,7 @@ export class Canvas {
   drawLine ( // @TODO
     pointA, 
     pointB, 
-    paint: CkPaint
+    paint: Paint
   ) {
     this.skia.drawLine(
       pointA.dx,
@@ -215,7 +216,7 @@ export class Canvas {
 
   drawOval ( // 
     rect: Rect, 
-    paint: CkPaint
+    paint: Paint
   ) {
     this.skia.drawOval(
       rect,
@@ -223,7 +224,7 @@ export class Canvas {
     )
   }
 
-  drawPaint (paint: CkPaint) {
+  drawPaint (paint: Paint) {
     this.skia.drawPaint(paint.skia)
   }
 
@@ -240,19 +241,19 @@ export class Canvas {
   }
 
   drawPath (
-    path: CkPath , 
-    paint: CkPaint //
+    path: Path, 
+    paint: Paint
   ) {
     this.skia.drawPath(path.skia, paint.skia)
   }
 
-  drawPicture (picture) { // 
+  drawPicture (picture) { 
     this.skia.drawPicture(picture.skia)
   }
 
   drawPoints (
-    paint: CkPaint, //
-    pointMode: BlendMode, 
+    paint: Paint,
+    pointMode: SkiaBlendMode, 
     points: Float32Array
   ) {
     this.skia.drawPoints(
@@ -264,7 +265,7 @@ export class Canvas {
 
   drawRRect (
     rrect: RRect, 
-    paint: CkPaint 
+    paint: Paint 
   ) {
     this.skia.drawRRect(
       rrect,
@@ -274,13 +275,13 @@ export class Canvas {
 
   drawRect (
     rect: Rect, 
-    paint: CkPaint 
+    paint: Paint 
   ) {
     this.skia.drawRect(rect, paint.skia)
   }
 
   drawShadow ( // @TODO
-    path: CkPath, 
+    path: Path, 
     color: Color, 
     elevation: number, 
     transparentOccluder: boolean
@@ -296,17 +297,16 @@ export class Canvas {
   }
 
   drawSkiaShadow (
-    skCanvas: Canvas,
-    path: CkPath,
+    skCanvas: SkiaCanvas,
+    path: Path,
     color: Color,
     elevation: number,
     transparentOccluder: boolean,
     devicePixelRatio: number,
   ) {
-    // 
     const flags = transparentOccluder
-      ? CkCanvas.kDirectionalLight_ShadowFlag | CkCanvas.kTransparentOccluder_ShadowFlag
-      : CkCanvas.kDirectionalLight_ShadowFlag | CkCanvas.kNone_ShadowFlag
+      ? Canvas.kDirectionalLight_ShadowFlag | Canvas.kTransparentOccluder_ShadowFlag
+      : Canvas.kDirectionalLight_ShadowFlag | Canvas.kNone_ShadowFlag
 
     // const inAmbient =
     //     color.withAlpha((color.alpha * ckShadowAmbientAlpha).round());
@@ -335,8 +335,8 @@ export class Canvas {
 
   drawVertices  (
     vertices, 
-    blendMode: BlendMode, 
-    paint: CkPaint // @TODO
+    blendMode: SkiaBlendMode, 
+    paint: Paint // @TODO
   ) {
     this.skia.drawVertices(
       vertices.skia,
@@ -364,7 +364,7 @@ export class Canvas {
 
   saveLayer (
     bounds: Rect, 
-    paint: CkPaint // @TODO
+    paint: Paint // @TODO
   ) {
     this.skia.saveLayer(
       paint?.skia,
@@ -373,14 +373,14 @@ export class Canvas {
     );
   }
 
-  saveLayerWithoutBounds (paint: CkPaint) { 
+  saveLayerWithoutBounds (paint: Paint) { 
     this.skia.saveLayer(paint?.skia, null, null)
   }
 
   saveLayerWithFilter (
     bounds: Rect, 
-    filter: CkImageFilter, 
-    paint: CkPaint
+    filter: ImageFilter, 
+    paint: Paint
   ) {
     // TODO
     const convertible: CkManagedSkImageFilterConvertible = filter

@@ -1,11 +1,10 @@
-import { SkiaObjectBox } from '@Skia'
-import { Image } from 'canvaskit-wasm'
+import { SkiaObjectBox, SkiaImage } from '@Skia'
 
-export class CkImage {
-  static malloc (skia: Image) {
-    return new CkImage(skia)
+export class Image {
+  static malloc (skia: SkiaImage) {
+    return new Image(skia)
   }
-  static cloneOf (box: SkiaObjectBox<Image>) {
+  static cloneOf (box: SkiaObjectBox<SkiaImage>) {
     
   }
 
@@ -21,11 +20,11 @@ export class CkImage {
     return this.skia.height()
   }
 
-  public box: SkiaObjectBox<Image>
+  public box: SkiaObjectBox<SkiaImage>
   // TODO
   // public videoFrame: VideoFrame | null = null
 
-  constructor (skia: Image) {
+  constructor (skia: SkiaImage) {
     this.box = new SkiaObjectBox(skia)
   }
 
@@ -33,13 +32,13 @@ export class CkImage {
     this.disposed = true
   }
 
-  clone (): CkImage  {
-    return CkImage.cloneOf(this.box)
+  clone (): Image  {
+    return Image.cloneOf(this.box)
   }
 
-  isCloneOf (other: CkImage) {
+  isCloneOf (other: Image) {
     return (
-      other instanceof CkImage && 
+      other instanceof Image && 
       other.skia.isAliasOf(this.skia)
     )
   }

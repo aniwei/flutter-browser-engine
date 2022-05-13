@@ -24,6 +24,7 @@ export type SkiaCubicFilterOption = {
 }
 
 export type {
+  PathOp as SkiaPathOp,
   Canvas as SkiaCanvas,
   FilterMode as SkiaFilterMode,
   MipmapMode as SkiaMipmapMode,

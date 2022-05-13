@@ -9,10 +9,6 @@ export abstract class ManagedSkiaObject <T extends RawSkia<T>> extends SkiaObjec
     throw new UnimplementedError()
   }
 
-  static init (options) {
-    throw new UnimplementedError()
-  }
-
   public get skia () {
     return this.rawSkia as T
   }

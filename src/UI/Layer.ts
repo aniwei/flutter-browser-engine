@@ -1,6 +1,6 @@
 import { Rect } from '@UI'
 import { BlendMode, ImageFilter } from 'canvaskit-wasm'
-import { CkPaint } from './CkPaint'
+import { Paint } from './Paint'
 
 export abstract class Layer {
   public parent: ContainerLayer | null = null
@@ -40,7 +40,7 @@ export class RootLayer extends ContainerLayer {
   }
 
   paint () {
-    const paint = CkPaint.malloc()
+    const paint = Paint.malloc()
     paint.blendMode = this.blendMode
 
     

@@ -1,23 +1,23 @@
 import { invariant } from 'ts-invariant'
-import { ManagedSkiaObject, Skia } from '@Skia'
-import { CkColorFilterImageFilter } from './CkImageFilter'
-import type { BlendMode, Color, ColorFilter, ImageFilter } from 'canvaskit-wasm'
+import { ManagedSkiaObject, Skia, SkiaColorFilter, SkiaImageFilter, SkiaBlendMode } from '@Skia'
+import { ColorFilterImageFilter } from './ImageFilter'
+import { Color } from './Painting'
 
-export abstract class CkColorFilter {
+export abstract class ColorFilter {
 
-  public get imageFilter (): ManagedSkiaObject<ImageFilter> {
-    return CkColorFilterImageFilter.malloc({ colorFilter: this })
+  public get imageFilter (): ManagedSkiaObject<SkiaImageFilter> {
+    return ColorFilterImageFilter.malloc({ colorFilter: this })
   }
   
-  initRawImageFilter (): ImageFilter  {
+  initRawImageFilter (): SkiaImageFilter  {
     return Skia.ImageFilter.MakeColorFilter(this.initRawColorFilter(), null)
   }
 
-  abstract initRawColorFilter (): ColorFilter
+  abstract initRawColorFilter (): SkiaColorFilter
 }
 
-export class ManagedSkiaColorFilter extends ManagedSkiaObject<ColorFilter> {
-  static malloc (colorFilter: CkColorFilter): ManagedSkiaColorFilter {
+export class ManagedSkiaColorFilter extends ManagedSkiaObject<SkiaColorFilter> {
+  static malloc (colorFilter: SkiaColorFilter): ManagedSkiaColorFilter {
     const managedSkiaColorFilter = new ManagedSkiaColorFilter(
       colorFilter.initRawColorFilter(), 
       colorFilter,
@@ -28,9 +28,9 @@ export class ManagedSkiaColorFilter extends ManagedSkiaObject<ColorFilter> {
 
   
 
-  public colorFilter: CkColorFilter
+  public colorFilter: ColorFilter
 
-  constructor (skia, colorFilter: CkColorFilter) {
+  constructor (skia, colorFilter: ColorFilter) {
     super(skia)
     this.colorFilter = colorFilter
   }
@@ -57,21 +57,21 @@ export class ManagedSkiaColorFilter extends ManagedSkiaObject<ColorFilter> {
   }
 }
 
-export type CkBlendModeColorFilterOptions = {
+export type BlendModeColorFilterOptions = {
   color: Color,
-  blendMode: BlendMode
+  blendMode: SkiaBlendMode
 }
 
-export class CkBlendModeColorFilter extends CkColorFilter {
-  static init (options: CkBlendModeColorFilterOptions) {
-    const blendModeColorFilter = new CkBlendModeColorFilter(options)
+export class BlendModeColorFilter extends ColorFilter {
+  static init (options: BlendModeColorFilterOptions) {
+    const blendModeColorFilter = new BlendModeColorFilter(options)
     return blendModeColorFilter
   }
 
   public color: Color
-  public blendMode: BlendMode
+  public blendMode: SkiaBlendMode
 
-  constructor (options: CkBlendModeColorFilterOptions) {
+  constructor (options: BlendModeColorFilterOptions) {
     super()
 
     this.color = options.color
@@ -85,8 +85,8 @@ export class CkBlendModeColorFilter extends CkColorFilter {
     )
   }
 
-  isEqual (other: CkBlendModeColorFilter) {
-    if (other instanceof CkBlendModeColorFilter) {
+  isEqual (other: BlendModeColorFilter) {
+    if (other instanceof BlendModeColorFilter) {
       return (
         other.color === this.color &&
         other.blendMode === this.blendMode
@@ -102,9 +102,9 @@ export class CkBlendModeColorFilter extends CkColorFilter {
 }
 
 
-export class CkMatrixColorFilter extends CkColorFilter {
+export class MatrixColorFilter extends ColorFilter {
   static malloc (matrix: Float32Array) {
-    const matrixColorFilter = new CkMatrixColorFilter(matrix)
+    const matrixColorFilter = new MatrixColorFilter(matrix)
     return matrixColorFilter
   }
 
@@ -132,7 +132,7 @@ export class CkMatrixColorFilter extends CkColorFilter {
 }
 
 
-export class CkLinearToSrgbGammaColorFilter extends CkColorFilter {
+export class CkLinearToSrgbGammaColorFilter extends ColorFilter {
   static init () {
     return new CkLinearToSrgbGammaColorFilter()
   }
@@ -156,7 +156,7 @@ export type CkComposeColorFilterOptions = {
   inner: ManagedSkiaColorFilter
 }
 
-export class CkComposeColorFilter extends CkColorFilter {
+export class CkComposeColorFilter extends ColorFilter {
   static malloc (options: CkComposeColorFilterOptions) {
     const composeColorFilter = new CkComposeColorFilter(options)
     return composeColorFilter

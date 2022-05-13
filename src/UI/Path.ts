@@ -1,39 +1,39 @@
-import { FillType, Path, PathOp, Rect } from 'canvaskit-wasm'
-import { ManagedSkiaObject, Skia } from '@Skia'
+import { ManagedSkiaObject, Skia, SkiaPath, SkiaFillType, SkiaPathOp } from '@Skia'
 import { setter } from '@Shared' 
+import { Offset, Rect } from './Geometry'
 
-export class CkPath extends ManagedSkiaObject<Path> {
-  static from (other: CkPath) {
-    const path = CkPath.malloc()
+export class Path extends ManagedSkiaObject<SkiaPath> {
+  static from (other: Path) {
+    const path = Path.malloc()
     path.fillType = other.fillType
     path.skia = other.skia.copy()
 
     return path
   }
 
-  static fromPath (skPath: Path, fillType: FillType) {
-    const path = CkPath.malloc()
+  static fromPath (skPath: SkiaPath, fillType: SkiaFillType) {
+    const path = Path.malloc()
     path.fillType = fillType
     path.skia = skPath
     return path
   }
 
   static combine (
-    operation: PathOp,
-    pathA: CkPath,
-    pathB: CkPath
+    operation: SkiaPathOp,
+    pathA: Path,
+    pathB: Path
   ) {
     const path = Skia.Path.MakeFromOp(
       pathA.skia,
       pathB.skia,
       operation
-    ) as Path
+    ) as SkiaPath
 
-    return CkPath.fromPath(path, pathA.fillType)
+    return Path.fromPath(path, pathA.fillType)
   }
 
-  static malloc (): CkPath {
-    return new CkPath(new Skia.Path())
+  static malloc (): Path {
+    return new Path(new Skia.Path())
   }
 
   @setter(function (this, value) {
@@ -49,7 +49,7 @@ export class CkPath extends ManagedSkiaObject<Path> {
 
   public cachedCommands: Float32Array | null = null
 
-  constructor (skia: Path) {
+  constructor (skia: SkiaPath) {
     super(skia)
     this.fillType = Skia.FillType.Winding
   }
@@ -68,8 +68,8 @@ export class CkPath extends ManagedSkiaObject<Path> {
   }
 
   addPath (
-    path,
-    offset: Float32Array,
+    path: SkiaPath,
+    offset: Offset,
     matrix4
   ) {
 
@@ -98,7 +98,7 @@ export class CkPath extends ManagedSkiaObject<Path> {
     this.skia.close()
   }
 
-  transform (matrix: Float64Array): CkPath {
+  transform (matrix: Float64Array): Path {
     const path = this.skia.copy()
     path.transform(
       matrix[0],
@@ -112,7 +112,7 @@ export class CkPath extends ManagedSkiaObject<Path> {
       matrix[8],
     )
 
-    return CkPath.fromPath(path, this.fillType)
+    return Path.fromPath(path, this.fillType)
   }
 
   delete () {
@@ -120,10 +120,10 @@ export class CkPath extends ManagedSkiaObject<Path> {
     super.delete()
   }
 
-  resurrect (): Path {
+  resurrect (): SkiaPath {
     const path = Skia.MakeFromCmds(this.cachedCommands as Float32Array)
     path?.setFillType(this.fillType)
-    return path as Path
+    return path as SkiaPath
   }
 
   toSvgString (): string {
