@@ -179,10 +179,6 @@ export class Skia {
     return Skia.s.ColorFilter.MakeBlend
   }
 
-  static SkiaFilterOptions (filterQuality: SkiaFilterQuality) {
-    return Skia.r.SkiaFilterOptions?.get(filterQuality) as (SkiaCubicFilterOption & SkiaTransformFilterOption)
-  }
-
   public skia: CanvasKit
 
   constructor (skia: CanvasKit) {

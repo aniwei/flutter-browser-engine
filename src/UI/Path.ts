@@ -1,8 +1,119 @@
 import { ManagedSkiaObject, Skia, SkiaPath, SkiaFillType, SkiaPathOp } from '@Skia'
 import { setter } from '@Shared' 
-import { Offset, Rect } from './Geometry'
+import { Offset, Radius, Rect, RRect } from './Geometry'
 
-export class Path extends ManagedSkiaObject<SkiaPath> {
+export interface IPath {
+  fillType: SkiaFillType
+  moveTo (
+    x: number, 
+    y: number
+  )
+  relativeMoveTo (
+    dx: number, 
+    dy: number
+  )
+  lineTo (
+    x: number, 
+    y: number
+  )
+  relativeLineTo (
+    dx: number, 
+    dy: number
+  )
+  quadraticBezierTo (
+    x1: number, 
+    y1: number, 
+    x2: number, 
+    y2: number
+  )
+  relativeQuadraticBezierTo (
+    x1: number, 
+    y1: number, 
+    x2: number, 
+    y2: number
+  )
+  cubicTo (
+    x1: number, 
+    y1: number, 
+    x2: number, 
+    y2: number, 
+    x3: number, 
+    y3: number
+  )
+  relativeCubicTo (
+    x1: number, 
+    y1: number, 
+    x2: number, 
+    y2: number, 
+    x3: number, 
+    y3: number
+  )
+  conicTo (
+    x1: number, 
+    y1: number, 
+    x2: number, 
+    y2: number, 
+    w: number
+  )
+  relativeConicTo (
+    x1: number, 
+    y1: number, 
+    x2: number, 
+    y2: number, 
+    w: number
+  )
+  arcTo (
+    rect: Rect, 
+    startAngle: number, 
+    sweepAngle: number, 
+    forceMoveTo: boolean
+  )
+  arcToPoint (
+    arcEnd: Offset,
+    radius: Radius,
+    rotation: number,
+    largeArc: boolean,
+    clockwise: boolean,
+  )
+  relativeArcToPoint(
+    arcEndDelta: Offset,
+    radius: Radius,
+    rotation: number,
+    largeArc: boolean,
+    clockwise: boolean,
+  )
+  addRect (rect: Rect)
+  addOval (oval: Rect)
+  addArc (
+    oval: Rect, 
+    startAngle: number, 
+    sweepAngle: number
+  )
+  addPolygon (
+    points: Offset[], 
+    close: boolean
+  )
+  addRRect (rrect: RRect)
+  addPath (
+    path: Path, 
+    offset: Offset, 
+    matrix4: Float64Array | null
+  )
+  extendWithPath (
+    path: Path, 
+    offset: Offset, 
+    matrix4: Float64Array | null
+  )
+  close ()
+  reset ()
+  contains (point: Offset ): boolean
+  shift (offset: Offset): Path
+  transform (matrix4: Float64Array): Path
+  getBounds (): Rect
+  computeMetrics (forceClosed: boolean)
+}
+
+export class Path extends ManagedSkiaObject<SkiaPath> implements IPath {
   static from (other: Path) {
     const path = Path.malloc()
     path.fillType = other.fillType
@@ -11,7 +122,7 @@ export class Path extends ManagedSkiaObject<SkiaPath> {
     return path
   }
 
-  static fromPath (skPath: SkiaPath, fillType: SkiaFillType) {
+  static fromSkiaPath (skPath: SkiaPath, fillType: SkiaFillType) {
     const path = Path.malloc()
     path.fillType = fillType
     path.skia = skPath
@@ -29,7 +140,7 @@ export class Path extends ManagedSkiaObject<SkiaPath> {
       operation
     ) as SkiaPath
 
-    return Path.fromPath(path, pathA.fillType)
+    return Path.fromSkiaPath(path, pathA.fillType)
   }
 
   static malloc (): Path {
@@ -60,19 +171,46 @@ export class Path extends ManagedSkiaObject<SkiaPath> {
     sweepAngle: number
   ) {
     const toDegree = 180.0 / Math.PI
-    this.skia.addArc(oval, startAngle * toDegree, sweepAngle * toDegree)  
+    this.skia.addArc(
+      oval, 
+      startAngle * toDegree, 
+      sweepAngle * toDegree
+    )  
   }
 
   addOval (oval: Rect) {
-    this.skia.addOval(oval, false, 1)
+    this.skia.addOval(
+      oval, 
+      false, 
+      1
+    )
   }
 
   addPath (
-    path: SkiaPath,
+    path: Path,
     offset: Offset,
-    matrix4
+    matrix4: Float64Array | null
   ) {
+    let matrix
+    if (matrix4 === null) {
 
+    } else {
+
+    }
+
+    this.skia.addPath(
+      path.skia,
+      matrix[0],
+      matrix[1],
+      matrix[2],
+      matrix[3],
+      matrix[4],
+      matrix[5],
+      matrix[6],
+      matrix[7],
+      matrix[8],
+      false,
+    )
   }
 
   addRect (
@@ -112,7 +250,7 @@ export class Path extends ManagedSkiaObject<SkiaPath> {
       matrix[8],
     )
 
-    return Path.fromPath(path, this.fillType)
+    return Path.fromSkiaPath(path, this.fillType)
   }
 
   delete () {
