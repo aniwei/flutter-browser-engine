@@ -1,5 +1,18 @@
 import invariant from 'ts-invariant'
-import { clamp, clampInt, lerpInt } from '@Math'
+import { lerpInt, clampInt, clamp } from '@Math'
+import { Image } from './Image'
+
+export enum ImageByteFormat {
+  RawRGBA,
+  RawStraightRGBA,
+  RawUnmodified,
+  PNG,
+}
+
+export enum PixelFormat {
+  RGBA8888,
+  BGRA8888,
+}
 
 export function scaleAlpha (
   a: Color, 
@@ -8,7 +21,7 @@ export function scaleAlpha (
   return a.withAlpha(clampInt(Math.round((a.alpha * factor)), 0, 255))
 }
 
-export class Color {
+export class Color extends Float32Array {
   static fromARGB (
     a: number,
     r: number,
@@ -90,25 +103,40 @@ export class Color {
   }
   
   public get alpha () {
-    return (0xFF000000 & this.value) >> 24
+    return this[3]
   }
   public get opacity () {
     return this.alpha / 0xFF
   }
   public get red () {
-    return (0x00ff0000 & this.value) >> 16;
+    return this[0]
   }
   public get green () {
-    return (0x0000ff00 & this.value) >> 8;
+    return this[1]
   }
   public get blue () {
-    return (0x000000ff & this.value) >> 0;
+    return this[2]
   }
 
-  public value: number
+  public get value (): number {
+    return (
+      (
+        ((this.alpha & 0xff) << 24) |
+        ((this.red & 0xff) << 16) |
+        ((this.green & 0xff) << 8) |
+        ((this.blue & 0xff) << 0)
+      ) & 0xFFFFFFFF
+    ) >>> 0
+  }
 
   constructor (value: number) {
-    this.value = value & 0xffffffff
+    value = value & 0xFFFFFFFF >>> 0
+    super([
+      (0x00ff0000 & value) >> 16,
+      (0x0000ff00 & value) >> 8,
+      (0x000000ff & value) >> 0,
+      (0xFF000000 & value) >> 24
+    ])
   }
 
   withAlpha (a: number) {
@@ -172,12 +200,39 @@ export class Color {
     }
     
     if (other instanceof Color) {
-      return this.value = other.value
+      return this.value === other.value
     }
+    
     return false
   }
 
   toString () {
     return `Color(${this.value})`
   }
+}
+
+export abstract class FrameInfo {
+  abstract get durationMillis (): number
+  abstract get image (): Image
+}
+
+export class Codec {
+  
+  public get frameCount () {
+    return 0
+  }
+  public get repetitionCount () {
+    return  0
+  }
+
+  // @TODO
+  // Future<FrameInfo> getNextFrame() {
+  //   return engine.futurize<FrameInfo>(_getNextFrame);
+  // }
+
+  // getNextFrame (callback): string | null {
+  //   return null
+  // }
+  
+  dispose () {}
 }

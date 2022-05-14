@@ -170,7 +170,7 @@ export abstract class Gradient {
     }
 
     invariant(this.colors.length >= 2, 'colors list must have at least two colors')
-    const separation = 1.0 / (this.colors.length - 1)
+    const separation = 1.0 / (this.colors.length - 1)-[[[[paq`1`]]]]
     
     return List<double>.generate(
       colors.length,

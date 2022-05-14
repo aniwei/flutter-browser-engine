@@ -1,9 +1,9 @@
 import { Skia, SkiaClipOp, SkiaFilterQuality } from '@Skia'
 import type { SkiaBlendMode, SkiaCanvas } from '@Skia'
-import type { RRect, Rect } from './Geometry'
+import type { RRect, Rect, Offset } from './Geometry'
 import type { Color } from './Painting'
-import type { CkImage } from './CkImage'
-import type { ImageFilter, CkManagedSkImageFilterConvertible } from './ImageFilter'
+import type { Image } from './Image'
+import type { ImageFilter, ManagedSkImageFilterConvertible } from './ImageFilter'
 import type { Paint } from './Paint'
 import type { Path } from './Path'
 
@@ -107,7 +107,7 @@ export class Canvas {
     blendMode: SkiaBlendMode
   ) {
     this.skia.drawColorInt(
-      color,
+      color.value,
       blendMode
     )
   }
@@ -125,8 +125,8 @@ export class Canvas {
   }
 
   drawImage ( // 
-    image: CkImage, 
-    offset, 
+    image: Image, 
+    offset: Offset, 
     paint: Paint
   ) {
     const filterQuality = paint.filterQuality
@@ -155,7 +155,7 @@ export class Canvas {
   }
 
   drawImageRect ( // 
-    image: CkImage, 
+    image: Image, 
     src: Rect, 
     dst: Rect, 
     paint: Paint
@@ -185,15 +185,15 @@ export class Canvas {
   }
 
   drawImageNine ( // 
-    image: CkImage, 
+    image: Image, 
     center: Rect, 
-    dst: Rect, 
+    dist: Rect, 
     paint: Paint
   ) {
     this.skia.drawImageNine(
       image.skia,
-      center,
-      dst,
+      center as unknown as Int32Array,
+      dist,
       paint.filterQuality === SkiaFilterQuality.None ?
         Skia.FilterMode.Nearest : Skia.FilterMode.Linear,
       paint.skia,
@@ -383,7 +383,7 @@ export class Canvas {
     paint: Paint
   ) {
     // TODO
-    const convertible: CkManagedSkImageFilterConvertible = filter
+    const convertible: ManagedSkImageFilterConvertible = filter
     return this.skia.saveLayer(
       paint?.skia,
       bounds,

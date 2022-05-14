@@ -164,6 +164,60 @@ export class Path extends ManagedSkiaObject<SkiaPath> implements IPath {
     super(skia)
     this.fillType = Skia.FillType.Winding
   }
+  relativeMoveTo(dx: number, dy: number) {
+    throw new Error('Method not implemented.')
+  }
+  relativeLineTo(dx: number, dy: number) {
+    throw new Error('Method not implemented.')
+  }
+  quadraticBezierTo(x1: number, y1: number, x2: number, y2: number) {
+    throw new Error('Method not implemented.')
+  }
+  relativeQuadraticBezierTo(x1: number, y1: number, x2: number, y2: number) {
+    throw new Error('Method not implemented.')
+  }
+  cubicTo(x1: number, y1: number, x2: number, y2: number, x3: number, y3: number) {
+    throw new Error('Method not implemented.')
+  }
+  relativeCubicTo(x1: number, y1: number, x2: number, y2: number, x3: number, y3: number) {
+    throw new Error('Method not implemented.')
+  }
+  conicTo(x1: number, y1: number, x2: number, y2: number, w: number) {
+    throw new Error('Method not implemented.')
+  }
+  relativeConicTo(x1: number, y1: number, x2: number, y2: number, w: number) {
+    throw new Error('Method not implemented.')
+  }
+  arcTo(rect: Rect, startAngle: number, sweepAngle: number, forceMoveTo: boolean) {
+    throw new Error('Method not implemented.')
+  }
+  arcToPoint(arcEnd: Offset, radius: Radius, rotation: number, largeArc: boolean, clockwise: boolean) {
+    throw new Error('Method not implemented.')
+  }
+  relativeArcToPoint(arcEndDelta: Offset, radius: Radius, rotation: number, largeArc: boolean, clockwise: boolean) {
+    throw new Error('Method not implemented.')
+  }
+  addPolygon(points: Offset[], close: boolean) {
+    throw new Error('Method not implemented.')
+  }
+  addRRect(rrect: RRect) {
+    throw new Error('Method not implemented.')
+  }
+  extendWithPath(path: Path, offset: Offset, matrix4: Float64Array | null) {
+    throw new Error('Method not implemented.')
+  }
+  contains(point: Offset): boolean {
+    throw new Error('Method not implemented.')
+  }
+  shift(offset: Offset): Path {
+    throw new Error('Method not implemented.')
+  }
+  getBounds(): Rect {
+    throw new Error('Method not implemented.')
+  }
+  computeMetrics(forceClosed: boolean) {
+    throw new Error('Method not implemented.')
+  }
 
   addArc (
     oval: Rect, 

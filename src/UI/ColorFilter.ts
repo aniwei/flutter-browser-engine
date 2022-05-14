@@ -1,5 +1,5 @@
 import { invariant } from 'ts-invariant'
-import { ManagedSkiaObject, Skia, SkiaColorFilter, SkiaImageFilter, SkiaBlendMode, toSkiaSharedColor } from '@Skia'
+import { ManagedSkiaObject, Skia, SkiaColorFilter, SkiaImageFilter, SkiaBlendMode } from '@Skia'
 import { ColorFilterImageFilter } from './ImageFilter'
 import { Color } from './Painting'
 
@@ -78,7 +78,7 @@ export class BlendModeColorFilter extends ColorFilter {
 
   initRawColorFilter () {
     return Skia.ColorFilter.MakeBlend(
-      toSkiaSharedColor(this.color) as Float32Array,
+      this.color,
       this.blendMode
     )
   }
@@ -149,21 +149,21 @@ export class CkLinearToSrgbGammaColorFilter extends ColorFilter {
 }
 
 
-export type CkComposeColorFilterOptions = {
+export type ComposeColorFilterOptions = {
   outer: ManagedSkiaColorFilter,
   inner: ManagedSkiaColorFilter
 }
 
-export class CkComposeColorFilter extends ColorFilter {
-  static malloc (options: CkComposeColorFilterOptions) {
-    const composeColorFilter = new CkComposeColorFilter(options)
+export class ComposeColorFilter extends ColorFilter {
+  static malloc (options: ComposeColorFilterOptions) {
+    const composeColorFilter = new ComposeColorFilter(options)
     return composeColorFilter
   }
 
   public outer: ManagedSkiaColorFilter
   public inner: ManagedSkiaColorFilter
 
-  constructor (options: CkComposeColorFilterOptions) {
+  constructor (options: ComposeColorFilterOptions) {
     super()
 
     this.outer = options.outer
@@ -177,8 +177,8 @@ export class CkComposeColorFilter extends ColorFilter {
     )
   }
 
-  isEqual (other: CkComposeColorFilter) {
-    if (other instanceof CkComposeColorFilter) {
+  isEqual (other: ComposeColorFilter) {
+    if (other instanceof ComposeColorFilter) {
       return (
         this.outer === other.outer &&
         this.inner === other.inner

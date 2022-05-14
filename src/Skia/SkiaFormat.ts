@@ -1,6 +1,6 @@
-import { Color, Offset } from '@UI'
+import { Color, Offset, Rect, RRect } from '@UI'
 import { Skia } from '@Skia'
-import { MallocObj } from 'canvaskit-wasm'
+import { CubicResampler, FilterOptions, MallocObj } from 'canvaskit-wasm'
 import { SkiaFilterQuality } from './Skia'
 
 const kMatrixIndexToMatrix4Index = [
@@ -9,7 +9,6 @@ const kMatrixIndexToMatrix4Index = [
   3, 7, 15, // Row 3
 ]
 
-let kSkiaSharedColor: MallocObj | null = null
 
 export function toSkiaMatrixFromFloat32 (matrix4: Float32Array) {
   const skMatrix = new Float32Array(9)
@@ -48,7 +47,7 @@ export function toSkiaPointFromOffset (offset: Offset) {
   return skPoint
 }
 
-export function toSkiaFilterQuality (filterQuality: SkiaFilterQuality) {
+export function toSkiaFilterQuality (filterQuality: SkiaFilterQuality): CubicResampler | FilterOptions {
   if (filterQuality === SkiaFilterQuality.None) {
     return {
       filter: Skia.FilterMode.Nearest,
@@ -64,26 +63,10 @@ export function toSkiaFilterQuality (filterQuality: SkiaFilterQuality) {
       filter: Skia.FilterMode.Linear,
       mipmap: Skia.MipmapMode.Linear
     }
-  }  else if (filterQuality === SkiaFilterQuality.High) {
+  }  else {
     return {
       B: 1.0 / 3,
       C: 1.0 / 3
     }
   } 
-}
-
-export function toSkiaColor (color: Color) {
-  return color.value
-}
-
-export function toSkiaSharedColor (color: Color) {
-  kSkiaSharedColor = kSkiaSharedColor || Skia.Malloc(Float32Array, 4)
-  const data = kSkiaSharedColor.toTypedArray()
-
-  data[0] = color.red / 255.0
-  data[1] = color.green / 255.0
-  data[2] = color.blue / 255.0
-  data[3] = color.alpha / 255.0
-
-  return data
 }

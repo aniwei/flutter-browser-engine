@@ -1,5 +1,5 @@
 import { UnimplementedError } from '@Shared'
-import { ManagedSkiaObject, Skia, SkiaFilterQuality, SkiaImageFilter, SkiaTileMode } from '@Skia'
+import { ManagedSkiaObject, Skia, SkiaFilterQuality, SkiaImageFilter, SkiaTileMode, toSkiaFilterQuality, toSkiaMatrixFromFloat64 } from '@Skia'
 import type { ColorFilter } from './ColorFilter'
 
 export abstract class ManagedSkImageFilterConvertible {
@@ -45,6 +45,7 @@ export class BlurImageFilter extends ImageFilter {
       options.tileMode,
       null
     ), options)
+    
     return blurImageFilter
   }
 
@@ -88,8 +89,13 @@ export class BlurImageFilter extends ImageFilter {
     return false
   }
 
-  resurrect (): ImageFilter {
-    return BlurImageFilter.init(this)
+  resurrect (): SkiaImageFilter {
+    return Skia.ImageFilter.MakeBlur(
+      this.sigmaX,
+      this.sigmaY,
+      this.tileMode,
+      null
+    )
   }
 
   toString () {
@@ -98,7 +104,7 @@ export class BlurImageFilter extends ImageFilter {
 }
 
 export type MatrixImageFilterOptions = {
-  matrix: Float32Array, 
+  matrix: Float64Array, 
   filterQuality: SkiaFilterQuality
 }
 
@@ -106,8 +112,8 @@ export class MatrixImageFilter extends ImageFilter {
   static malloc (options: MatrixImageFilterOptions): MatrixImageFilter {
     const matrixImageFilter = new MatrixImageFilter(
       Skia.ImageFilter.MakeMatrixTransform(
-        options.matrix,
-        Skia.SkiaFilterOptions(options.filterQuality),
+        toSkiaMatrixFromFloat64(options.matrix),
+        toSkiaFilterQuality(options.filterQuality),
         null,
       ), 
       options
@@ -116,7 +122,7 @@ export class MatrixImageFilter extends ImageFilter {
     return matrixImageFilter
   }
 
-  public matrix: Float32Array
+  public matrix: Float64Array
   public filterQuality: SkiaFilterQuality
 
   constructor (
@@ -129,8 +135,12 @@ export class MatrixImageFilter extends ImageFilter {
     this.filterQuality = options.filterQuality
   }
 
-  resurrect (): ImageFilter {
-    return MatrixImageFilter.init(this)
+  resurrect (): SkiaImageFilter {
+    return Skia.ImageFilter.MakeMatrixTransform(
+      toSkiaMatrixFromFloat64(this.matrix),
+      toSkiaFilterQuality(this.filterQuality),
+      null,
+    )
   }
   
   isEqual (other: MatrixImageFilter) {
@@ -168,8 +178,8 @@ export class ColorFilterImageFilter extends ImageFilter {
     this.colorFilter = options.colorFilter
   }
 
-  resurrect(): ImageFilter {
-    return ColorFilterImageFilter.init(this)
+  resurrect(): SkiaImageFilter {
+    return this.colorFilter.initRawImageFilter()
   }
 
   isEqual (other: ColorFilterImageFilter) {

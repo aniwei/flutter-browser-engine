@@ -1,22 +1,26 @@
 import { setter } from '@Shared'
 import { Color } from '@UI'
 import { ManagedSkiaObject, Skia, SkiaFilterQuality, SkiaMaskFilter } from '@Skia'
-import { ManagedSkiaColorFilter, CkComposeColorFilter, CkMatrixColorFilter } from './CkColorFilter'
+import { ManagedSkiaColorFilter, ComposeColorFilter, MatrixColorFilter } from './ColorFilter'
 import type { SkiaPaint, SkiaImageFilter, SkiaBlendMode, SkiaColorFilter, SkiaPaintStyle, SkiaStrokeCap, SkiaStrokeJoin } from '@Skia'
-import type { CkManagedSkImageFilterConvertible } from './CkImageFilter'
+import type { ManagedSkImageFilterConvertible } from './ImageFilter'
 import type { Shader } from './Shader'
 
 export class Paint extends ManagedSkiaObject<SkiaPaint> {
-  static kDefaultPaintColor = new Color(0xFF000000)
-  static kInvertColorMatrix = Float32Array.from([
-    -1.0, 0, 0, 1.0, 0, // row
-    0, -1.0, 0, 1.0, 0, // row
-    0, 0, -1.0, 1.0, 0, // row
-    1.0, 1.0, 1.0, 1.0, 0
-  ])
+  static get kDefaultPaintColor () {
+    return new Color(0xFF000000)
+  } 
+  static get kInvertColorMatrix () {
+    return Float32Array.from([
+      -1.0, 0, 0, 1.0, 0, // row
+      0, -1.0, 0, 1.0, 0, // row
+      0, 0, -1.0, 1.0, 0, // row
+      1.0, 1.0, 1.0, 1.0, 0
+    ])
+  }
 
   static get kInvertColorFilter () {
-    return ManagedSkiaColorFilter.malloc(CkMatrixColorFilter.malloc(Paint.kInvertColorMatrix))
+    return ManagedSkiaColorFilter.malloc(MatrixColorFilter.malloc(Paint.kInvertColorMatrix))
   } 
 
   static malloc () {
@@ -68,7 +72,7 @@ export class Paint extends ManagedSkiaObject<SkiaPaint> {
   @setter(function (this, color: Color) {
     if (this.color !== color) {
       this._color = color
-      this.skia.setColorInt(color)
+      this.skia.setColorInt(color.value)
     }
   }) public color: Color = Paint.kDefaultPaintColor
 
@@ -83,7 +87,7 @@ export class Paint extends ManagedSkiaObject<SkiaPaint> {
           this.effectiveColorFilter = Paint.kInvertColorFilter
         } else {
           this.effectiveColorFilter = ManagedSkiaColorFilter.malloc(
-            CkComposeColorFilter.malloc({
+            ComposeColorFilter.malloc({
               outer: Paint.kInvertColorFilter,
               inner: this.effectiveColorFilter
             })
@@ -153,7 +157,7 @@ export class Paint extends ManagedSkiaObject<SkiaPaint> {
     }
   }) public strokeMiterLimit: number = 0
 
-  @setter(function (this, imageFilter: CkManagedSkImageFilterConvertible) {
+  @setter(function (this, imageFilter: ManagedSkImageFilterConvertible) {
     if (this.imageFilter !== imageFilter) {
       this._imageFilter = imageFilter
 
@@ -172,7 +176,7 @@ export class Paint extends ManagedSkiaObject<SkiaPaint> {
     super(skia)
 
     this.skia.setAntiAlias(this.isAntiAlias)
-    this.skia.setColorInt(this.color)
+    this.skia.setColorInt(this.color.value)
   }
 
   resurrect (): SkiaPaint {
@@ -181,7 +185,7 @@ export class Paint extends ManagedSkiaObject<SkiaPaint> {
     paint.setStyle(this.style)
     paint.setStrokeWidth(this.strokeWidth)
     paint.setAntiAlias(this.isAntiAlias)
-    paint.setColorInt(this.color)
+    paint.setColorInt(this.color.value)
     paint.setShader((this.shader as Shader).withQuality(this.filterQuality)) 
     paint.setMaskFilter(this.maskFilter as SkiaMaskFilter)
     paint.setColorFilter(this.colorFilter as SkiaColorFilter)
