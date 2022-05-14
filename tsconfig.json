@@ -27,15 +27,10 @@
     "outDir": "dist",
     "paths": {
       "@UI": ["./src/UI/index.ts"],
-      "@Util": ["./src/ENgine/Util/index.ts"],
       "@Skia": ["src/Skia/index.ts"],
-      "@Layer": ["src/Engine/CanvasKit/Layer/index.ts"],
-      "@CanvasKit": ["src/CanvasKit/index.ts"],
       "@Painting": ["src/Painting/index.ts"],
-      "@Types": ["./src/Types/index.ts"],
       "@Math": ["./src/Math/index.ts"],
       "@Shared": ["./src/Shared/index.ts"],
-      "@Engine": ["./src/Engine/index.ts"],
       "@Rendering": ["./src/Rendering/index.ts"]
     },
     "plugins": [

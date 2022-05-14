@@ -1,18 +1,17 @@
 import { invariant } from 'ts-invariant'
-import { TextDirection } from 'canvaskit-wasm'
-import { CkCanvas, CkPaint, CkPath } from '@CanvasKit'
-import { Color, Rect } from '@UI'
-import { Skia } from '@Skia'
+import { Color, Rect, Canvas, Paint, Path } from '@UI'
+import { Skia, SkiaTextDirection } from '@Skia'
 import { lerpDouble, listEquals } from '@Math'
-import { Paint } from './Paint'
 import { EdgeInsets, EdgeInsetsGeometry } from './EdgeInsets'
+import { BorderRadius } from './BorderRadius'
+import { BoxShape } from './BoxBorder'
 
 export enum BorderStyle {
   None,
   Solid
 }
 
-export class BorderSide implements Paint {
+export class BorderSide {
   static None = new BorderSide(
     new Color(0xFF000000), 
     0, 
@@ -167,8 +166,8 @@ export class BorderSide implements Paint {
     )
   }
 
-  toPaint (): CkPaint {
-    const paint = CkPaint.malloc()
+  toPaint (): Paint {
+    const paint = Paint.malloc()
 
     switch (this.style) {
       case BorderStyle.Solid: {
@@ -231,24 +230,25 @@ export abstract class ShapeBorder {
     return result ?? (t < 0.5 ? a : b)
   }
 
-
   abstract dimensions: EdgeInsetsGeometry
   
   abstract getOuterPath(
     rect: Rect, 
-    textDirection: TextDirection | null
-  ): CkPath
+    textDirection: SkiaTextDirection | null
+  ): Path
   
   abstract getInnerPath(
     rect: Rect, 
-    textDirection: TextDirection | null
-  ): CkPath 
+    textDirection: SkiaTextDirection | null
+  ): Path 
   
   abstract paint (
-    canvas: CkCanvas, 
+    canvas: Canvas, 
     rect: Rect, 
-    textDirection: TextDirection | null
-  )
+    textDirection: SkiaTextDirection | null,
+    BoxShape: BoxShape | null,
+    borderRadius: BorderRadius | null
+  ): void
 
   abstract scale (t: number)
 
@@ -411,10 +411,10 @@ export class CompoundBorder extends ShapeBorder {
 
   getInnerPath (
     rect: Rect, 
-    textDirection: TextDirection | null
+    textDirection: SkiaTextDirection | null
   ) {
     for (let index = 0; index < this.borders.length - 1; index += 1) {
-      rect = this.borders[index].dimensions.resolve(textDirection as TextDirection).deflateRect(rect)
+      rect = this.borders[index].dimensions.resolve(textDirection as SkiaTextDirection).deflateRect(rect)
     }
     
     return this.borders[this.borders.length - 1].getInnerPath(rect, textDirection)
@@ -422,19 +422,19 @@ export class CompoundBorder extends ShapeBorder {
 
   getOuterPath (
     rect: Rect, 
-    textDirection: TextDirection | null
+    textDirection: SkiaTextDirection | null
   ) {
     return this.borders[0].getOuterPath(rect, textDirection)
   }
 
   paint (
-    canvas: CkCanvas, 
+    canvas: Canvas, 
     rect: Rect, 
-    textDirection: TextDirection | null
+    textDirection: SkiaTextDirection | null
   ) {
     for (const border of this.borders) {
-      border.paint(canvas, rect, textDirection)
-      rect = border.dimensions.resolve(textDirection as TextDirection).deflateRect(rect)
+      border.paint(canvas, rect, textDirection, null, null)
+      rect = border.dimensions.resolve(textDirection as SkiaTextDirection).deflateRect(rect)
     }
   }
 
@@ -456,7 +456,7 @@ export class CompoundBorder extends ShapeBorder {
 
 
 export function paintBorder (
-  canvas: CkCanvas,
+  canvas: Canvas,
   rect: Rect, 
   top: BorderSide = BorderSide.None,
   right: BorderSide = BorderSide.None,
@@ -470,10 +470,10 @@ export function paintBorder (
   invariant(bottom !== null)
   invariant(left !== null)
 
-  const paint = CkPaint.malloc()
+  const paint = Paint.malloc()
   paint.strokeWidth = 0.0
 
-  const path = CkPath.malloc()
+  const path = Path.malloc()
 
   switch (top.style) {
     case BorderStyle.Solid: {

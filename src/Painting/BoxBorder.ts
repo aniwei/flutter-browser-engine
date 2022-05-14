@@ -1,6 +1,6 @@
 import invariant from 'ts-invariant'
-import { Skia } from '@Skia'
-import { CkCanvas, CkPaint, CkPath } from '@CanvasKit'
+import { Skia, SkiaTextDirection } from '@Skia'
+import { Canvas, Paint, Path } from '@UI'
 import { Color, Rect } from '@UI'
 import { BorderSide, BorderStyle, paintBorder, ShapeBorder } from './Border'
 import { EdgeInsets, EdgeInsetsDirectional, EdgeInsetsGeometry } from './EdgeInsets'
@@ -14,13 +14,13 @@ export enum BoxShape {
 
 export abstract class BoxBorder extends ShapeBorder {
   static paintUniformBorderWithRadius (
-    canvas: CkCanvas,
+    canvas: Canvas,
     rect: Rect,
     side,
     borderRadius
   ) {
     invariant(side.style !== BorderStyle.None)
-    const paint = CkPaint.malloc()
+    const paint = Paint.malloc()
     paint.color = side.color
 
     const outer = borderRadius.toRRect(rect)
@@ -36,7 +36,7 @@ export abstract class BoxBorder extends ShapeBorder {
   }
 
   static paintUniformBorderWithCircle (
-    canvas: CkCanvas,
+    canvas: Canvas,
     rect: Rect,
     side
   ) {
@@ -48,7 +48,7 @@ export abstract class BoxBorder extends ShapeBorder {
   }
 
   static paintUniformBorderWithRectangle (
-    canvas: CkCanvas,
+    canvas: Canvas,
     rect: Rect,
     side,
   ) {
@@ -62,7 +62,7 @@ export abstract class BoxBorder extends ShapeBorder {
     a: BoxBorder | null,
     b: BoxBorder | null,
     t: number
-  ) {
+  ): BoxBorder | null {
     invariant(t !== null)
 
     if (
@@ -131,6 +131,8 @@ export abstract class BoxBorder extends ShapeBorder {
         BorderSide.lerp(a.bottom, b.bottom, t),
       )
     }
+
+    throw new Error(`BoxBorder.lerp can only interpolate Border and BorderDirectional classes.`)
   }
 
   abstract top: BorderSide
@@ -138,26 +140,26 @@ export abstract class BoxBorder extends ShapeBorder {
   abstract isUniform: boolean
 
   abstract paint (
-    canvas: CkCanvas,
+    canvas: Canvas,
     rect: Rect, 
-    textDirection?,
-    shape?: BoxShape,
-    borderRadius?
-  )
+    textDirection: SkiaTextDirection | null,
+    shape: BoxShape | null,
+    borderRadius: BorderRadius | null
+  ): void
 
   add (
     other: ShapeBorder, 
-    reverse: boolean = false
-  ) {
+    reversed: boolean = false
+  ): ShapeBorder | null {
     return null
   }
 
   getInnerPath (
     rect: Rect, 
     textDirection: TextDirection | null
-  ): CkPath {
+  ): Path {
     invariant(textDirection !== null, 'The textDirection argument to $runtimeType.getInnerPath must not be null.')
-    const path = CkPath.malloc()
+    const path = Path.malloc()
 
     path.addRect(this.dimensions.resolve(textDirection).deflateRect(rect))
 
@@ -167,9 +169,9 @@ export abstract class BoxBorder extends ShapeBorder {
   getOuterPath (
     rect: Rect, 
     textDirection: TextDirection | null
-  ): CkPath {
+  ): Path {
     invariant(textDirection !== null, 'The textDirection argument to $runtimeType.getOuterPath must not be null.')
-    const path = CkPath.malloc()
+    const path = Path.malloc()
     path.addRect(rect)
     
     return path
@@ -369,13 +371,78 @@ export class Border extends BoxBorder {
   }
 
   paint (
-    canvas: CkCanvas, 
+    canvas: Canvas, 
     rect: Rect, 
-    textDirection?: any, 
-    shape: BoxShape = BoxShape.Rectangle, 
-    borderRadius?: any
+    textDirection: SkiaTextDirection | null, 
+    shape: BoxShape | null = BoxShape.Rectangle, 
+    borderRadius: BorderRadius | null
   ) {
-    
+    if (this.isUniform) {
+      switch (this.top.style) {
+        case BorderStyle.None: {
+          return 
+        }
+
+        case BorderStyle.Solid: {
+          switch (shape) {
+            case BoxShape.Circle: {
+              invariant(borderRadius === null, `A borderRadius can only be given for rectangular boxes.`)
+              Border.paintUniformBorderWithCircle(
+                canvas,
+                rect,
+                this.top
+              )
+              break
+            }
+
+            case BoxShape.Rectangle: {
+              if (borderRadius === null) {
+                Border.paintUniformBorderWithRectangle(
+                  canvas,
+                  rect,
+                  this.top
+                ) 
+              } else {
+                Border.paintUniformBorderWithRadius(
+                  canvas,
+                  rect,
+                  this.top,
+                  borderRadius
+                )  
+              }
+              
+              break
+            }
+          }
+          return
+        }
+      }
+    }
+
+    invariant((() => {
+      if (borderRadius !== null) {
+        throw new Error(`A borderRadius can only be given for a uniform Border.`)
+      }
+
+      return true
+    })())
+
+    invariant((() => {
+      if (shape !== BoxShape.Rectangle) {
+        throw new Error(`A Border can only be drawn as a circle if it is uniform`)
+      }
+
+      return true
+    })())
+
+    paintBorder(
+      canvas,
+      rect,
+      this.top,
+      this.right,
+      this.bottom,
+      this.left
+    )
   }
 }
 
@@ -490,7 +557,7 @@ export class BorderDirectional extends BoxBorder {
   add (
     other: ShapeBorder, 
     reversed: boolean = false
-  ) {
+  ): BoxBorder | null {
     if (other instanceof BorderDirectional) {
       const typedOther = other
       if (
@@ -541,8 +608,9 @@ export class BorderDirectional extends BoxBorder {
         typedOther.right,
         BorderSide.merge(typedOther.bottom, this.bottom),
         typedOther.left,
-      ) as Border
+      )
     }
+
     return null
   }
 
@@ -579,10 +647,10 @@ export class BorderDirectional extends BoxBorder {
   }
 
   paint (
-    canvas: CkCanvas,
+    canvas: Canvas,
     rect: Rect,
-    textDirection: TextDirection,
-    shape: BoxShape = BoxShape.Rectangle,
+    textDirection: TextDirection | null,
+    shape: BoxShape | null = BoxShape.Rectangle,
     borderRadius: BorderRadius | null,
   ) {
     if (this.isUniform) {
@@ -630,11 +698,12 @@ export class BorderDirectional extends BoxBorder {
     invariant(textDirection !== null, 'Non-uniform BorderDirectional objects require a TextDirection when painting.')
     
     switch (textDirection) {
-      case TextDirection.Rtl:
+      case Skia.TextDirection.RTL:
         left = this.end
         right = this.start
         break
-      case TextDirection.Ltr:
+      case Skia.TextDirection.LTR:
+      default: 
         left = this.start
         right = this.end
         break
@@ -644,9 +713,9 @@ export class BorderDirectional extends BoxBorder {
       canvas, 
       rect,
       this.top, 
-      this.right, 
+      right, 
       this.bottom, 
-      this.left
+      left
     )
   }
 
@@ -665,6 +734,6 @@ export class BorderDirectional extends BoxBorder {
   }
 
   toString () {
-    return ``
+    return `[Painting BorderDirectional]`
   }
 }

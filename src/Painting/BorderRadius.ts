@@ -33,8 +33,8 @@ export abstract class BorderRadiusGeometry {
   constructor (
     topLeft: Radius,
     topRight: Radius,
-    bottomLeft: Radius,
     bottomRight: Radius,
+    bottomLeft: Radius,
     topStart: Radius,
     topEnd: Radius,
     bottomStart: Radius,
@@ -42,8 +42,8 @@ export abstract class BorderRadiusGeometry {
   ) {
     this.topLeft = topLeft
     this.topRight = topRight
-    this.bottomLeft = bottomLeft
     this.bottomRight = bottomRight
+    this.bottomLeft = bottomLeft
     this.topStart = topStart
     this.topEnd = topEnd
     this.bottomStart = bottomStart
@@ -140,8 +140,8 @@ export class BorderRadius extends BorderRadiusGeometry {
     return BorderRadius.only(
       Radius.lerp(a.topLeft, b.topLeft, t)!,
       Radius.lerp(a.topRight, b.topRight, t)!,
-      Radius.lerp(a.bottomLeft, b.bottomLeft, t)!,
       Radius.lerp(a.bottomRight, b.bottomRight, t)!,
+      Radius.lerp(a.bottomLeft, b.bottomLeft, t)!,
     )
   }
 
@@ -168,36 +168,36 @@ export class BorderRadius extends BorderRadiusGeometry {
     BorderRadius.only(
       left,
       right,
-      left,
       right,
+      left,
     )
   } 
 
   static only(
     topLeft: Radius = Radius.Zero,
     topRight: Radius = Radius.Zero,
-    bottomLeft: Radius = Radius.Zero,
     bottomRight: Radius = Radius.Zero,
+    bottomLeft: Radius = Radius.Zero,
   ) {
     return new BorderRadius(
       topLeft,
       topRight,
-      bottomLeft,
       bottomRight,
+      bottomLeft,
     )
   }
 
   constructor (
     topLeft: Radius,
     topRight: Radius,
-    bottomLeft: Radius,
     bottomRight: Radius,
+    bottomLeft: Radius,
   ) {
     super(
       topLeft,
       topRight,
-      bottomLeft,
       bottomRight,
+      bottomLeft,
       Radius.Zero,
       Radius.Zero,
       Radius.Zero,
@@ -209,14 +209,14 @@ export class BorderRadius extends BorderRadiusGeometry {
   copyWith (
    topLeft:  Radius | null,
    topRight:  Radius | null,
-   bottomLeft:  Radius | null,
    bottomRight:  Radius | null,
+   bottomLeft:  Radius | null,
   ) {
     return BorderRadius.only(
       topLeft ?? this.topLeft,
       topRight ?? this.topRight,
-      bottomLeft ?? this.bottomLeft,
       bottomRight ?? this.bottomRight,
+      bottomLeft ?? this.bottomLeft,
     )
   }
 
@@ -225,8 +225,8 @@ export class BorderRadius extends BorderRadiusGeometry {
       rect,
       this.topLeft,
       this.topRight,
-      this.bottomLeft,
       this.bottomRight,
+      this.bottomLeft,
     )
   }
 
@@ -234,8 +234,8 @@ export class BorderRadius extends BorderRadiusGeometry {
     return BorderRadius.only(
       this.topLeft.opposite(),
       this.topRight.opposite(),
-      this.bottomLeft.opposite(),
       this.bottomRight.opposite(),
+      this.bottomLeft.opposite(),
     )
   }
 
@@ -243,8 +243,8 @@ export class BorderRadius extends BorderRadiusGeometry {
     return BorderRadius.only(
       this.topLeft.subtract(other.topLeft),
       this.topRight.subtract(other.topRight),
-      this.bottomLeft.subtract(other.bottomLeft),
       this.bottomRight.subtract(other.bottomRight),
+      this.bottomLeft.subtract(other.bottomLeft),
     )
   }
 
@@ -252,8 +252,8 @@ export class BorderRadius extends BorderRadiusGeometry {
     return BorderRadius.only(
       this.topLeft.add(other.topLeft),
       this.topRight.add(other.topRight),
-      this.bottomLeft.add(other.bottomLeft),
       this.bottomRight.add(other.bottomRight),
+      this.bottomLeft.add(other.bottomLeft),
     )
   }
 
@@ -261,8 +261,8 @@ export class BorderRadius extends BorderRadiusGeometry {
     return BorderRadius.only(
       this.topLeft.multiply(other),
       this.topRight.multiply(other),
-      this.bottomLeft.multiply(other),
       this.bottomRight.multiply(other),
+      this.bottomLeft.multiply(other),
     )
   }
 
@@ -270,8 +270,8 @@ export class BorderRadius extends BorderRadiusGeometry {
     return BorderRadius.only(
       this.topLeft.divide(other),
       this.topRight.divide(other),
-      this.bottomLeft.divide(other),
       this.bottomRight.divide(other),
+      this.bottomLeft.divide(other),
     )
   }
 
@@ -279,8 +279,8 @@ export class BorderRadius extends BorderRadiusGeometry {
     return BorderRadius.only(
       this.topLeft.modulo(other),
       this.topRight.modulo(other),
-      this.bottomLeft.modulo(other),
       this.bottomRight.modulo(other),
+      this.bottomLeft.modulo(other),
     )
   }
   

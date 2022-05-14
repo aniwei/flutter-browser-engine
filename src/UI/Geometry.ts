@@ -848,7 +848,28 @@ export class Rect extends Float32Array {
   
 }
 
-export class RRect extends Float32Array {
+export interface IRRect {
+  left: number,
+  top: number,
+  right: number,
+  bottom: number,
+  tlRadiusX: number,
+  tlRadiusY: number,
+  tlRadius: Radius,
+  trRadiusX: number,
+  trRadiusY: number,
+  trRadius: Radius,
+  brRadiusX: number,
+  brRadiusY: number,
+  brRadius: Radius,
+  blRadiusX: number,
+  blRadiusY: number,
+  // webOnly
+  webOnlyUniformRadii: boolean,
+  blRadius: Radius
+}
+
+export class RRect extends Float32Array implements IRRect {
   static Zero = RRect.raw()
   static fromLTRBXY (
     left: number, 
@@ -950,10 +971,45 @@ export class RRect extends Float32Array {
     bottomLeft: Radius = Radius.Zero,
   ) {
     return RRect.raw(
-      rect.top,
       rect.left,
+      rect.top,
       rect.right,
       rect.bottom,
+      topLeft.x,
+      topLeft.y,
+      topRight.x,
+      topRight.y,
+      bottomRight.x,
+      bottomRight.y,
+      bottomLeft.x,
+      bottomLeft.y,
+      (
+        topLeft.x === topLeft.y &&
+        topLeft.x === topRight.x &&
+        topLeft.x === topRight.y &&
+        topLeft.x === bottomLeft.x &&
+        topLeft.x === bottomLeft.y &&
+        topLeft.x === bottomRight.x &&
+        topLeft.x === bottomRight.y
+      )
+    )
+  }
+
+  static fromLTRBAndCorners (
+    left: number,
+    top: number,
+    right: number,
+    bottom: number,
+    topLeft: Radius = Radius.Zero,
+    topRight: Radius = Radius.Zero,
+    bottomRight: Radius = Radius.Zero,
+    bottomLeft: Radius = Radius.Zero,
+  ) {
+    return RRect.raw(
+      top,
+      left,
+      right,
+      bottom,
       topLeft.x,
       topLeft.y,
       topRight.x,
@@ -963,13 +1019,13 @@ export class RRect extends Float32Array {
       bottomRight.x,
       bottomRight.y,
       (
-        topLeft.x === topLeft.y &&
-        topLeft.x === topRight.x &&
-        topLeft.x === topRight.y &&
-        topLeft.x === bottomLeft.x &&
-        topLeft.x === bottomLeft.y &&
-        topLeft.x === bottomRight.x &&
-        topLeft.x === bottomRight.y
+        topLeft.x == topLeft.y &&
+        topLeft.x == topRight.x &&
+        topLeft.x == topRight.y &&
+        topLeft.x == bottomLeft.x &&
+        topLeft.x == bottomLeft.y &&
+        topLeft.x == bottomRight.x &&
+        topLeft.x == bottomRight.y
       )
     )
   }
@@ -983,10 +1039,10 @@ export class RRect extends Float32Array {
     tlRadiusY: number = 0.0,
     trRadiusX: number = 0.0,
     trRadiusY: number = 0.0,
-    blRadiusX: number = 0.0,
-    blRadiusY: number = 0.0,
     brRadiusX: number = 0.0,
     brRadiusY: number = 0.0,
+    blRadiusX: number = 0.0,
+    blRadiusY: number = 0.0,
     uniformRadii: boolean = false,
   ) {
 
@@ -1198,7 +1254,7 @@ export class RRect extends Float32Array {
     scale = this.getMin(scale, this.brRadiusX, this.blRadiusX, absWidth)
 
     if (scale < 1) {
-      return new RRect (
+      return RRect.raw(
         this.top,
         this.left,
         this.right,
@@ -1214,7 +1270,7 @@ export class RRect extends Float32Array {
       )
     }
 
-    return new RRect (
+    return RRect.raw(
       this.top,
       this.left,
       this.right,
@@ -1291,5 +1347,26 @@ export class RRect extends Float32Array {
     }
 
     return true
+  }
+
+  inflate (delta: number) {
+    return RRect.raw(
+      this.left - delta,
+      this.top - delta,
+      this.right + delta,
+      this.bottom + delta,
+      this.tlRadiusX + delta,
+      this.tlRadiusY + delta,
+      this.trRadiusX + delta,
+      this.trRadiusY + delta,
+      this.brRadiusX + delta,
+      this.brRadiusY + delta,
+      this.blRadiusX + delta,
+      this.blRadiusY + delta,
+    )
+  }
+
+  deflate (delta: number) {
+    return this.inflate(-delta)
   }
 }
