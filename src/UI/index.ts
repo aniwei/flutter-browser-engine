@@ -1,6 +1,8 @@
 export * from './Path'
 export * from './Paint'
 export * from './Canvas'
+export * from './Image'
+export * from './MaskFilter'
 export * from './ColorFilter'
 export * from './ImageFilter'
 

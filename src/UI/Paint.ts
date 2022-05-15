@@ -5,6 +5,7 @@ import { ManagedSkiaColorFilter, ComposeColorFilter, MatrixColorFilter } from '.
 import type { SkiaPaint, SkiaImageFilter, SkiaBlendMode, SkiaColorFilter, SkiaPaintStyle, SkiaStrokeCap, SkiaStrokeJoin } from '@Skia'
 import type { ManagedSkImageFilterConvertible } from './ImageFilter'
 import type { Shader } from './Shader'
+import { MaskFilter } from './MaskFilter'
 
 export class Paint extends ManagedSkiaObject<SkiaPaint> {
   static get kDefaultPaintColor () {
@@ -107,12 +108,12 @@ export class Paint extends ManagedSkiaObject<SkiaPaint> {
     }
   }) public shader: Shader | null = null
 
-  @setter(function (this, maskFilter: SkiaMaskFilter) {
+  @setter(function (this, maskFilter: MaskFilter) {
     if (this.maskFilter !== maskFilter) {
       this._maskFilter = maskFilter
-      this.skia.setMaskFilter(maskFilter)
+      this.skia.setMaskFilter(maskFilter.skia)
     }
-  }) public maskFilter: SkiaMaskFilter | null = null
+  }) public maskFilter: MaskFilter | null = null
 
   // @TODO
   @setter(function (this, filterQuality: SkiaFilterQuality) {
@@ -186,9 +187,9 @@ export class Paint extends ManagedSkiaObject<SkiaPaint> {
     paint.setStrokeWidth(this.strokeWidth)
     paint.setAntiAlias(this.isAntiAlias)
     paint.setColorInt(this.color.value)
-    paint.setShader((this.shader as Shader).withQuality(this.filterQuality)) 
-    paint.setMaskFilter(this.maskFilter as SkiaMaskFilter)
-    paint.setColorFilter(this.colorFilter as SkiaColorFilter)
+    paint.setShader(this.shader!.withQuality(this.filterQuality)) 
+    paint.setMaskFilter(this.maskFilter!.skia)
+    paint.setColorFilter(this.colorFilter!)
     paint.setImageFilter((this.managedImageFilter as ManagedSkiaObject<SkiaImageFilter>).skia)
     paint.setStrokeCap(this.strokeCap)
     paint.setStrokeJoin(this.strokeJoin)

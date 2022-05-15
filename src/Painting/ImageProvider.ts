@@ -1,18 +1,26 @@
-import { Size, TextDirection } from '@UI';
-import invariant from 'ts-invariant';
+import invariant from 'ts-invariant'
+import { Codec, Size } from '@UI'
+import { SkiaTextDirection } from '@Skia'
+import { ImageErrorListener, Locale, TargetPlatform } from '@Platform'
+import { AssetBundle } from '@Services'
 
-typedef _KeyAndErrorHandlerCallback<T> = void Function(T key, ImageErrorListener handleError);
-
-/// Signature used for error handling by [_createErrorHandlerAndKey].
-typedef _AsyncKeyErrorHandler<T> = Future<void> Function(T key, Object exception, StackTrace? stack);
-
+type KeyAndErrorHandlerCallback<T> = { (key: T, handleError: ImageErrorListener): void }
+type AsyncKeyErrorHandler<T> = { (key: T, exception): Promise<void> }
+type DecoderCallback = {
+  (
+    bytes: Uint8Array, 
+    cacheWidth: number | null,
+    cacheHeight: number | null,
+    allowUpscaling: boolean
+  ): Promise<Codec>
+}
 
 export class ImageConfiguration {
   static Empty = new ImageConfiguration()
   public bundle: AssetBundle | null = null
-  public devicePixelRatio: double | null = null
+  public devicePixelRatio: number | null = null
   public locale: Locale | null = null
-  public textDirection: TextDirection | null = null
+  public textDirection: SkiaTextDirection | null = null
   public size: Size | null = null
   public platform: TargetPlatform | null = null
   
@@ -37,7 +45,7 @@ export class ImageConfiguration {
     bundle: AssetBundle | null,
     devicePixelRatio: number | null,
     locale: Locale | null,
-    textDirection: TextDirection | null,
+    textDirection: SkiaTextDirection | null,
     size: Size | null,
     platform: TargetPlatform | null,
   ): ImageConfiguration  {
@@ -72,10 +80,8 @@ export class ImageConfiguration {
 }
 
 
-typedef DecoderCallback = Future<ui.Codec> Function(Uint8List bytes, {int? cacheWidth, int? cacheHeight, bool allowUpscaling});
 
-
-abstract class ImageProvider<T> {
+export abstract class ImageProvider<T> {
   
   resolve (configuration: ImageConfiguration): ImageStream {
     invariant(configuration !== null)
@@ -112,30 +118,14 @@ abstract class ImageProvider<T> {
     return stream;
   }
 
-  /// Called by [resolve] to create the [ImageStream] it returns.
-  ///
-  /// Subclasses should override this instead of [resolve] if they need to
-  /// return some subclass of [ImageStream]. The stream created here will be
-  /// passed to [resolveStreamForKey].
-  @protected
-  ImageStream createStream(ImageConfiguration configuration) {
-    return ImageStream();
+  createStream (configuration: ImageConfiguration): ImageStream {
+    return new ImageStream()
   }
 
-  /// Returns the cache location for the key that this [ImageProvider] creates.
-  ///
-  /// The location may be [ImageCacheStatus.untracked], indicating that this
-  /// image provider's key is not available in the [ImageCache].
-  ///
-  /// The `cache` and `configuration` parameters must not be null. If the
-  /// `handleError` parameter is null, errors will be reported to
-  /// [FlutterError.onError], and the method will return null.
-  ///
-  /// A completed return value of null indicates that an error has occurred.
-  Future<ImageCacheStatus?> obtainCacheStatus({
-    required ImageConfiguration configuration,
-    ImageErrorListener? handleError,
-  }) {
+  obtainCacheStatus (
+    configuration: ImageConfiguration ,
+    handleError: ImageErrorListener | null,
+  ): Promise<ImageCacheStatus | null>  {
     assert(configuration != null);
     final Completer<ImageCacheStatus?> completer = Completer<ImageCacheStatus?>();
     _createErrorHandlerAndKey(
@@ -466,14 +456,6 @@ class ResizeImageKey {
   int get hashCode => hashValues(_providerCacheKey, _width, _height);
 }
 
-/// Instructs Flutter to decode the image at the specified dimensions
-/// instead of at its native size.
-///
-/// This allows finer control of the size of the image in [ImageCache] and is
-/// generally used to reduce the memory footprint of [ImageCache].
-///
-/// The decoded image may still be displayed at sizes other than the
-/// cached size provided here.
 export class ResizeImage extends ImageProvider<ResizeImageKey> {
   static resizeIfNeeded(
     cacheWidth: number | null, 
@@ -497,10 +479,10 @@ export class ResizeImage extends ImageProvider<ResizeImageKey> {
   public allowUpscaling: boolean
 
   constructor (
-    imageProvider
-    width
-    height
-    allowUpscaling
+    imageProvider: ImageProvider,
+    width: number,
+    height: number,
+    allowUpscaling: boolean
   ) {
     this.imageProvider
     this.width
@@ -508,7 +490,7 @@ export class ResizeImage extends ImageProvider<ResizeImageKey> {
     this.allowUpscaling
   }
   
-  load(
+  load (
     key: ResizeImageKey, 
     decode: DecoderCallback
   ): ImageStreamCompleter {
@@ -527,7 +509,9 @@ export class ResizeImage extends ImageProvider<ResizeImageKey> {
     return completer;
   }
 
-  obtainKey (configuration: ImageConfiguration): Promise<ResizeImageKey>  {
+  obtainKey (
+    configuration: ImageConfiguration
+  ): Promise<ResizeImageKey>  {
     Completer<ResizeImageKey>? completer
     // If the imageProvider.obtainKey future is synchronous, then we will be able to fill in result with
     // a value before completer is initialized below.
@@ -541,28 +525,39 @@ export class ResizeImage extends ImageProvider<ResizeImageKey> {
         // This future did not synchronously complete.
         completer.complete(ResizeImageKey._(key, width, height));
       }
-    });
-    if (result != null) {
+    })
+
+    if (result !== null) {
       return result!;
     }
-    // If the code reaches here, it means the imageProvider.obtainKey was not
-    // completed sync, so we initialize the completer for completion later.
+    
     completer = Completer<ResizeImageKey>();
-    return completer.future;
+    return completer.future
   }
 }
 
-abstract class NetworkImage extends ImageProvider<NetworkImage> {
-  const factory NetworkImage(String url, { double scale, Map<String, String>? headers }) = network_image.NetworkImage;
+export abstract class NetworkImage extends ImageProvider<NetworkImage> {
+  url: string
+  scale: nmber
+  headers: Map<string, string> | null
 
-  abstract url: string
-  abstract scale: nmber
-  abstract headers: Map<string, string> | null
+  constructor (
+    url: string,
+    scale: number,
+    headers: Map<string, string>
+  ) {
+    super()
+
+    this.url = url
+    this.scale = scalle
+    this.headers = headers
+  }
+
   abstract load (key: NetworkImage, decode: DecoderCallback): ImageStreamCompleter
 }
 
 
-class FileImage extends ImageProvider<FileImage> {
+export class FileImage extends ImageProvider<FileImage> {
   public file: File
   public scale: double
 
@@ -581,45 +576,46 @@ class FileImage extends ImageProvider<FileImage> {
   }
 
   @override
-  ImageStreamCompleter load(FileImage key, DecoderCallback decode) {
-    return MultiFrameImageStreamCompleter(
-      codec: _loadAsync(key, decode),
-      scale: key.scale,
-      debugLabel: key.file.path,
-      informationCollector: () => <DiagnosticsNode>[
+  load (
+    key: FileImage, 
+    decode: DecoderCallback
+  ): ImageStreamCompleter {
+    return new MultiFrameImageStreamCompleter(
+      this.loadAsync(key, decode),
+      key.scale,
+      key.file.path,
+      () => <DiagnosticsNode>[
         ErrorDescription('Path: ${file.path}'),
       ],
     );
   }
 
-  Future<ui.Codec> _loadAsync(FileImage key, DecoderCallback decode) async {
-    assert(key == this);
-
-    final Uint8List bytes = await file.readAsBytes();
+  async loadAsync (
+    key: FileImage, 
+    decode: DecoderCallback
+  ) {
+    invariant(key === this)
+    const bytes: Uint8Array = await file.readAsBytes()
 
     if (bytes.lengthInBytes == 0) {
-      // The file may become available later.
-      PaintingBinding.instance!.imageCache!.evict(key);
-      throw StateError('$file is empty and cannot be loaded as an image.');
+      PaintingBinding.instance!.imageCache!.evict(key)
+      throw new Error(`${this.file} is empty and cannot be loaded as an image.`)
     }
 
-    return decode(bytes);
+    return decode(bytes)
   }
 
-  @override
-  bool operator ==(Object other) {
-    if (other.runtimeType != runtimeType)
-      return false;
-    return other is FileImage
-        && other.file.path == file.path
-        && other.scale == scale;
+  isEqual (other: FileImage) {
+    return (
+      other instanceof FileImage &&
+      other.file.path === file.path &&
+      other.scale === scale
+    )
   }
 
-  @override
-  int get hashCode => hashValues(file.path, scale);
-
-  @override
-  String toString() => '${objectRuntimeType(this, 'FileImage')}("${file.path}", scale: $scale)';
+  toString () {
+    return ``
+  }
 }
 
 /// Decodes the given [Uint8List] buffer as an image, associating it with the
@@ -661,10 +657,12 @@ class MemoryImage extends ImageProvider<MemoryImage> {
     );
   }
 
-  Future<ui.Codec> loadAsync(key: MemoryImage, decode: DecoderCallback) {
-    assert(key == this);
-
-    return decode(bytes);
+  loadAsync (
+    key: MemoryImage, 
+    decode: DecoderCallback
+  ) {
+    invariant(key === this)
+    return decode(bytes)
   }
 
   isEqual (other) {
@@ -679,17 +677,20 @@ class MemoryImage extends ImageProvider<MemoryImage> {
     )
   }
 
-  toString () {}
+  toString () {
+    return ``
+  }
 }
 
-class ExactAssetImage extends AssetBundleImageProvider {
-
+export class ExactAssetImage extends AssetBundleImageProvider {
   public assetName
   public scale
   public bundle
   public package
 
-  String get keyName => package == null ? assetName : 'packages/$package/$assetName';
+  get keyName () {
+    return this.package == null ? assetName : `packages/${this.package}/${this.assetName}`
+  } 
 
   constructor (
     assetName, 
@@ -702,8 +703,6 @@ class ExactAssetImage extends AssetBundleImageProvider {
     this.bundle = bundle
     this.package = package
   }
-
-  
 
   obtainKey (configuration: ImageConfiguration): Promise<AssetBundleImageKey> {
     return SynchronousFuture<AssetBundleImageKey>(AssetBundleImageKey(
@@ -728,11 +727,9 @@ class ExactAssetImage extends AssetBundleImageProvider {
   toString () {}
 }
 
-// A completer used when resolving an image fails sync.
-class ErrorImageCompleter extends ImageStreamCompleter { }
+export class ErrorImageCompleter extends ImageStreamCompleter { }
 
-/// The exception thrown when the HTTP request to load a network image fails.
-class NetworkImageLoadException implements Exception {
+export class NetworkImageLoadException implements Exception {
   NetworkImageLoadException({required this.statusCode, required this.uri})
       : assert(uri != null),
         assert(statusCode != null),
@@ -747,6 +744,8 @@ class NetworkImageLoadException implements Exception {
   /// Resolved URL of the requested image.
   final Uri uri;
 
-  @override
-  String toString() => _message;
+  
+  toString () {
+    return this.message
+  }
 }

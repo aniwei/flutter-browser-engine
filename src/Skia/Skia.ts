@@ -135,8 +135,16 @@ export class Skia {
     return Skia.s.ImageFilter
   }
 
+  static get MaskFilter () {
+    return Skia.s.MaskFilter
+  }
+
   static get FillType () {
     return Skia.s.FillType
+  }
+
+  static get BlurStyle () {
+    return Skia.s.BlurStyle
   }
 
   static get StrokeCap () {

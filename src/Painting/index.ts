@@ -6,5 +6,4 @@ export enum Axis {
 export * from './Border'
 export * from './BoxBorder'
 export * from './BorderRadius'
-
 export * from './BoxShadow'

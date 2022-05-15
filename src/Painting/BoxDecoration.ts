@@ -1,29 +1,64 @@
 import invariant from 'ts-invariant'
-import { CkCanvas, CkPath } from '@CanvasKit'
-import { Color, Offset, Rect } from '@UI'
-import { BlendMode } from 'canvaskit-wasm'
+import { Canvas, Path, Color, Offset, Rect, Size, Paint } from '@UI'
 import { BorderRadiusGeometry } from './BorderRadius'
 import { BoxBorder, BoxShape } from './BoxBorder'
 import { BoxShadow } from './BoxShadow'
 import { EdgeInsetsGeometry } from './EdgeInsets'
 import { ImageConfiguration } from './ImageProvider'
-import { Decoration } from './Decoration'
+import { BoxPainter, Decoration } from './Decoration'
+import { SkiaBlendMode, SkiaTextDirection, VoidCallback } from '@Skia'
+import { listEquals } from '@Math'
 
 export class BoxDecoration extends Decoration {
+  static lerp (
+    a: BoxDecoration | null, 
+    b: BoxDecoration | null, 
+    t: number
+  ): BoxDecoration | null {
+    invariant(t !== null)
+
+    if (a === null && b === null) {
+      return null
+    }
+    if (a === null) {
+      return b!.scale(t)
+    }
+    if (b === null) {
+      return a.scale(1.0 - t)
+    }
+    if (t === 0.0) {
+      return a
+    }
+    if (t === 1.0) {
+      return b
+    }
+    return new BoxDecoration(
+      Color.lerp(a.color, b.color, t),
+      t < 0.5 ? a.image : b.image, // TODO(ianh): cross-fade the image
+      BoxBorder.lerp(a.border, b.border, t),
+      BorderRadiusGeometry.lerp(a.borderRadius, b.borderRadius, t),
+      BoxShadow.lerpList(a.boxShadow!, b.boxShadow!, t),
+      null, // Gradient.lerp(a.gradient, b.gradient, t),
+      t < 0.5 ? a.shape : b.shape,
+    )
+  }
+
+
   public color: Color | null
-  public image: DecorationImage | null
+  // @TODO
+  public image
   public border: BoxBorder | null
   public borderRadius: BorderRadiusGeometry | null
   public boxShadow: BoxShadow[] | null
-  public gradient: Gradient | null
-  public backgroundBlendMode: BlendMode | null
+  // @TODO
+  public gradient
+  public backgroundBlendMode: SkiaBlendMode | null
   public shape: BoxShape
 
   public get padding () : EdgeInsetsGeometry | null {
     return this.border ? this.border.dimensions : null
   }
 
-  
   public get isComplex () {
     return this.boxShadow !== null
   } 
@@ -49,11 +84,13 @@ export class BoxDecoration extends Decoration {
     )
 
     this.color = color
-    this.image = image
+    // @TODO
+    // this.image = image
     this.border = border
     this.borderRadius = borderRadius
     this.boxShadow = boxShadow
-    this.gradient = gradient
+    // @TODO
+    // this.gradient = gradient
     this.backgroundBlendMode = backgroundBlendMode
     this.shape = shape
   }
@@ -87,25 +124,28 @@ export class BoxDecoration extends Decoration {
 
   getClipPath (
     rect: Rect, 
-    textDirection: TextDirection
-  ): CkPath {
+    textDirection: SkiaTextDirection
+  ): Path {
+    const path = Path.malloc()
     switch (this.shape) {
-      case BoxShape.Circle:
+      case BoxShape.Circle: {
         const center = rect.center
         const radius = rect.shortestSide / 2.0
         const square = Rect.fromCircle(center, radius)
-        const path = CkPath.malloc()
         path.addOval(square)
-        return path
-      case BoxShape.Rectangle:
-        const path = CkPath.malloc()
+        break
+      }
+      case BoxShape.Rectangle: {
         if (this.borderRadius !== null) {
           path.addRRect(this.borderRadius.resolve(textDirection).toRRect(rect))
           return path
         }
         path.addRect(rect)
-        return path
+        break
+      }
     }
+
+    return path
   }
 
   scale (factor: number): BoxDecoration {
@@ -114,74 +154,40 @@ export class BoxDecoration extends Decoration {
       this.image, 
       BoxBorder.lerp(null, this.border, factor),
       BorderRadiusGeometry.lerp(null, this.borderRadius, factor),
-      BoxShadow.lerpList(null, this.boxShadow, factor),
+      BoxShadow.lerpList(null, this.boxShadow!, factor),
       this.gradient?.scale(factor),
       this.shape,
     );
   }
 
-  @override
-  BoxDecoration? lerpFrom(Decoration? a, double t) {
-    if (a == null)
-      return scale(t);
-    if (a is BoxDecoration)
-      return BoxDecoration.lerp(a, this, t);
-    return super.lerpFrom(a, t) as BoxDecoration?;
+  lerpFrom (
+    a: Decoration | null, 
+    t: number
+  ): BoxDecoration | null {
+    if (a === null) {
+      return this.scale(t)
+    }
+
+    if (a instanceof BoxDecoration) {
+      return BoxDecoration.lerp(a, this, t)
+    }
+
+    return super.lerpFrom(a, t) as BoxDecoration?
   }
 
-  @override
-  BoxDecoration? lerpTo(Decoration? b, double t) {
-    if (b == null)
-      return scale(1.0 - t);
-    if (b is BoxDecoration)
-      return BoxDecoration.lerp(this, b, t);
-    return super.lerpTo(b, t) as BoxDecoration?;
-  }
+  lerpTo (
+    b: Decoration | null, 
+    t: number
+  ): BoxDecoration | null {
+    if (b === null) {
+      return this.scale(1.0 - t)
+    }
 
-  /// Linearly interpolate between two box decorations.
-  ///
-  /// Interpolates each parameter of the box decoration separately.
-  ///
-  /// The [shape] is not interpolated. To interpolate the shape, consider using
-  /// a [ShapeDecoration] with different border shapes.
-  ///
-  /// If both values are null, this returns null. Otherwise, it returns a
-  /// non-null value. If one of the values is null, then the result is obtained
-  /// by applying [scale] to the other value. If neither value is null and `t ==
-  /// 0.0`, then `a` is returned unmodified; if `t == 1.0` then `b` is returned
-  /// unmodified. Otherwise, the values are computed by interpolating the
-  /// properties appropriately.
-  ///
-  /// {@macro dart.ui.shadow.lerp}
-  ///
-  /// See also:
-  ///
-  ///  * [Decoration.lerp], which can interpolate between any two types of
-  ///    [Decoration]s, not just [BoxDecoration]s.
-  ///  * [lerpFrom] and [lerpTo], which are used to implement [Decoration.lerp]
-  ///    and which use [BoxDecoration.lerp] when interpolating two
-  ///    [BoxDecoration]s or a [BoxDecoration] to or from null.
-  static BoxDecoration? lerp(BoxDecoration? a, BoxDecoration? b, double t) {
-    assert(t != null);
-    if (a == null && b == null)
-      return null;
-    if (a == null)
-      return b!.scale(t);
-    if (b == null)
-      return a.scale(1.0 - t);
-    if (t == 0.0)
-      return a;
-    if (t == 1.0)
-      return b;
-    return BoxDecoration(
-      color: Color.lerp(a.color, b.color, t),
-      image: t < 0.5 ? a.image : b.image, // TODO(ianh): cross-fade the image
-      border: BoxBorder.lerp(a.border, b.border, t),
-      borderRadius: BorderRadiusGeometry.lerp(a.borderRadius, b.borderRadius, t),
-      boxShadow: BoxShadow.lerpList(a.boxShadow, b.boxShadow, t),
-      gradient: Gradient.lerp(a.gradient, b.gradient, t),
-      shape: t < 0.5 ? a.shape : b.shape,
-    );
+    if (b instanceof BoxDecoration) {
+      return BoxDecoration.lerp(this, b, t)
+    }
+
+    return super.lerpTo(b, t) as BoxDecoration?
   }
 
   isEqual (other: BoxDecoration) {
@@ -191,7 +197,7 @@ export class BoxDecoration extends Decoration {
     
     return (
       other instanceof BoxDecoration &&
-      other.color?.isEqual(this.color) &&
+      other.color?.isEqual(this.color!) &&
       other.image === this.image &&
       other.border === this.border &&
       other.borderRadius === this.borderRadius &&
@@ -218,68 +224,92 @@ export class BoxDecoration extends Decoration {
   hitTest (
     size: Size, 
     position: Offset , 
-    textDirection: TextDirection
+    textDirection: SkiaTextDirection
   ): boolean {
     invariant(this.shape !== null)
-    invariant((Offset.Zero & size).contains(position))
+    invariant((Offset.Zero.and(size)).contains(position))
 
     switch (this.shape) {
-      case BoxShape.Rectangle:
+      case BoxShape.Rectangle: {
         if (this.borderRadius !== null) {
-          const bounds = this.borderRadius!.resolve(textDirection).toRRect(Offset.Zero & size)
+          const bounds = this.borderRadius!.resolve(textDirection).toRRect(Offset.Zero.and(size))
           return bounds.contains(position)
         }
         return true
-      case BoxShape.Circle:
+      }
+      case BoxShape.Circle: {
         const center = size.center(Offset.Zero)
-        const distance = (position - center).distance
+        const distance = position.subtract(center).distance
         return distance <= Math.min(size.width, size.height) / 2.0
+      }
     }
   }
 
-  createBoxPainter (onChanged: VoidCallback?): BoxPainter  {
+  createBoxPainter (onChanged: VoidCallback | null): BoxPainter  {
     invariant(onChanged !== null || this.image === null)
-    return BoxDecorationPainter(this, onChanged)
+    return new BoxDecorationPainter(this, onChanged)
   }
 }
 
 export class BoxDecorationPainter extends BoxPainter {
-  BoxDecorationPainter(this._decoration, VoidCallback? onChanged)
-    : assert(_decoration != null),
-      super(onChanged);
+  public decoration: BoxDecoration
+  public cachedBackgroundPaint: Paint | null = null
+  public rectForCachedBackgroundPaint: Rect | null = null
+  public imagePainter: DecorationImagePainter | null = null
 
-  final BoxDecoration _decoration;
+  constructor (
+    dectoration,
+    onChanged,
+  ) {
+    super(onChanged)
+    this.decoration = dectoration
+  }
+  
+  getBackgroundPaint (
+    rect: Rect, 
+    textDirection: SkiaTextDirection | null
+  ): Paint {
+    invariant(rect !== null)
+    invariant(
+      this.decoration!.gradient !== null || 
+      this.rectForCachedBackgroundPaint === null
+    )
 
-  Paint? _cachedBackgroundPaint;
-  Rect? _rectForCachedBackgroundPaint;
-  Paint _getBackgroundPaint(Rect rect, TextDirection? textDirection) {
-    assert(rect != null);
-    assert(_decoration.gradient != null || _rectForCachedBackgroundPaint == null);
-
-    if (_cachedBackgroundPaint == null ||
-        (_decoration.gradient != null && _rectForCachedBackgroundPaint != rect)) {
-      final Paint paint = Paint();
-      if (_decoration.backgroundBlendMode != null)
-        paint.blendMode = _decoration.backgroundBlendMode!;
-      if (_decoration.color != null)
-        paint.color = _decoration.color!;
-      if (_decoration.gradient != null) {
-        paint.shader = _decoration.gradient!.createShader(rect, textDirection: textDirection);
-        _rectForCachedBackgroundPaint = rect;
+    if (
+      this.cachedBackgroundPaint === null ||
+      (
+        this.decoration.gradient !== null && 
+        this.rectForCachedBackgroundPaint !== rect
+      )
+    ) {
+      const paint = Paint.malloc()
+      if (this.decoration.backgroundBlendMode !== null) {
+        paint.blendMode = this.decoration!.backgroundBlendMode!
       }
-      _cachedBackgroundPaint = paint;
+
+      if (this.decoration.color !== null) {
+        paint.color = this.decoration!.color!
+      }
+      if (this.decoration.gradient !== null) {
+        paint.shader = this.decoration!.gradient!.createShader(
+          rect, 
+          textDirection
+        )
+        this.rectForCachedBackgroundPaint = rect
+      }
+      this.cachedBackgroundPaint = paint
     }
 
-    return _cachedBackgroundPaint!;
+    return this.cachedBackgroundPaint!
   }
 
   paintBox (
-    canvas: CkCanvas, 
+    canvas: Canvas, 
     rect: Rect , 
-    paint: CkPaint, 
-    textDirection: TextDirection
+    paint: Paint, 
+    textDirection: SkiaTextDirection
   ) {
-    switch (this.decoration.shape) {
+    switch (this.decoration!.shape) {
       case BoxShape.Circle: {
         invariant(this.decoration.borderRadius === null)
 
@@ -302,7 +332,7 @@ export class BoxDecorationPainter extends BoxPainter {
   paintShadows (
     canvas: Canvas , 
     rect: Rect, 
-    textDirection: TextDirection | null
+    textDirection: SkiaTextDirection | null
   ) {
     if (this.decoration.boxShadow === null) {
       return
@@ -311,26 +341,25 @@ export class BoxDecorationPainter extends BoxPainter {
     for (const boxShadow of this.decoration.boxShadow!) {
       const paint = boxShadow.toPaint()
       const bounds = rect.shift(boxShadow.offset).inflate(boxShadow.spreadRadius)
-      this.paintBox(canvas, bounds, paint, textDirection)
+      this.paintBox(canvas, bounds, paint, textDirection!)
     }
   }
 
   paintBackgroundColor (
-    canvas: CkCanvas, 
+    canvas: Canvas, 
     rect: Rect, 
-    textDirection: TextDirection | null
+    textDirection: SkiaTextDirection | null
   ) {
     if (
       this.decoration.color !== null || 
-      this._decoration.gradient !=- null
+      this.decoration.gradient !== null
     ) {
-      this.paintBox(canvas, rect, this.getBackgroundPaint(rect, textDirection), textDirection)
+      this.paintBox(canvas, rect, this.getBackgroundPaint(rect, textDirection), textDirection!)
     }
   }
 
-  DecorationImagePainter? _imagePainter;
   paintBackgroundImage (
-    canvas: CkCanvas, 
+    canvas: Canvas, 
     rect: Rect, 
     configuration: ImageConfiguration
   ) {
@@ -345,50 +374,53 @@ export class BoxDecorationPainter extends BoxPainter {
         const center = rect.center
         const radius = rect.shortestSide / 2.0
         const square = Rect.fromCircle(center, radius)
-        clipPath = CkPath.malloc()
+        clipPath = Path.malloc()
         clipPath.addOval(square)
         break
       }
 
-      case BoxShape.Cectangle: {
+      case BoxShape.Rectangle: {
         if (this.decoration.borderRadius !== null) {
-          clipPath = Path().malloc()
+          clipPath = Path.malloc()
           clipPath.addRRect(this.decoration.borderRadius!.resolve(configuration.textDirection).toRRect(rect))
         }
         break
       }
     }
     
-    this.imagePainter!.paint(canvas, rect, clipPath, configuration)
+    this.imagePainter!.paint(canvas, rect, clipPath!, configuration)
   }
 
   dispose () {
-    this._imagePainter?.dispose()
+    this.imagePainter?.dispose()
     super.dispose()
   }
 
   paint (
-    canvas: CkCanvas, 
+    canvas: Canvas, 
     offset: Offset, 
     configuration: ImageConfiguration
   ) {
     invariant(configuration !== null)
     invariant(configuration.size !== null)
-    final Rect rect = offset & configuration.size!;
-    final TextDirection? textDirection = configuration.textDirection;
-    _paintShadows(canvas, rect, textDirection);
-    _paintBackgroundColor(canvas, rect, textDirection);
-    _paintBackgroundImage(canvas, rect, configuration);
-    _decoration.border?.paint(
+
+    const rect = offset.and(configuration.size)
+    const textDirection = configuration.textDirection
+    
+    this.paintShadows(canvas, rect, textDirection)
+    this.paintBackgroundColor(canvas, rect, textDirection)
+    this.paintBackgroundImage(canvas, rect, configuration)
+    
+    this.decoration.border?.paint(
       canvas,
       rect,
-      shape: _decoration.shape,
-      borderRadius: _decoration.borderRadius?.resolve(textDirection),
-      textDirection: configuration.textDirection,
-    );
+      this.decoration.shape,
+      this.decoration.borderRadius?.resolve(textDirection),
+      this.configuration.textDirection,
+    )
   }
 
   toString () {
-    return 'BoxPainter for $_decoration';
+    return `BoxPainter for ${this.decoration}`
   }
 }

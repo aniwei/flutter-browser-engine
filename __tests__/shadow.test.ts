@@ -1,6 +1,6 @@
 import jimp from 'jimp'
 import { resolve } from 'path'
-import { Skia, SkiaCanvas } from '@Skia'
+import { Skia, SkiaCanvas, SkiaTextDirection } from '@Skia'
 import { Border, BorderStyle, BoxShape, BorderRadius } from '@Painting'
 import { Canvas, Color, Radius, Rect } from '@UI'
 

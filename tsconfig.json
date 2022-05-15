@@ -28,9 +28,10 @@
     "paths": {
       "@UI": ["./src/UI/index.ts"],
       "@Skia": ["src/Skia/index.ts"],
-      "@Painting": ["src/Painting/index.ts"],
       "@Math": ["./src/Math/index.ts"],
       "@Shared": ["./src/Shared/index.ts"],
+      "@Platform": ["src/Platform/index.ts"],
+      "@Painting": ["src/Painting/index.ts"],
       "@Rendering": ["./src/Rendering/index.ts"]
     },
     "plugins": [

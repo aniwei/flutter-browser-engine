@@ -158,6 +158,15 @@ export class Offset extends OffsetBase {
     )
   }
 
+  and (other: Size) {
+    return Rect.fromLTWH(
+      this.dx, 
+      this.dy, 
+      other.width, 
+      other.height
+    )
+  }
+
   isEqual (offset: Offset): boolean {
     if (offset === this) {
       return true

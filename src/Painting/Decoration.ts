@@ -1,7 +1,6 @@
 import invariant from 'ts-invariant'
-import { CkCanvas, CkPath } from '@CanvasKit'
 import { UnsupportedError } from '@Shared'
-import { Offset, Rect, Size } from '@UI'
+import { Canvas, Path, Offset, Rect, Size } from '@UI'
 import { TextDirection } from 'canvaskit-wasm'
 import { EdgeInsets, EdgeInsetsGeometry } from './EdgeInsets'
 
@@ -77,7 +76,7 @@ export abstract class Decoration {
   getClipPath (
     rect: Rect, 
     textDirection: TextDirection
-  ): CkPath  {
+  ): Path  {
     throw new UnsupportedError()
   }
 }
@@ -90,7 +89,7 @@ export abstract class BoxPainter {
   }
 
   abstract paint (
-    canvas: CkCanvas, 
+    canvas: Canvas, 
     offset: Offset, 
     configuration: ImageConfiguration
   )

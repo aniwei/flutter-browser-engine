@@ -1,8 +1,13 @@
 import invariant from 'ts-invariant'
-import { CkImage } from '@CanvasKit'
+import { Image } from '@UI'
+
+export type ImageListener = { (image: ImageInfo, synchronousCall: boolean): void } 
+export type ImageChunkListener = { (event: ImageChunkEvent): void }
+
+export type ImageErrorListener = { (exception): void }
 
 export class ImageInfo {
-  public image: CkImage 
+  public image: Image 
   public scale: number 
   public debugLabel: string | null
   
@@ -11,7 +16,7 @@ export class ImageInfo {
   } 
 
   constructor (
-    image: CkImage,
+    image: Image,
     scale: number = 1.0,
     debugLabel: string | null
   ) {
@@ -61,113 +66,40 @@ export class ImageInfo {
   }
 }
 
-
 export class ImageStreamListener {
+  public onImage: ImageListener
+  public onChunk: ImageChunkListener | null
+  public onError: ImageErrorListener | null
   
   
-  
-  const ImageStreamListener(
-    this.onImage, {
-    this.onChunk,
-    this.onError,
-  }) : assert(onImage != null);
+  constructor (
+    onImage: ImageListener,
+    onChunk: ImageChunkListener | null,
+    onError: ImageErrorListener | null,
+  ) {
+    invariant(onImage !== null)
 
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  final ImageListener onImage;
+    this.onImage = onImage
+    this.onChunk = onChunk
+    this.onError = onError
+  }
 
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  final ImageChunkListener? onChunk;
+  isEqual (other: ImageStreamListener) {
+    if (other === this) {
+      return true
+    }
 
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  final ImageErrorListener? onError;
-
-  @override
-  int get hashCode => hashValues(onImage, onChunk, onError);
-
-  @override
-  bool operator ==(Object other) {
-    if (other.runtimeType != runtimeType)
-      return false;
-    return other is ImageStreamListener
-        && other.onImage == onImage
-        && other.onChunk == onChunk
-        && other.onError == onError;
+    return (
+      other instanceof ImageStreamListener &&
+      other.onImage === this.onImage &&
+      other.onChunk === this.onChunk &&
+      other.onError === this.onError
+    )
   }
 }
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-typedef ImageListener = void Function(ImageInfo image, bool synchronousCall);
-
-
-
-
-typedef ImageChunkListener = void Function(ImageChunkEvent event);
-
-
-
-
-
-typedef ImageErrorListener = void Function(Object exception, StackTrace? stackTrace);
-
-
-
-
-
-
-
-
-
-
-@immutable
-class ImageChunkEvent with Diagnosticable {
+export class ImageChunkEvent {
   
   const ImageChunkEvent({
     required this.cumulativeBytesLoaded,
@@ -177,21 +109,8 @@ class ImageChunkEvent with Diagnosticable {
 
   
   final int cumulativeBytesLoaded;
-
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
   final int? expectedTotalBytes;
 
-  @override
   void debugFillProperties(DiagnosticPropertiesBuilder properties) {
     super.debugFillProperties(properties);
     properties.add(IntProperty('cumulativeBytesLoaded', cumulativeBytesLoaded));
