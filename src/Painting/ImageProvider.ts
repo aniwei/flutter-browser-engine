@@ -159,24 +159,16 @@ export abstract class ImageProvider<T> {
   ) {
     let obtainedKey: T | null
     let  didError = false
-    Future<void> handleError(Object exception, StackTrace? stack) async {
+    const handleError = (exception) => {
       if (didError) {
-        return;
+        return
       }
       if (!didError) {
-        errorCallback(obtainedKey, exception, stack);
+        errorCallback(obtainedKey, exception);
       }
-      didError = true;
+      didError = true
     }
 
-    // If an error is added to a synchronous completer before a listener has been
-    // added, it can throw an error both into the zone and up the stack. Thus, it
-    // looks like the error has been caught, but it is in fact also bubbling to the
-    // zone. Since we cannot prevent all usage of Completer.sync here, or rather
-    // that changing them would be too breaking, we instead hook into the same
-    // zone mechanism to intercept the uncaught error and deliver it to the
-    // image stream's error handler. Note that these errors may be duplicated,
-    // hence the need for the `didError` flag.
     final Zone dangerZone = Zone.current.fork(
       specification: ZoneSpecification(
         handleUncaughtError: (Zone zone, ZoneDelegate delegate, Zone parent, Object error, StackTrace stackTrace) {
@@ -494,8 +486,8 @@ export class FileImage extends ImageProvider<FileImage> {
   isEqual (other: FileImage) {
     return (
       other instanceof FileImage &&
-      other.file.path === file.path &&
-      other.scale === scale
+      other.file.path === this.file.path &&
+      other.scale === this.scale
     )
   }
 
@@ -504,19 +496,7 @@ export class FileImage extends ImageProvider<FileImage> {
   }
 }
 
-/// Decodes the given [Uint8List] buffer as an image, associating it with the
-/// given scale.
-///
-/// The provided [bytes] buffer should not be changed after it is provided
-/// to a [MemoryImage]. To provide an [ImageStream] that represents an image
-/// that changes over time, consider creating a new subclass of [ImageProvider]
-/// whose [load] method returns a subclass of [ImageStreamCompleter] that can
-/// handle providing multiple images.
-///
-/// See also:
-///
-///  * [Image.memory] for a shorthand of an [Image] widget backed by [MemoryImage].
-class MemoryImage extends ImageProvider<MemoryImage> {
+export class MemoryImage extends ImageProvider<MemoryImage> {
   public bytes: Uint8Array
   public scale: number
   
@@ -524,6 +504,8 @@ class MemoryImage extends ImageProvider<MemoryImage> {
     bytes: Uint8Array,
     scale: number = 1.0
   ) {
+    super()
+
     this.bytes = bytes
     this.scale = scale
   }
@@ -558,8 +540,8 @@ class MemoryImage extends ImageProvider<MemoryImage> {
 
     return (
       other instanceof MemoryImage &&
-      other.bytes == bytes &&
-      other.scale == scale
+      other.bytes === this.bytes &&
+      other.scale === this.scale
     )
   }
 

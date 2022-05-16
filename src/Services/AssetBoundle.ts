@@ -1,3 +1,4 @@
+import { ByteData } from '@Platform'
 
 export abstract class AssetBundle {
   static  utf8decode (data: ByteData) {

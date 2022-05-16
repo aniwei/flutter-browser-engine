@@ -6,8 +6,9 @@ import { BoxShadow } from './BoxShadow'
 import { EdgeInsetsGeometry } from './EdgeInsets'
 import { ImageConfiguration } from './ImageProvider'
 import { BoxPainter, Decoration } from './Decoration'
-import { SkiaBlendMode, SkiaTextDirection, VoidCallback } from '@Skia'
+import { SkiaBlendMode, SkiaTextDirection } from '@Skia'
 import { listEquals } from '@Math'
+import { VoidCallback } from '@Platform'
 
 export class BoxDecoration extends Decoration {
   static lerp (
@@ -172,7 +173,7 @@ export class BoxDecoration extends Decoration {
       return BoxDecoration.lerp(a, this, t)
     }
 
-    return super.lerpFrom(a, t) as BoxDecoration?
+    return super.lerpFrom(a, t) as BoxDecoration
   }
 
   lerpTo (
@@ -205,20 +206,6 @@ export class BoxDecoration extends Decoration {
       other.gradient == this.gradient &&
       other.shape == this.shape
     )
-  }
-
-  debugFillProperties (properties: DiagnosticPropertiesBuilder) {
-    super.debugFillProperties(properties)
-    properties.defaultDiagnosticsTreeStyle = DiagnosticsTreeStyle.whitespace
-    properties.emptyBodyDescription = '<no decorations specified>';
-
-    properties.add(ColorProperty('color', color, defaultValue: null));
-    properties.add(DiagnosticsProperty<DecorationImage>('image', image, defaultValue: null));
-    properties.add(DiagnosticsProperty<BoxBorder>('border', border, defaultValue: null));
-    properties.add(DiagnosticsProperty<BorderRadiusGeometry>('borderRadius', borderRadius, defaultValue: null));
-    properties.add(IterableProperty<BoxShadow>('boxShadow', boxShadow, defaultValue: null, style: DiagnosticsTreeStyle.whitespace));
-    properties.add(DiagnosticsProperty<Gradient>('gradient', gradient, defaultValue: null));
-    properties.add(EnumProperty<BoxShape>('shape', shape, defaultValue: BoxShape.rectangle));
   }
 
   hitTest (

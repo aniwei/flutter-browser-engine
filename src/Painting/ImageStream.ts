@@ -262,8 +262,6 @@ abstract class ImageStreamCompleter {
     this.onLastListenerRemovedCallbacks.push(callback)
   }
 
-  
-  
   removeOnLastListenerRemovedCallback (callback: VoidCallback) {
     invariant(callback !== null)
     this.checkDisposed()

@@ -1,4 +1,5 @@
-import { ImageInfo } from '@Painting'
+import type { ImageInfo } from '@Painting'
+import type { ImageChunkEvent } from '@Painting'
 
 export enum TargetPlatform {
   Android,
@@ -16,3 +17,4 @@ export type ImageErrorListener = { (exception): void }
 export type VoidCallback = { (): void }
 
 export * from './Locale'
+export * from './TypedData'
