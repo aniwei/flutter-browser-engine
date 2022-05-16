@@ -3,6 +3,7 @@ import { Codec, Size } from '@UI'
 import { SkiaTextDirection } from '@Skia'
 import { ImageErrorListener, Locale, TargetPlatform } from '@Platform'
 import { AssetBundle } from '@Services'
+import { ImageStream } from './ImageStream'
 
 type KeyAndErrorHandlerCallback<T> = { (key: T, handleError: ImageErrorListener): void }
 type AsyncKeyErrorHandler<T> = { (key: T, exception): Promise<void> }
@@ -85,37 +86,28 @@ export abstract class ImageProvider<T> {
   
   resolve (configuration: ImageConfiguration): ImageStream {
     invariant(configuration !== null)
-    final ImageStream stream = createStream(configuration)
+    const stream = this.createStream(configuration)
     
-    _createErrorHandlerAndKey(
+    this.createErrorHandlerAndKey(
       configuration,
-      (T key, ImageErrorListener errorHandler) {
-        resolveStreamForKey(configuration, stream, key, errorHandler);
+      (key: T , errorHandler: ImageErrorListener) => {
+        this.resolveStreamForKey(configuration, stream, key, errorHandler);
       },
-      (T? key, Object exception, StackTrace? stack) async {
-        await null; // wait an event turn in case a listener has been added to the image stream.
-        InformationCollector? collector;
-        assert(() {
-          collector = () => <DiagnosticsNode>[
-            DiagnosticsProperty<ImageProvider>('Image provider', this),
-            DiagnosticsProperty<ImageConfiguration>('Image configuration', configuration),
-            DiagnosticsProperty<T>('Image key', key, defaultValue: null),
-          ];
-          return true;
-        }());
-        if (stream.completer == null) {
-          stream.setCompleter(ErrorImageCompleter());
+      async (key: T | null, exception ) => {
+        if (stream.completer === null) {
+          stream.setCompleter(new ErrorImageCompleter())
         }
+
         stream.completer!.reportError(
           exception: exception,
           stack: stack,
           context: ErrorDescription('while resolving an image'),
           silent: true, // could be a network error or whatnot
           informationCollector: collector,
-        );
+        )
       },
-    );
-    return stream;
+    )
+    return stream
   }
 
   createStream (configuration: ImageConfiguration): ImageStream {
@@ -126,8 +118,9 @@ export abstract class ImageProvider<T> {
     configuration: ImageConfiguration ,
     handleError: ImageErrorListener | null,
   ): Promise<ImageCacheStatus | null>  {
-    assert(configuration != null);
-    final Completer<ImageCacheStatus?> completer = Completer<ImageCacheStatus?>();
+    invariant(configuration !== null)
+    const completer = new Completer<ImageCacheStatus | null>()
+
     _createErrorHandlerAndKey(
       configuration,
       (T key, ImageErrorListener innerHandleError) {
@@ -159,16 +152,13 @@ export abstract class ImageProvider<T> {
     return completer.future;
   }
 
-  /// This method is used by both [resolve] and [obtainCacheStatus] to ensure
-  /// that errors thrown during key creation are handled whether synchronous or
-  /// asynchronous.
-  void _createErrorHandlerAndKey(
-    ImageConfiguration configuration,
-    _KeyAndErrorHandlerCallback<T> successCallback,
-    _AsyncKeyErrorHandler<T?> errorCallback,
+  createErrorHandlerAndKey (
+    configuration: ImageConfiguration,
+    successCallback: KeyAndErrorHandlerCallback<T>,
+    errorCallback: AsyncKeyErrorHandler<T | null> ,
   ) {
-    T? obtainedKey;
-    bool didError = false;
+    let obtainedKey: T | null
+    let  didError = false
     Future<void> handleError(Object exception, StackTrace? stack) async {
       if (didError) {
         return;
@@ -213,29 +203,14 @@ export abstract class ImageProvider<T> {
     });
   }
 
-  /// Called by [resolve] with the key returned by [obtainKey].
-  ///
-  /// Subclasses should override this method rather than calling [obtainKey] if
-  /// they need to use a key directly. The [resolve] method installs appropriate
-  /// error handling guards so that errors will bubble up to the right places in
-  /// the framework, and passes those guards along to this method via the
-  /// [handleError] parameter.
-  ///
-  /// It is safe for the implementation of this method to call [handleError]
-  /// multiple times if multiple errors occur, or if an error is thrown both
-  /// synchronously into the current part of the stack and thrown into the
-  /// enclosing [Zone].
-  ///
-  /// The default implementation uses the key to interact with the [ImageCache],
-  /// calling [ImageCache.putIfAbsent] and notifying listeners of the [stream].
-  /// Implementers that do not call super are expected to correctly use the
-  /// [ImageCache].
-  @protected
-  void resolveStreamForKey(ImageConfiguration configuration, ImageStream stream, T key, ImageErrorListener handleError) {
-    // This is an unusual edge case where someone has told us that they found
-    // the image we want before getting to this method. We should avoid calling
-    // load again, but still update the image cache with LRU information.
-    if (stream.completer != null) {
+  
+  resolveStreamForKey (
+    configuration: ImageConfiguration, 
+    stream: ImageStream, 
+    key: T, 
+    handleError: ImageErrorListener
+  ) {
+    if (stream.completer !== null) {
       final ImageStreamCompleter? completer = PaintingBinding.instance!.imageCache!.putIfAbsent(
         key,
         () => stream.completer!,
@@ -249,211 +224,122 @@ export abstract class ImageProvider<T> {
       () => load(key, PaintingBinding.instance!.instantiateImageCodec),
       onError: handleError,
     );
-    if (completer != null) {
+    if (completer !== null) {
       stream.setCompleter(completer);
     }
   }
 
-  /// Evicts an entry from the image cache.
-  ///
-  /// Returns a [Future] which indicates whether the value was successfully
-  /// removed.
-  ///
-  /// The [ImageProvider] used does not need to be the same instance that was
-  /// passed to an [Image] widget, but it does need to create a key which is
-  /// equal to one.
-  ///
-  /// The [cache] is optional and defaults to the global image cache.
-  ///
-  /// The [configuration] is optional and defaults to
-  /// [ImageConfiguration.empty].
-  ///
-  /// {@tool snippet}
-  ///
-  /// The following sample code shows how an image loaded using the [Image]
-  /// widget can be evicted using a [NetworkImage] with a matching URL.
-  ///
-  /// ```dart
-  /// class MyWidget extends StatelessWidget {
-  ///   const MyWidget({
-  ///     Key? key,
-  ///     this.url = ' ... ',
-  ///   }) : super(key: key);
-  ///
-  ///   final String url;
-  ///
-  ///   @override
-  ///   Widget build(BuildContext context) {
-  ///     return Image.network(url);
-  ///   }
-  ///
-  ///   void evictImage() {
-  ///     final NetworkImage provider = NetworkImage(url);
-  ///     provider.evict().then<void>((bool success) {
-  ///       if (success) {
-  ///         debugPrint('removed image!');
-  ///       }
-  ///     });
-  ///   }
-  /// }
-  /// ```
-  /// {@end-tool}
-  Future<bool> evict({ ImageCache? cache, ImageConfiguration configuration = ImageConfiguration.empty }) async {
-    cache ??= imageCache;
+  async evict(
+    cache: ImageCache | null, 
+    configuration: ImageConfiguration = ImageConfiguration.Empty 
+  ): Promise<boolean>  {
+    cache ??= imageCache
     final T key = await obtainKey(configuration);
     return cache!.evict(key);
   }
 
-  /// Converts an ImageProvider's settings plus an ImageConfiguration to a key
-  /// that describes the precise image to load.
-  ///
-  /// The type of the key is determined by the subclass. It is a value that
-  /// unambiguously identifies the image (_including its scale_) that the [load]
-  /// method will fetch. Different [ImageProvider]s given the same constructor
-  /// arguments and [ImageConfiguration] objects should return keys that are
-  /// '==' to each other (possibly by using a class for the key that itself
-  /// implements [==]).
-  Future<T> obtainKey(ImageConfiguration configuration);
+  abstract obtainKey(configuration： ImageConfiguration): Promise<T> 
+  abstract load (key: T, decode: DecoderCallback): ImageStreamCompleter 
 
-  /// Converts a key into an [ImageStreamCompleter], and begins fetching the
-  /// image.
-  ///
-  /// The [decode] callback provides the logic to obtain the codec for the
-  /// image.
-  ///
-  /// See also:
-  ///
-  ///  * [ResizeImage], for modifying the key to account for cache dimensions.
-  @protected
-  ImageStreamCompleter load(T key, DecoderCallback decode);
-
-  @override
-  String toString() => '${objectRuntimeType(this, 'ImageConfiguration')}()';
+  toString () {
+    return ``
+  }
 }
 
-/// Key for the image obtained by an [AssetImage] or [ExactAssetImage].
-///
-/// This is used to identify the precise resource in the [imageCache].
-@immutable
+
 class AssetBundleImageKey {
-  /// Creates the key for an [AssetImage] or [AssetBundleImageProvider].
-  ///
-  /// The arguments must not be null.
-  const AssetBundleImageKey({
-    required this.bundle,
-    required this.name,
-    required this.scale,
-  }) : assert(bundle != null),
-       assert(name != null),
-       assert(scale != null);
+  public bundle: AssetBundle
+  public name: String
+  public scale: number
 
-  /// The bundle from which the image will be obtained.
-  ///
-  /// The image is obtained by calling [AssetBundle.load] on the given [bundle]
-  /// using the key given by [name].
-  final AssetBundle bundle;
+  constructor(
+    bundle: AssetBundle,
+    name: string,
+    scale: number,
+  ) {
+    invariant(bundle !== null)
+    invariant(name !== null)
+    invariant(scale !== null)
 
-  /// The key to use to obtain the resource from the [bundle]. This is the
-  /// argument passed to [AssetBundle.load].
-  final String name;
-
-  /// The scale to place in the [ImageInfo] object of the image.
-  final double scale;
-
-  @override
-  bool operator ==(Object other) {
-    if (other.runtimeType != runtimeType)
-      return false;
-    return other is AssetBundleImageKey
-        && other.bundle == bundle
-        && other.name == name
-        && other.scale == scale;
+    this.bundle = bundle
+    this.name = name
+    this.scale = scale
   }
 
-  @override
-  int get hashCode => hashValues(bundle, name, scale);
+  isEqual (other: AssetBundleImageKey) {
+    return (
+      other instanceof AssetBundleImageKey &&
+      other.bundle === this.bundle &&
+      other.name === this.name &&
+      other.scale === this.scale
+    )
+  }
 
-  @override
-  String toString() => '${objectRuntimeType(this, 'AssetBundleImageKey')}(bundle: $bundle, name: "$name", scale: $scale)';
+  toString () {
+    return ``
+  }
 }
 
-/// A subclass of [ImageProvider] that knows about [AssetBundle]s.
-///
-/// This factors out the common logic of [AssetBundle]-based [ImageProvider]
-/// classes, simplifying what subclasses must implement to just [obtainKey].
-abstract class AssetBundleImageProvider extends ImageProvider<AssetBundleImageKey> {
-  /// Abstract const constructor. This constructor enables subclasses to provide
-  /// const constructors so that they can be used in const expressions.
-  const AssetBundleImageProvider();
-
-  /// Converts a key into an [ImageStreamCompleter], and begins fetching the
-  /// image.
-  @override
-  ImageStreamCompleter load(AssetBundleImageKey key, DecoderCallback decode) {
-    InformationCollector? collector;
-    assert(() {
-      collector = () => <DiagnosticsNode>[
-        DiagnosticsProperty<ImageProvider>('Image provider', this),
-        DiagnosticsProperty<AssetBundleImageKey>('Image key', key),
-      ];
-      return true;
-    }());
-    return MultiFrameImageStreamCompleter(
-      codec: _loadAsync(key, decode),
-      scale: key.scale,
-      debugLabel: key.name,
-      informationCollector: collector,
+export abstract class AssetBundleImageProvider extends ImageProvider<AssetBundleImageKey> {
+  load (
+    key: AssetBundleImageKey, 
+    decode: DecoderCallback
+  ): ImageStreamCompleter {
+   
+    return new MultiFrameImageStreamCompleter(
+      this.loadAsync(key, decode),
+      key.scale,
+      key.name,
+      collector,
     );
   }
 
-  /// Fetches the image from the asset bundle, decodes it, and returns a
-  /// corresponding [ImageInfo] object.
-  ///
-  /// This function is used by [load].
-  @protected
-  Future<ui.Codec> _loadAsync(AssetBundleImageKey key, DecoderCallback decode) async {
-    ByteData? data;
-    // Hot reload/restart could change whether an asset bundle or key in a
-    // bundle are available, or if it is a network backed bundle.
+  async loadAsync (
+    key: AssetBundleImageKey, 
+    decode: DecoderCallback
+  ) {
+    let data
+    
     try {
-      data = await key.bundle.load(key.name);
+      data = await key.bundle.load(key.name)
     } on FlutterError {
       PaintingBinding.instance!.imageCache!.evict(key);
       rethrow;
     }
     if (data == null) {
       PaintingBinding.instance!.imageCache!.evict(key);
-      throw StateError('Unable to read data');
+      throw new Error('Unable to read data')
     }
+
     return decode(data.buffer.asUint8List());
   }
 }
 
-/// Key used internally by [ResizeImage].
-///
-/// This is used to identify the precise resource in the [imageCache].
-@immutable
-class ResizeImageKey {
-  // Private constructor so nobody from the outside can poison the image cache
-  // with this key. It's only accessible to [ResizeImage] internally.
-  const ResizeImageKey._(this._providerCacheKey, this._width, this._height);
 
-  final Object _providerCacheKey;
-  final int? _width;
-  final int? _height;
+export class ResizeImageKey {
+  public providerCacheKey
+  public width: number | null
+  public height: number | null
 
-  @override
-  bool operator ==(Object other) {
-    if (other.runtimeType != runtimeType)
-      return false;
-    return other is ResizeImageKey
-        && other._providerCacheKey == _providerCacheKey
-        && other._width == _width
-        && other._height == _height;
+  constructor (
+    providerCacheKey,
+    width: number,
+    height: number,
+  ) {
+    this.providerCacheKey = providerCacheKey
+    this.width = width
+    this.height = height
   }
 
-  @override
-  int get hashCode => hashValues(_providerCacheKey, _width, _height);
+  isEqual (other: ResizeImageKey) {
+    
+    return (
+      other instanceof ResizeImageKey &&
+      other.providerCacheKey === this.providerCacheKey &&
+      other.width === this.width &&
+      other.height === this.height
+    )
+  }
 }
 
 export class ResizeImage extends ImageProvider<ResizeImageKey> {
@@ -462,7 +348,7 @@ export class ResizeImage extends ImageProvider<ResizeImageKey> {
     cacheHeight: number | null, 
     provider: ImageProvider<Object> 
   ): ImageProvider<Object>  {
-    if (cacheWidth != null || cacheHeight != null) {
+    if (cacheWidth !== null || cacheHeight !== null) {
       return new ResizeImage(
         provider, 
         cacheWidth, 
@@ -730,21 +616,21 @@ export class ExactAssetImage extends AssetBundleImageProvider {
 export class ErrorImageCompleter extends ImageStreamCompleter { }
 
 export class NetworkImageLoadException implements Exception {
-  NetworkImageLoadException({required this.statusCode, required this.uri})
-      : assert(uri != null),
-        assert(statusCode != null),
-        _message = 'HTTP request failed, statusCode: $statusCode, $uri';
+  public statusCode: number
+  public message: string
+  public uri: URI
 
-  /// The HTTP status code from the server.
-  final int statusCode;
+  constructor (
+    statusCode: number,
+    uri: URI
+  ) {
+    invariant(uri !== null)
+    invariant(statusCode !== null)
+    this.statusCode = statusCode
+    this.uri = uri
+    this.message = `HTTP request failed, statusCode: ${this.statusCode}, ${this.uri}`
+  }
 
-  /// A human-readable error message.
-  final String _message;
-
-  /// Resolved URL of the requested image.
-  final Uri uri;
-
-  
   toString () {
     return this.message
   }
