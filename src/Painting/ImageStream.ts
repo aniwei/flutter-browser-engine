@@ -1,9 +1,9 @@
 import invariant from 'ts-invariant'
 import { Image } from '@UI'
+import { VoidCallback } from '@Platform'
 
 export type ImageListener = { (image: ImageInfo, synchronousCall: boolean): void } 
 export type ImageChunkListener = { (event: ImageChunkEvent): void }
-
 export type ImageErrorListener = { (exception): void }
 
 export class ImageInfo {
@@ -71,7 +71,6 @@ export class ImageStreamListener {
   public onChunk: ImageChunkListener | null
   public onError: ImageErrorListener | null
   
-  
   constructor (
     onImage: ImageListener,
     onChunk: ImageChunkListener | null,
@@ -100,428 +99,212 @@ export class ImageStreamListener {
 
 
 export class ImageChunkEvent {
-  
-  const ImageChunkEvent({
-    required this.cumulativeBytesLoaded,
-    required this.expectedTotalBytes,
-  }) : assert(cumulativeBytesLoaded >= 0),
-       assert(expectedTotalBytes == null || expectedTotalBytes >= 0);
+  public cumulativeBytesLoaded: number
+  public expectedTotalBytes: number | null
 
-  
-  final int cumulativeBytesLoaded;
-  final int? expectedTotalBytes;
+  constructor (
+    cumulativeBytesLoaded: number,
+    expectedTotalBytes: number | null
+  ) {
+    invariant(cumulativeBytesLoaded >= 0)
+    invariant(expectedTotalBytes == null || expectedTotalBytes >= 0)
 
-  void debugFillProperties(DiagnosticPropertiesBuilder properties) {
-    super.debugFillProperties(properties);
-    properties.add(IntProperty('cumulativeBytesLoaded', cumulativeBytesLoaded));
-    properties.add(IntProperty('expectedTotalBytes', expectedTotalBytes));
+    this.cumulativeBytesLoaded = cumulativeBytesLoaded
+    this.expectedTotalBytes = expectedTotalBytes
   }
 }
 
+export class ImageStream {  
+  public completer: ImageStreamCompleter | null = null
+  public listeners: ImageStreamListener[] | null = null
 
+  public get key () {
+    return this.completer ?? this
+  } 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-export class ImageStream {
-  
-  
-  
-  ImageStream();
-
-  
-  
-  
-  ImageStreamCompleter? get completer => _completer;
-  ImageStreamCompleter? _completer;
-
-  List<ImageStreamListener>? _listeners;
-
-  
-  
-  
-  
-  
-  
-  
-  
-  void setCompleter(ImageStreamCompleter value) {
-    assert(_completer == null);
-    _completer = value;
-    if (_listeners != null) {
-      final List<ImageStreamListener> initialListeners = _listeners!;
-      _listeners = null;
-      initialListeners.forEach(_completer!.addListener);
+  setCompleter (value: ImageStreamCompleter) {
+    invariant(this.completer === null)
+    this.completer = value
+    if (this.listeners !== null) {
+      const initialListeners: ImageStreamListener[] = this.listeners
+      this.listeners = null
+      initialListeners.forEach(this.completer!.addListener)
     }
   }
 
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  void addListener(ImageStreamListener listener) {
-    if (_completer != null)
-      return _completer!.addListener(listener);
-    _listeners ??= <ImageStreamListener>[];
-    _listeners!.add(listener);
+  addListener (listener: ImageStreamListener) {
+    if (this.completer !== null) {
+      return this.completer!.addListener(listener)
+    }
+    this.listeners ??= []
+    this.listeners!.push(listener)
   }
 
-  
-  
-  
-  
-  void removeListener(ImageStreamListener listener) {
-    if (_completer != null)
-      return _completer!.removeListener(listener);
-    assert(_listeners != null);
-    for (int i = 0; i < _listeners!.length; i += 1) {
-      if (_listeners![i] == listener) {
-        _listeners!.removeAt(i);
-        break;
+  removeListener (listener: ImageStreamListener) {
+    if (this.completer !== null) {
+      return this.completer!.removeListener(listener)
+    }
+    invariant(this.listeners !== null)
+
+    for (let i = 0; i < this.listeners!.length; i += 1) {
+      if (this.listeners![i] === listener) {
+        this.listeners!.splice(i, 1)
+        break
       }
     }
   }
-
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  Object get key => _completer ?? this;
-
-  @override
-  void debugFillProperties(DiagnosticPropertiesBuilder properties) {
-    super.debugFillProperties(properties);
-    properties.add(ObjectFlagProperty<ImageStreamCompleter>(
-      'completer',
-      _completer,
-      ifPresent: _completer?.toStringShort(),
-      ifNull: 'unresolved',
-    ));
-    properties.add(ObjectFlagProperty<List<ImageStreamListener>>(
-      'listeners',
-      _listeners,
-      ifPresent: '${_listeners?.length} listener${_listeners?.length == 1 ? "" : "s" }',
-      ifNull: 'no listeners',
-      level: _completer != null ? DiagnosticLevel.hidden : DiagnosticLevel.info,
-    ));
-    _completer?.debugFillProperties(properties);
-  }
 }
 
 
 
-
-
-
-
-
-
-
-class ImageStreamCompleterHandle {
-  ImageStreamCompleterHandle._(ImageStreamCompleter this._completer) {
-    _completer!._keepAliveHandles += 1;
+export class ImageStreamCompleterHandle {
+  constructor (completer: ImageStreamCompleter) {
+    this.completer = completer
+    this.completer.keepAliveHandles += 1
   }
 
-  ImageStreamCompleter? _completer;
+  public completer: ImageStreamCompleter | null = null
+  
+  dispose () {
+    invariant(this.completer !== null);
+    invariant(this.completer!.keepAliveHandles > 0);
+    invariant(!this.completer!.disposed);
 
-  
-  
-  
-  
-  void dispose() {
-    assert(_completer != null);
-    assert(_completer!._keepAliveHandles > 0);
-    assert(!_completer!._disposed);
-
-    _completer!._keepAliveHandles -= 1;
-    _completer!._maybeDispose();
-    _completer = null;
+    this.completer!.keepAliveHandles -= 1
+    this.completer!.maybeDispose();
+    this.completer = null
   }
 }
 
-
-
-
-
-
-
-abstract class ImageStreamCompleter with Diagnosticable {
-  final List<ImageStreamListener> _listeners = <ImageStreamListener>[];
-  ImageInfo? _currentImage;
-  FlutterErrorDetails? _currentError;
-
+abstract class ImageStreamCompleter {
+  public listeners: ImageStreamListener[] = []
+  public currentImage: ImageInfo | null = null
   
-  String? debugLabel;
-  @protected
-  @visibleForTesting
-  bool get hasListeners => _listeners.isNotEmpty;
-  bool _hadAtLeastOneListener = false;
-  void addListener(ImageStreamListener listener) {
-    _checkDisposed();
-    _hadAtLeastOneListener = true;
-    _listeners.add(listener);
-    if (_currentImage != null) {
+  public get hasListeners () {
+    return this.listeners.length > 0
+  }
+
+  public hadAtLeastOneListener: boolean = false
+  public keepAliveHandles: number = 0
+  public disposed = false
+  public onLastListenerRemovedCallbacks: VoidCallback[] = []
+
+  addListener (listener: ImageStreamListener) {
+    this.checkDisposed()
+    this.hadAtLeastOneListener = true
+    this.listeners.push(listener)
+
+    if (this.currentImage !== null) {
       try {
-        listener.onImage(_currentImage!.clone(), true);
-      } catch (exception, stack) {
-        reportError(
-          context: ErrorDescription('by a synchronously-called image listener'),
-          exception: exception,
-          stack: stack,
-        );
-      }
-    }
-    if (_currentError != null && listener.onError != null) {
-      try {
-        listener.onError!(_currentError!.exception, _currentError!.stack);
-      } catch (newException, newStack) {
-        if (newException != _currentError!.exception) {
-          FlutterError.reportError(
-            FlutterErrorDetails(
-              exception: newException,
-              library: 'image resource service',
-              context: ErrorDescription('by a synchronously-called image error listener'),
-              stack: newStack,
-            ),
-          );
+        listener.onImage(this.currentImage!.clone(), true)
+      } catch (exception) {
+        if (listener.onError !== null) {
+          listener.onError(exception)
+        } else {
+          throw exception
         }
       }
     }
   }
 
-  int _keepAliveHandles = 0;  
-  ImageStreamCompleterHandle keepAlive() {
-    _checkDisposed();
-    return ImageStreamCompleterHandle._(this);
+  
+  keepAlive (): ImageStreamCompleterHandle {
+    this.checkDisposed()
+    return new ImageStreamCompleterHandle(this)
   }
 
-  void removeListener(ImageStreamListener listener) {
-    _checkDisposed();
-    for (int i = 0; i < _listeners.length; i += 1) {
-      if (_listeners[i] == listener) {
-        _listeners.removeAt(i);
-        break;
+  removeListener (listener: ImageStreamListener) {
+    this.checkDisposed()
+
+    for (let i = 0; i < this.listeners.length; i += 1) {
+      if (this.listeners[i] === listener) {
+        this.listeners.splice(i, 1)
+        break
       }
     }
-    if (_listeners.isEmpty) {
-      final List<VoidCallback> callbacks = _onLastListenerRemovedCallbacks.toList();
-      for (final VoidCallback callback in callbacks) {
-        callback();
+
+    if (this.listeners.length === 0) {
+      const callbacks: VoidCallback[] = this.onLastListenerRemovedCallbacks
+      for (const callback of callbacks) {
+        callback()
       }
-      _onLastListenerRemovedCallbacks.clear();
-      _maybeDispose();
+      this.onLastListenerRemovedCallbacks = []
+      this.maybeDispose()
     }
   }
 
-  bool _disposed = false;
-
-  @mustCallSuper
-  void _maybeDispose() {
-    if (!_hadAtLeastOneListener || _disposed || _listeners.isNotEmpty || _keepAliveHandles != 0) {
-      return;
+  maybeDispose () {
+    if (
+      !this.hadAtLeastOneListener || 
+      this.disposed || 
+      this.listeners.length > 0 || 
+      this.keepAliveHandles !== 0
+    ) {
+      return
     }
 
-    _currentImage?.dispose();
-    _currentImage = null;
-    _disposed = true;
+    this.currentImage?.dispose()
+    this.currentImage = null
+    this.disposed = true
   }
 
-  void _checkDisposed() {
-    if (_disposed) {
-      throw StateError(
-        'Stream has been disposed.\n'
-        'An ImageStream is considered disposed once at least one listener has '
-        'been added and subsequently all listeners have been removed and no '
-        'handles are outstanding from the keepAlive method.\n'
-        'To resolve this error, maintain at least one listener on the stream, '
-        'or create an ImageStreamCompleterHandle from the keepAlive '
-        'method, or create a new stream for the image.',
-      );
+  checkDisposed () {
+    if (this.disposed) {
+      throw new Error(
+        `Stream has been disposed.`
+      )
     }
   }
 
-  final List<VoidCallback> _onLastListenerRemovedCallbacks = <VoidCallback>[];
-
-  
-  
-  
-  
-  void addOnLastListenerRemovedCallback(VoidCallback callback) {
-    assert(callback != null);
-    _checkDisposed();
-    _onLastListenerRemovedCallbacks.add(callback);
+  addOnLastListenerRemovedCallback (callback: VoidCallback) {
+    invariant(callback !== null)
+    this.checkDisposed()
+    this.onLastListenerRemovedCallbacks.push(callback)
   }
 
-  
-  
-  void removeOnLastListenerRemovedCallback(VoidCallback callback) {
-    assert(callback != null);
-    _checkDisposed();
-    _onLastListenerRemovedCallbacks.remove(callback);
+  removeOnLastListenerRemovedCallback (callback: VoidCallback) {
+    invariant(callback !== null)
+    this.checkDisposed()
+    const index = this.onLastListenerRemovedCallbacks.findIndex(callback)
+    this.onLastListenerRemovedCallbacks.splice(index, 1)
   }
 
-  
-  @protected
-  @pragma('vm:notify-debugger-on-exception')
-  void setImage(ImageInfo image) {
-    _checkDisposed();
-    _currentImage?.dispose();
-    _currentImage = image;
+  setImage (image: ImageInfo) {
+    this.checkDisposed()
+    this.currentImage?.dispose()
+    this.currentImage = image
 
-    if (_listeners.isEmpty)
-      return;
-    // Make a copy to allow for concurrent modification.
-    final List<ImageStreamListener> localListeners =
-        List<ImageStreamListener>.of(_listeners);
-    for (final ImageStreamListener listener in localListeners) {
+    if (this.listeners.length === 0) {
+      return
+    }
+    
+    const localListeners = Array.from(this.listeners)
+    for (const listener of localListeners) {
       try {
-        listener.onImage(image.clone(), false);
-      } catch (exception, stack) {
-        reportError(
-          context: ErrorDescription('by an image listener'),
-          exception: exception,
-          stack: stack,
-        );
+        listener.onImage(image.clone(), false)
+      } catch (exception) {
+        throw exception
       }
     }
   }
-
-  @pragma('vm:notify-debugger-on-exception')
-  void reportError({
-    DiagnosticsNode? context,
-    required Object exception,
-    StackTrace? stack,
-    InformationCollector? informationCollector,
-    bool silent = false,
-  }) {
-    _currentError = FlutterErrorDetails(
-      exception: exception,
-      stack: stack,
-      library: 'image resource service',
-      context: context,
-      informationCollector: informationCollector,
-      silent: silent,
-    );
-
-    // Make a copy to allow for concurrent modification.
-    final List<ImageErrorListener> localErrorListeners = _listeners
-        .map<ImageErrorListener?>((ImageStreamListener listener) => listener.onError)
-        .whereType<ImageErrorListener>()
-        .toList();
-
-    bool handled = false;
-    for (final ImageErrorListener errorListener in localErrorListeners) {
-      try {
-        errorListener(exception, stack);
-        handled = true;
-      } catch (newException, newStack) {
-        if (newException != exception) {
-          FlutterError.reportError(
-            FlutterErrorDetails(
-              context: ErrorDescription('when reporting an error to an image listener'),
-              library: 'image resource service',
-              exception: newException,
-              stack: newStack,
-            ),
-          );
-        }
+  
+  reportImageChunkEvent (event: ImageChunkEvent) {
+    this.checkDisposed()
+    if (this.hasListeners) {
+      
+      const localListeners = this.listeners
+          .map<ImageChunkListener | null>((listener: ImageStreamListener) => listener.onChunk)
+         
+      for (const listener of localListeners) {
+        listener!(event)
       }
     }
-    if (!handled) {
-      FlutterError.reportError(_currentError!);
-    }
-  }
-
-  
-  
-  
-  @protected
-  void reportImageChunkEvent(ImageChunkEvent event) {
-    _checkDisposed();
-    if (hasListeners) {
-      // Make a copy to allow for concurrent modification.
-      final List<ImageChunkListener> localListeners = _listeners
-          .map<ImageChunkListener?>((ImageStreamListener listener) => listener.onChunk)
-          .whereType<ImageChunkListener>()
-          .toList();
-      for (final ImageChunkListener listener in localListeners) {
-        listener(event);
-      }
-    }
-  }
-
-  
-  
-  @override
-  void debugFillProperties(DiagnosticPropertiesBuilder description) {
-    super.debugFillProperties(description);
-    description.add(DiagnosticsProperty<ImageInfo>('current', _currentImage, ifNull: 'unresolved', showName: false));
-    description.add(ObjectFlagProperty<List<ImageStreamListener>>(
-      'listeners',
-      _listeners,
-      ifPresent: '${_listeners.length} listener${_listeners.length == 1 ? "" : "s" }',
-    ));
-    description.add(FlagProperty('disposed', value: _disposed, ifTrue: '<disposed>'));
   }
 }
 
 
 
-class OneFrameImageStreamCompleter extends ImageStreamCompleter {
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
+export class OneFrameImageStreamCompleter extends ImageStreamCompleter {
   OneFrameImageStreamCompleter(Future<ImageInfo> image, { InformationCollector? informationCollector })
       : assert(image != null) {
     image.then<void>(setImage, onError: (Object error, StackTrace stack) {

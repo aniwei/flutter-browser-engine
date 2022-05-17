@@ -1,11 +1,11 @@
-import invariant from 'ts-invariant'
-import { Skia } from '@Skia'
-import { Color, Offset, Rect } from '@UI'
+import { invariant } from 'ts-invariant'
+import { Skia, SkiaTextDirection } from '@Skia'
+import { Color, Offset, Rect, Shader } from '@UI'
 import { TextDirection, TileMode } from 'canvaskit-wasm'
 import { lerpDouble, listEquals } from '@Math'
 import { Alignment, AlignmentGeometry } from './Alignment'
 
-function sample(
+function sample (
   colors: Color[], 
   stops: number[], 
   t: number
@@ -24,7 +24,7 @@ function sample(
     return colors[stops.length -1]
   }
 
-  const index = stops.lastIndexWhere((double s) => s <= t);
+  const index = stops.findIndex((s: number) => s <= t)
   invariant(index !== -1)
 
   return Color.lerp(
@@ -50,9 +50,8 @@ function interpolateColorsAndStops (
   stops.addAll(bStops)
 
   const interpolatedStops: number[] = stops.toList(false)
-  const interpolatedColors: Color[] = interpolatedStops.map<Color>(
-          (double stop) => Color.lerp(_sample(aColors, aStops, stop), _sample(bColors, bStops, stop), t)!,
-  ).toList(growable: false);
+  // @TODO
+  const interpolatedColors: Color[] = interpolatedStops.map<Color>((stop: number) => Color.lerp(sample(aColors, aStops, stop), sample(bColors, bStops, stop), t)!)
   
   return new ColorsAndStops(
     interpolatedColors, 
@@ -176,14 +175,14 @@ export abstract class Gradient {
       colors.length,
       (int index) => index * separation,
       growable: false,
-    );
+    )
   }
 
   
   abstract createShader (
     rect: Rect, 
     textDirection: TextDirection | null
-  ): CkShader 
+  ): Shader 
 
   
   abstract scale (factor: number): Gradient
@@ -574,8 +573,8 @@ export class SweepGradient extends Gradient {
 
   createShader (
     rect: Rect, 
-    textDirection: TextDirection
-  ): CkShader {
+    textDirection: SkiaTextDirection
+  ): Shader {
     return ui.Gradient.sweep(
       center.resolve(textDirection).withinRect(rect),
       colors, this.impliedStops(), 

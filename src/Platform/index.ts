@@ -9,10 +9,7 @@ export enum TargetPlatform {
   Windows,
 }
 
-export type ImageListener = { (image: ImageInfo, synchronousCall: boolean): void } 
-export type ImageChunkListener = { (event: ImageChunkEvent): void }
 
-export type ImageErrorListener = { (exception): void }
 export type VoidCallback = { (): void }
 
 export * from './Locale'

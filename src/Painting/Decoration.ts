@@ -3,6 +3,7 @@ import { UnsupportedError } from '@Shared'
 import { Canvas, Path, Offset, Rect, Size } from '@UI'
 import { TextDirection } from 'canvaskit-wasm'
 import { EdgeInsets, EdgeInsetsGeometry } from './EdgeInsets'
+import { ImageConfiguration } from './ImageProvider'
 
 type VoidCallback = { (): void }
 

@@ -1,10 +1,10 @@
 import invariant from 'ts-invariant'
 import { CkCanvas, CkPath } from '@CanvasKit'
-import { Skia } from '@Skia'
-import { Offset, Rect, Size } from '@UI'
-import { ColorFilter, TextDirection } from 'canvaskit-wasm'
+import { Skia, SkiaFilterQuality } from '@Skia'
+import { Canvas, Color, ColorFilter, Image, Offset, Paint, Rect, Size } from '@UI'
 import { Alignment, AlignmentGeometry } from './Alignment'
-import { BoxFit } from './BoxFit'
+import { applyBoxFit, BoxFit } from './BoxFit'
+import { VoidCallback } from 'src/Platform'
 
 export enum ImageRepeat {
   Repeat,
@@ -91,7 +91,7 @@ export class DecorationImage {
   }
 }
 
-class DecorationImagePainter {
+export class DecorationImagePainter {
   public details: DecorationImage
   public onChanged: VoidCallback
 
@@ -210,9 +210,9 @@ Set<ImageSizeInfo> _lastFrameImageSizeInfo = <ImageSizeInfo>{};
 
 
 export function paintImage(
-  canvas: CkCanvas,
+  canvas: Canvas,
   rect: Rect,
-  image: CkImage,
+  image: Image,
   debugImageLabel: string | null,
   scale: number = 1.0,
   opacity: number = 1.0,
@@ -232,55 +232,59 @@ export function paintImage(
   invariant(repeat !== null)
   invariant(flipHorizontally !== null)
   invariant(isAntiAlias !== null)
-  invariant(image.debugGetOpenHandleStackTraces()?.isNotEmpty ?? true)
+  // invariant(image.debugGetOpenHandleStackTraces()?.isNotEmpty ?? true)
 
   if (rect.isEmpty) {
     return
   }
+
   let outputSize = rect.size
   let inputSize = new Size(image.width, image.height)
   let sliceBorder: Offset | null  
   if (centerSlice !== null) {
-    sliceBorder = inputSize / scale - centerSlice.size as Offset
+    sliceBorder = inputSize.divide(scale).subtract - centerSlice.size as Offset
     outputSize = outputSize - sliceBorder as Size
     inputSize = inputSize - sliceBorder * scale as Size
   }
 
-  fit ??= centerSlice == null ? BoxFit.scaleDown : BoxFit.fill
-  invariant(centerSlice === null || (fit !== BoxFit.none && fit !== BoxFit.cover))
+  fit ??= centerSlice == null ? BoxFit.ScaleDown : BoxFit.Fill
+  
+  invariant(centerSlice === null || (fit !== BoxFit.None && fit !== BoxFit.Cover))
 
-  const fittedSizes = applyBoxFit(fit, inputSize / scale, outputSize);
-  const sourceSize = fittedSizes.source * scale;
-  const destinationSize = fittedSizes.destination
+  const fittedSizes = applyBoxFit(fit, inputSize.divide(scale), outputSize)
+  const sourceSize = fittedSizes.source.multiply(scale)
+  let destinationSize = fittedSizes.destination
   
   if (centerSlice !== null) {
-    outputSize += sliceBorder!;
-    destinationSize += sliceBorder;
-    // We don't have the ability to draw a subset of the image at the same time
-    // as we apply a nine-patch stretch.
-    assert(sourceSize == inputSize, 'centerSlice was used with a BoxFit that does not guarantee that the image is fully visible.');
+    outputSize = outputSize.add(sliceBorder!)
+    destinationSize = destinationSize.add(sliceBorder!)
+   
+    invariant(sourceSize.isEqual(inputSize), 'centerSlice was used with a BoxFit that does not guarantee that the image is fully visible.')
   }
 
-  if (repeat != ImageRepeat.noRepeat && destinationSize == outputSize) {
-    // There's no need to repeat the image because we're exactly filling the
-    // output rect with the image.
-    repeat = ImageRepeat.noRepeat;
+  if (
+    repeat !== ImageRepeat.NoRepeat && 
+    destinationSize.isEqual(outputSize)
+  ) {
+    repeat = ImageRepeat.NoRepeat
   }
-  final Paint paint = Paint()..isAntiAlias = isAntiAlias;
-  if (colorFilter != null)
-    paint.colorFilter = colorFilter;
-  paint.color = Color.fromRGBO(0, 0, 0, opacity);
-  paint.filterQuality = filterQuality;
-  paint.invertColors = invertColors;
-  final double halfWidthDelta = (outputSize.width - destinationSize.width) / 2.0;
-  final double halfHeightDelta = (outputSize.height - destinationSize.height) / 2.0;
-  final double dx = halfWidthDelta + (flipHorizontally ? -alignment.x : alignment.x) * halfWidthDelta;
-  final double dy = halfHeightDelta + alignment.y * halfHeightDelta;
-  final Offset destinationPosition = rect.topLeft.translate(dx, dy);
-  final Rect destinationRect = destinationPosition & destinationSize;
+  const paint = Paint.malloc()
+  paint.isAntiAlias = isAntiAlias
+  if (colorFilter !== null) {
+    paint.colorFilter = colorFilter
+  }
 
-  // Set to true if we added a saveLayer to the canvas to invert/flip the image.
-  bool invertedCanvas = false;
+  paint.color = Color.fromRGBO(0, 0, 0, opacity)
+  paint.filterQuality = filterQuality
+  paint.invertColors = invertColors
+  const halfWidthDelta = (outputSize.width - destinationSize.width) / 2.0;
+  const halfHeightDelta = (outputSize.height - destinationSize.height) / 2.0;
+  const dx = halfWidthDelta + (flipHorizontally ? -alignment.x : alignment.x) * halfWidthDelta;
+  const dy = halfHeightDelta + alignment.y * halfHeightDelta;
+  const destinationPosition: Offset = rect.topLeft.translate(dx, dy)
+  const destinationRect: Rect = destinationPosition.and(destinationSize)
+
+  const invertedCanvas = false
   // Output size and destination rect are fully calculated.
   if (!kReleaseMode) {
     final ImageSizeInfo sizeInfo = ImageSizeInfo(
@@ -385,33 +389,57 @@ export function paintImage(
     canvas.restore();
 
   if (invertedCanvas) {
-    canvas.restore();
+    canvas.restore()
   }
 }
 
-Iterable<Rect> _generateImageTileRects(Rect outputRect, Rect fundamentalRect, ImageRepeat repeat) {
-  int startX = 0;
-  int startY = 0;
-  int stopX = 0;
-  int stopY = 0;
-  final double strideX = fundamentalRect.width;
-  final double strideY = fundamentalRect.height;
+export function generateImageTileRects (
+  outputRect: Rect, 
+  fundamentalRect: Rect, 
+  repeat: ImageRepeat
+): Rect[] {
+  let startX = 0
+  let startY = 0
+  let stopX = 0
+  let stopY = 0
+  const strideX = fundamentalRect.width
+  const strideY = fundamentalRect.height
 
-  if (repeat == ImageRepeat.repeat || repeat == ImageRepeat.repeatX) {
-    startX = ((outputRect.left - fundamentalRect.left) / strideX).floor();
-    stopX = ((outputRect.right - fundamentalRect.right) / strideX).ceil();
+  if (
+    repeat == ImageRepeat.Repeat || 
+    repeat == ImageRepeat.RepeatX
+  ) {
+    startX = Math.floor(((outputRect.left - fundamentalRect.left) / strideX))
+    stopX = Math.ceil(((outputRect.right - fundamentalRect.right) / strideX))
   }
 
-  if (repeat == ImageRepeat.repeat || repeat == ImageRepeat.repeatY) {
-    startY = ((outputRect.top - fundamentalRect.top) / strideY).floor();
-    stopY = ((outputRect.bottom - fundamentalRect.bottom) / strideY).ceil();
+  if (
+    repeat == ImageRepeat.Repeat || 
+    repeat == ImageRepeat.RepeatY
+  ) {
+    startY = Math.floor(((outputRect.top - fundamentalRect.top) / strideY))
+    stopY = Math.ceil(((outputRect.bottom - fundamentalRect.bottom) / strideY))
   }
 
-  return <Rect>[
-    for (int i = startX; i <= stopX; ++i)
-      for (int j = startY; j <= stopY; ++j)
-        fundamentalRect.shift(Offset(i * strideX, j * strideY)),
-  ];
+  const rects: Rect[] = []
+
+  for (let i = startX; i <= stopX; ++i) {
+    for (let j = startY; j <= stopY; ++j) {
+      fundamentalRect.shift(new Offset(i * strideX, j * strideY))
+    }
+  }
+
+  return rects
 }
 
-Rect _scaleRect(Rect rect, double scale) => Rect.fromLTRB(rect.left * scale, rect.top * scale, rect.right * scale, rect.bottom * scale);
+function scaleRect(
+  rect: Rect, 
+  scale: number
+): Rect {
+  return Rect.fromLTRB(
+    rect.left * scale, 
+    rect.top * scale, 
+    rect.right * scale, 
+    rect.bottom * scale
+  )
+}
