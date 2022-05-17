@@ -139,7 +139,7 @@ export class ImageChunkEvent {
 
 
 
-class ImageStream with Diagnosticable {
+export class ImageStream {
   
   
   
