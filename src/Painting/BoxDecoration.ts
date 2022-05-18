@@ -40,6 +40,7 @@ export class BoxDecoration extends Decoration {
       BorderRadiusGeometry.lerp(a.borderRadius, b.borderRadius, t),
       BoxShadow.lerpList(a.boxShadow!, b.boxShadow!, t),
       null, // Gradient.lerp(a.gradient, b.gradient, t),
+      null,
       t < 0.5 ? a.shape : b.shape,
     )
   }
@@ -157,6 +158,7 @@ export class BoxDecoration extends Decoration {
       BorderRadiusGeometry.lerp(null, this.borderRadius, factor),
       BoxShadow.lerpList(null, this.boxShadow!, factor),
       this.gradient?.scale(factor),
+      null,
       this.shape,
     );
   }
