@@ -151,13 +151,14 @@ export class Locale {
   }
 
   rawToString (separator: string): string {
-     StringBuffer out = StringBuffer(languageCode);
-    if (scriptCode != null) {
-      out.write('$separator$scriptCode');
-    }
-    if (_countryCode != null) {
-      out.write('$separator$countryCode');
-    }
-    return out.toString();
+    //  StringBuffer out = StringBuffer(languageCode);
+    // if (scriptCode != null) {
+    //   out.write('$separator$scriptCode');
+    // }
+    // if (_countryCode != null) {
+    //   out.write('$separator$countryCode');
+    // }
+    // return out.toString();
+    return ``
   }
 }

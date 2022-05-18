@@ -109,9 +109,9 @@ export class Paint extends ManagedSkiaObject<SkiaPaint> {
   }) public shader: Shader | null = null
 
   @setter(function (this, maskFilter: MaskFilter) {
-    if (this.maskFilter !== maskFilter) {
+    if (maskFilter && this.maskFilter !== maskFilter) {
       this._maskFilter = maskFilter
-      this.skia.setMaskFilter(maskFilter.skia)
+      this.skia.setMaskFilter(maskFilter.skia!)
     }
   }) public maskFilter: MaskFilter | null = null
 

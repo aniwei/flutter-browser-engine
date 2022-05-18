@@ -66,13 +66,13 @@ export class BoxDecoration extends Decoration {
   } 
 
   constructor (
-    color: Color | null,
-    image: null,
-    border: BoxBorder | null,
-    borderRadius: BorderRadiusGeometry | null,
-    boxShadow: BoxShadow[] | null,
-    gradient: null,
-    backgroundBlendMode: SkiaBlendMode | null,
+    color: Color | null = null,
+    image: null = null,
+    border: BoxBorder | null = null,
+    borderRadius: BorderRadiusGeometry | null = null,
+    boxShadow: BoxShadow[] | null = null,
+    gradient: null = null,
+    backgroundBlendMode: SkiaBlendMode | null = null,
     shape = BoxShape.Rectangle,
   ) {
     super()

@@ -32,12 +32,12 @@ export class ImageConfiguration {
   public platform: TargetPlatform | null = null
   
   constructor (
-    bundle: AssetBundle | null,
-    devicePixelRatio: number | null,
-    locale: Locale | null,
-    textDirection: SkiaTextDirection | null,
-    size: Size | null,
-    platform: TargetPlatform | null,  
+    bundle: AssetBundle | null = null,
+    devicePixelRatio: number | null = null,
+    locale: Locale | null = null,
+    textDirection: SkiaTextDirection | null = null,
+    size: Size | null = null,
+    platform: TargetPlatform | null = null,  
   ) {
     this.bundle = bundle
     this.devicePixelRatio = devicePixelRatio

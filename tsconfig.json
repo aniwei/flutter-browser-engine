@@ -31,6 +31,7 @@
       "@Math": ["./src/Math/index.ts"],
       "@Shared": ["./src/Shared/index.ts"],
       "@Platform": ["src/Platform/index.ts"],
+      "@Services": ["src/Services/index.ts"],
       "@Painting": ["src/Painting/index.ts"],
       "@Rendering": ["./src/Rendering/index.ts"]
     },

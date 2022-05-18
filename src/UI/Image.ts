@@ -49,7 +49,8 @@ export class Image implements IImage {
   }
 
   clone (): Image  {
-    return Image.cloneOf(this.box)
+    // return Image.cloneOf(this.box)
+    throw new Error()
   }
 
   isCloneOf (other: Image) {

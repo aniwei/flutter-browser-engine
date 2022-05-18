@@ -1,4 +1,3 @@
-import { ImageInfo } from '@Painting'
 
 export enum TargetPlatform {
   Android,
@@ -13,3 +12,4 @@ export enum TargetPlatform {
 export type VoidCallback = { (): void }
 
 export * from './Locale'
+export * from './TypedData'
