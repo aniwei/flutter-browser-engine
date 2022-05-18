@@ -65,13 +65,13 @@ export class BoxDecoration extends Decoration {
   } 
 
   constructor (
-    color,
-    image,
-    border,
-    borderRadius,
-    boxShadow,
-    gradient,
-    backgroundBlendMode,
+    color: Color | null,
+    image: null,
+    border: BoxBorder | null,
+    borderRadius: BorderRadiusGeometry | null,
+    boxShadow: BoxShadow[] | null,
+    gradient: null,
+    backgroundBlendMode: SkiaBlendMode | null,
     shape = BoxShape.Rectangle,
   ) {
     super()
@@ -242,7 +242,7 @@ export class BoxDecorationPainter extends BoxPainter {
   public decoration: BoxDecoration
   public cachedBackgroundPaint: Paint | null = null
   public rectForCachedBackgroundPaint: Rect | null = null
-  public imagePainter: DecorationImagePainter | null = null
+  // public imagePainter: DecorationImagePainter | null = null
 
   constructor (
     dectoration,
@@ -345,43 +345,43 @@ export class BoxDecorationPainter extends BoxPainter {
     }
   }
 
-  paintBackgroundImage (
-    canvas: Canvas, 
-    rect: Rect, 
-    configuration: ImageConfiguration
-  ) {
-    if (this.decoration.image == null) {
-      return
-    }
-    this.imagePainter ??= this.decoration.image!.createPainter(this.onChanged!)
-    let clipPath: Path | null
-    switch (this.decoration.shape) {
-      case BoxShape.Circle: {
-        invariant(this.decoration.borderRadius === null)
-        const center = rect.center
-        const radius = rect.shortestSide / 2.0
-        const square = Rect.fromCircle(center, radius)
-        clipPath = Path.malloc()
-        clipPath.addOval(square)
-        break
-      }
+  // paintBackgroundImage (
+  //   canvas: Canvas, 
+  //   rect: Rect, 
+  //   configuration: ImageConfiguration
+  // ) {
+  //   if (this.decoration.image == null) {
+  //     return
+  //   }
+  //   this.imagePainter ??= this.decoration.image!.createPainter(this.onChanged!)
+  //   let clipPath: Path | null
+  //   switch (this.decoration.shape) {
+  //     case BoxShape.Circle: {
+  //       invariant(this.decoration.borderRadius === null)
+  //       const center = rect.center
+  //       const radius = rect.shortestSide / 2.0
+  //       const square = Rect.fromCircle(center, radius)
+  //       clipPath = Path.malloc()
+  //       clipPath.addOval(square)
+  //       break
+  //     }
 
-      case BoxShape.Rectangle: {
-        if (this.decoration.borderRadius !== null) {
-          clipPath = Path.malloc()
-          clipPath.addRRect(this.decoration.borderRadius!.resolve(configuration.textDirection).toRRect(rect))
-        }
-        break
-      }
-    }
+  //     case BoxShape.Rectangle: {
+  //       if (this.decoration.borderRadius !== null) {
+  //         clipPath = Path.malloc()
+  //         clipPath.addRRect(this.decoration.borderRadius!.resolve(configuration.textDirection).toRRect(rect))
+  //       }
+  //       break
+  //     }
+  //   }
     
-    this.imagePainter!.paint(canvas, rect, clipPath!, configuration)
-  }
+  //   this.imagePainter!.paint(canvas, rect, clipPath!, configuration)
+  // }
 
-  dispose () {
-    this.imagePainter?.dispose()
-    super.dispose()
-  }
+  // dispose () {
+  //   this.imagePainter?.dispose()
+  //   super.dispose()
+  // }
 
   paint (
     canvas: Canvas, 
@@ -396,7 +396,7 @@ export class BoxDecorationPainter extends BoxPainter {
     
     this.paintShadows(canvas, rect, textDirection)
     this.paintBackgroundColor(canvas, rect, textDirection)
-    this.paintBackgroundImage(canvas, rect, configuration)
+    // this.paintBackgroundImage(canvas, rect, configuration)
     
     this.decoration.border?.paint(
       canvas,
