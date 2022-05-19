@@ -1,4 +1,3 @@
-export const utf8 = new UTF8Codec()
 
 class UTF8Codec extends Encoding {
   public allowMalformed: boolean
