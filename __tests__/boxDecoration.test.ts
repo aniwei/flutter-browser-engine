@@ -1,7 +1,7 @@
 import jimp from 'jimp'
 import { resolve } from 'path'
 import { Skia, SkiaCanvas } from '@Skia'
-import { Border, BorderStyle, BoxShape, BorderRadius, BoxDecoration } from '@Painting'
+import { Border, BorderStyle, BoxShape, BorderRadius, BoxDecoration, BoxShadow } from '@Painting'
 import { Canvas, Color, Offset, Radius, Rect, Size } from '@UI'
 import { ImageConfiguration } from '@Painting'
 import { TargetPlatform } from '@Platform'
@@ -17,17 +17,24 @@ test(`Skia`, async () => {
     new Color(0xff00ff00),
     null,
     Border.all(
-      new Color(0xff00ff00),
+      new Color(0xffffffff),
       2.0,
       BorderStyle.Solid
     ),
     BorderRadius.only(
       Radius.circular(10.0),
-      Radius.Zero,
-      Radius.Zero,
+      Radius.circular(10.0),
+      Radius.circular(10.0),
       Radius.circular(10.0),
     ),
-    null,
+    [
+        new BoxShadow(
+          new Color(0xffff00ff),
+          new Offset(12, 12),
+          20,
+          10
+        ) 
+    ],
     null,
     Skia.BlendMode.Color,
   )

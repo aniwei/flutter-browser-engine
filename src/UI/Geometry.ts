@@ -2,8 +2,7 @@ import { invariant } from 'ts-invariant'
 import { lerpDouble } from '@Math'
 
 const GIANT_SCALAR = 1.0E+9
-const POSITIVE_INFINITY = Number.POSITIVE_INFINITY
-const NEGATIVE_INFINITY = Number.NEGATIVE_INFINITY
+
 
 export abstract class OffsetBase extends Float32Array {
   public get dx () {
@@ -22,8 +21,8 @@ export abstract class OffsetBase extends Float32Array {
     this[1] = dy
   }
 
-  constructor (dx, dy) {
-    super([dx, dy])
+  constructor (dx, dy, ...rest) {
+    super([dx, dy, ...rest])
     
     invariant(dx !== null)
     invariant(dy !== null)
@@ -33,8 +32,8 @@ export abstract class OffsetBase extends Float32Array {
 export class Offset extends OffsetBase {
   static Zero = new Offset(0, 0)
   static Infinite = new Offset(
-    POSITIVE_INFINITY, 
-    POSITIVE_INFINITY
+    Infinity, 
+    Infinity
   )
   
   static fromDirection (
@@ -184,10 +183,10 @@ export class Offset extends OffsetBase {
 }
 
 export class Size extends OffsetBase {
-  static zero = new Size(0.0, 0.0)
-  static infinite = new Size(
-    POSITIVE_INFINITY, 
-    POSITIVE_INFINITY
+  static Zero = new Size(0.0, 0.0)
+  static Infinite = new Size(
+    Infinity, 
+    Infinity
   )
 
   static copy (source: Size) {
@@ -204,14 +203,14 @@ export class Size extends OffsetBase {
   static fromWidth (width: number) {
     return new Size(
       width, 
-      POSITIVE_INFINITY
+      Infinity
     )
   }
 
   static fromHeight (height: number) {
     return new Size(
       height, 
-      POSITIVE_INFINITY
+      Infinity
     )
   }
 
@@ -255,8 +254,21 @@ export class Size extends OffsetBase {
     }
   }
 
-  public width: number
-  public height: number
+  public get width (): number {
+    return this[2]
+  }
+
+  public set width (width: number) {
+    this[2] = width
+  }
+
+  public get height (): number {
+    return this[3]
+  }
+
+  public set height (height: number) {
+    this[3] = height
+  }
 
   public get isEmpty (): boolean {
     return (
@@ -269,9 +281,9 @@ export class Size extends OffsetBase {
     if (this.height !== 0) {
       return this.width / this.height
     } else if (this.width > 0) {
-      return POSITIVE_INFINITY
+      return Infinity
     } else if (this.width < 0) {
-      return NEGATIVE_INFINITY
+      return Infinity
     }
     
     return 0.0
@@ -304,60 +316,59 @@ export class Size extends OffsetBase {
     height: number
   ) {
     super (
-      POSITIVE_INFINITY, 
-      POSITIVE_INFINITY
+      Infinity, 
+      Infinity,
+      width,
+      height
     )
-
-    this.width = width
-    this.height = height
   }
 
   opposite (): Size {
     return new Size(
-      -this.dx,
-      -this.dy,
+      -this.width,
+      -this.width,
     )
   }
 
   add (size: Size): Size {
     return new Size(
-      this.dx + size.dx, 
-      this.dy + size.dy
+      this.width + size.width, 
+      this.height + size.height
     )
   }
 
   subtract (size: Size): Size {
     return new Size(
-      this.dx + size.dx, 
-      this.dy + size.dy
+      this.width + size.width, 
+      this.height + size.height
     )
   }
 
   multiply (operand: number): Size {
     return new Size(
-      this.dx * operand, 
-      this.dy * operand
+      this.width * operand, 
+      this.height * operand
     )
   }
 
   divide (operand: number): Size {
     return new Size(
-      this.dx / operand, 
-      this.dy / operand
+      this.width / operand, 
+      this.height / operand
     )
   }
 
   floor (operand: number): Size {
     return new Size(
-      Math.floor(this.dx / operand),
-      Math.floor(this.dy / operand)
+      Math.floor(this.width / operand),
+      Math.floor(this.height / operand)
     )
   }
 
   ceil (operand: number): Size {
     return new Size(
-      Math.ceil(this.dx / operand),
-      Math.ceil(this.dy / operand)
+      Math.ceil(this.width / operand),
+      Math.ceil(this.height / operand)
     )
   }
 
@@ -649,10 +660,10 @@ export class Rect extends Float32Array {
 
   public get isInfinite () {
     return (
-      this.left > POSITIVE_INFINITY ||
-      this.top > POSITIVE_INFINITY ||
-      this.right > POSITIVE_INFINITY ||
-      this.bottom > POSITIVE_INFINITY
+      this.left > Infinity ||
+      this.top > Infinity ||
+      this.right > Infinity ||
+      this.bottom > Infinity
     )
   }
 
