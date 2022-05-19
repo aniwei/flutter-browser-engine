@@ -12,4 +12,5 @@ export enum TargetPlatform {
 export type VoidCallback = { (): void }
 
 export * from './Locale'
+export * from './Encoding'
 export * from './TypedData'

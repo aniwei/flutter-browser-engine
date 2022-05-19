@@ -1,8 +1,8 @@
-import { ByteData } from '@Platform'
+import { ByteData, utf8 } from '@Platform'
 
 export abstract class AssetBundle {
   static  utf8decode (data: ByteData) {
-    return utf8.decode(data.buffer.asUint8List())
+    return utf8.decode(new Uint8Array(data.buffer))
   }
   
   abstract load(key: string): Promise<ByteData>
@@ -13,14 +13,13 @@ export abstract class AssetBundle {
   ): Promise<String> {
     const data = await this.load(key)
     if (data === null) {
-      throw new Error('Unable to load asset: $key')
+      throw new Error(`Unable to load asset: ${key}`)
     }
 
-    if (data.lengthInBytes < 50 * 1024) {
-      return utf8.decode(data.buffer.asUint8List());
+    if (data.byteLength < 50 * 1024) {
+      return utf8.decode(new Uint8Array(data.buffer))
     }
-    // For strings larger than 50 KB, run the computation in an isolate to
-    // avoid causing main thread jank.
+   
     return compute(_utf8decode, data, debugLabel: 'UTF8 decode for "$key"');
   }
 
