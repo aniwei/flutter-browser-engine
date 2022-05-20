@@ -48,7 +48,7 @@ export class NetworkAssetBundle extends AssetBundle {
     this.httpClient = new HttpClient()
   }
 
-  uriFromKey (key: string) {
+  URIFromKey (key: string) {
     return this.baseURI.resolve(key)
   } 
 
@@ -133,7 +133,7 @@ export abstract class CachingAssetBundle extends AssetBundle {
 
 export class PlatformAssetBundle extends CachingAssetBundle {
   async load (key: string) {
-    const encoded: Uint8Array = utf8.encoder.convert(Uri(path: Uri.encodeFull(key)).path)
+    const encoded: Uint8Array = utf8.encode(Uri(path: Uri.encodeFull(key)).path)
     
     final ByteData? asset = await ServicesBinding.instance!.defaultBinaryMessenger.send('flutter/assets', encoded.buffer.asByteData())
     
