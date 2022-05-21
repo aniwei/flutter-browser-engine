@@ -8,6 +8,7 @@
     "@types/node": "^17.0.30",
     "jest": "^27.5.1",
     "jimp": "^0.16.1",
+    "lerna": "^4.0.0",
     "ts-jest": "^27.1.4",
     "ts-node": "^10.7.0",
     "tsconfig-paths-jest": "^0.0.1",
