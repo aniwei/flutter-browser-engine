@@ -243,13 +243,13 @@ class URIFormatError extends Error {
 }
 
 export type URIInitOptions = {
-  scheme: string,
-  userInfo: string,
-  host: string,
-  port: number,
-  path: string,
-  query: string,
-  fragment: string,
+  scheme: string | null,
+  userInfo: string | null,
+  host: string | null,
+  port: number | null,
+  path: string | null,
+  query: string | null,
+  fragment: string | null,
 }
 
 export class URI {
@@ -355,7 +355,7 @@ export class URI {
       if (!seenDot) {
         parts.push(parseHex(partStart, end))
       } else {
-        List<int> last = _parseIPv4Address(host, partStart, end);
+        List<int> last = parseIPv4Address(host, partStart, end);
         parts.add(last[0] << 8 | last[1]);
         parts.add(last[2] << 8 | last[3]);
       }
@@ -386,6 +386,59 @@ export class URI {
 
     return bytes
   }
+
+  static parseIPv4Address (
+    host: string, 
+    start: number, 
+    end: number
+  ) {
+    const error = (
+      msg: string, 
+      position: number
+    ) => {
+      throw new URIFormatError(`Illegal IPv4 address, ${msg}`, host, position)
+    }
+
+    const result = new Uint8Array(4)
+    let partIndex = 0
+    let partStart = start
+    for (let i = start; i < end; i++) {
+      let char = host.charCodeAt(i)
+      if (char !== kDot) {
+        if ((char ^ 0x30) > 9) {
+          // Fail on a non-digit character.
+          error('invalid character', i)
+        }
+      } else {
+        if (partIndex === 3) {
+          error('IPv4 address should contain exactly 4 parts', i)
+        }
+
+        
+
+        const part = parseInt(host.substring(partStart, i))
+        if (part > 255) {
+          error('each part must be in the range 0..255', partStart)
+        }
+        result[partIndex++] = part
+        partStart = i + 1
+      }
+    }
+
+    if (partIndex != 3) {
+      error('IPv4 address should contain exactly 4 parts', end);
+    }
+
+    const part = parseInt(host.substring(partStart, end))
+
+    if (part > 255) {
+      error('each part must be in the range 0..255', partStart)
+    }
+    result[partIndex] = part
+
+    return result
+  }
+
 
   static fail (
     uri: string,
@@ -506,6 +559,20 @@ export class URI {
     return index
   }
 
+  static isSchemeCharacter (ch: number): boolean {
+    return ch < 128 && ((kSchemeTable[ch >> 4] & (1 << (ch & 0x0f))) !== 0)
+  }
+
+  static isAlphabeticCharacter (
+    code: number
+  ): boolean {
+    const lowerCase = code | 0x20
+    return (
+      kLowerCaseA <= lowerCase && 
+      lowerCase <= kLowerCaseZ
+    )
+  }
+
   static isZoneIDChar (char: number): boolean {
     return char < 127 && (kZoneIDTable[char >> 4] & (1 << (char & 0xf))) !== 0
   }
@@ -522,6 +589,20 @@ export class URI {
       ch <= kRightBracket &&
       ((kGenDelimitersTable[ch >> 4] & (1 << (ch & 0x0f))) !== 0)
     )
+  }
+
+  static canonicalizeScheme (scheme: string): string {
+    if (scheme === 'http') { 
+      return 'http'
+    } else if (scheme === 'file') { 
+      return 'file'
+    } else if (scheme === 'https') { 
+      return 'https'
+    } else if (scheme === 'package') { 
+      return 'package'
+    }
+
+    return scheme
   }
 
   static escapeChar (char: number): string {
@@ -708,6 +789,79 @@ export class URI {
     ) ?? component.substring(start, end)
   }
 
+  static normalizeRegName (
+    host: string, 
+    start: number, 
+    end: number
+  ) {
+    let buffer: StringBuffer | null
+    let sectionStart = start
+    let index = start
+    // Whether all characters between sectionStart and index are normalized,
+    let isNormalized: boolean = true
+
+    while (index < end) {
+      let char = host.charCodeAt(index)
+      if (char === kPercent) {
+        // The _regNameTable contains "%", so we check that first.
+        const replacement: string | null = URI.normalizeEscape(host, index, true)
+        if (replacement === null && isNormalized) {
+          index += 3
+          continue
+        }
+        buffer ??= StringBuffer();
+        String slice = host.substring(sectionStart, index);
+        if (!isNormalized) slice = slice.toLowerCase();
+        buffer.write(slice);
+        int sourceLength = 3;
+        if (replacement == null) {
+          replacement = host.substring(index, index + 3);
+        } else if (replacement == "%") {
+          replacement = "%25";
+          sourceLength = 1;
+        }
+        buffer.write(replacement);
+        index += sourceLength;
+        sectionStart = index;
+        isNormalized = true;
+      } else if (_isRegNameChar(char)) {
+        if (isNormalized && kUpperCaseA <= char && kUpperCaseZ >= char) {
+          // Put initial slice in buffer and continue in non-normalized mode
+          buffer ??= StringBuffer();
+          if (sectionStart < index) {
+            buffer.write(host.substring(sectionStart, index));
+            sectionStart = index;
+          }
+          isNormalized = false;
+        }
+        index++;
+      } else if (isGeneralDelimiter(char)) {
+        fail(host, index, "Invalid character");
+      } else {
+        int sourceLength = 1;
+        if ((char & 0xFC00) == 0xD800 && (index + 1) < end) {
+          int tail = host.codeAt(index + 1);
+          if ((tail & 0xFC00) == 0xDC00) {
+            char = 0x10000 | ((char & 0x3ff) << 10) | (tail & 0x3ff);
+            sourceLength = 2;
+          }
+        }
+        String slice = host.substring(sectionStart, index);
+        if (!isNormalized) slice = slice.toLowerCase();
+        (buffer ??= StringBuffer())..write(slice)..write(escapeChar(char));
+        index += sourceLength;
+        sectionStart = index;
+      }
+    }
+    if (buffer == null) return host.substring(start, end);
+    if (sectionStart < end) {
+      String slice = host.substring(sectionStart, end);
+      if (!isNormalized) slice = slice.toLowerCase();
+      buffer.write(slice);
+    }
+    return buffer.toString();
+  }
+
   static normalize(
     component: string, 
     start: number, 
@@ -763,9 +917,9 @@ export class URI {
           }
           replacement = URI.escapeChar(char);
         }
-        (buffer ??= new StringBuffer())
-          ..write(component.substring(sectionStart, index))
-          ..write(replacement);
+        buffer ??= new StringBuffer()
+        buffer.write(component.substring(sectionStart, index))
+        buffer.write(replacement)
         index += sourceLength
         sectionStart = index
       }
@@ -858,7 +1012,7 @@ export class URI {
       const index = URI.checkZoneID(host, start + 1, end - 1)
       if (index < end - 1) {
         const zoneIDstart = (host.startsWith('25', index + 1)) ? index + 3 : index + 1
-        zoneID = normalizeZoneID(host, zoneIDstart, end - 1, '%25')
+        zoneID = URI.normalizeZoneID(host, zoneIDstart, end - 1, '%25')
       }
       URI.parseIPv6Address(host, start + 1, index)
       // RFC 5952 requires hex digits to be lower case.
@@ -872,7 +1026,7 @@ export class URI {
           const index = URI.checkZoneID(host, start, end)
           if (index < end) {
             const zoneIDstart = (host.startsWith('25', index + 1)) ? index + 3 : index + 1
-            zoneID = normalizeZoneID(host, zoneIDstart, end, '%25')
+            zoneID = URI.normalizeZoneID(host, zoneIDstart, end, '%25')
           }
 
           URI.parseIPv6Address(host, start, index)
