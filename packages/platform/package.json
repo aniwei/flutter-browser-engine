@@ -1,8 +1,0 @@
-{
-  "name": "@skia/platform",
-  "version": "0.1.0",
-  "main": "dist/index.js",
-  "author": "aniwei",
-  "license": "MIT",
-  "private": true
-}

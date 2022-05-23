@@ -1,6 +1,5 @@
 import invariant from 'ts-invariant'
-import { hexDigitValue } from '@skia/math'
-import { URIFormatError } from './URIFormatError'
+import { isWindow } from '.'
 
 const kSpace = 0x20;
 const kPercent = 0x25;
@@ -21,7 +20,16 @@ const kLowerCaseZ = 0x7A;
 
 const kHexDigits = '0123456789ABCDEF'
 
+export class URIFormatError extends Error { 
+  public uri: string
+  public index: number
 
+  constructor (message: string, uri: string, index:  number) {
+    super(message)
+    this.uri = uri
+    this.index = index
+  }
+}
 
 export type URIInitOptions = {
   scheme: string,
@@ -51,9 +59,8 @@ export class URI {
     0xfffe, // 0x60 - 0x6f  0111111111111111
     //                      pqrstuvwxyz   ~
     0x47ff, // 0x70 - 0x7f  1111111111100010
-  ];
+  ]
 
-  // The unreserved characters of RFC 2396.
   static unreserved2396Table = [
     //                     LSB            MSB
     //                      |              |
@@ -71,9 +78,8 @@ export class URI {
     0xfffe, // 0x60 - 0x6f  0111111111111111
     //                      pqrstuvwxyz   ~
     0x47ff, // 0x70 - 0x7f  1111111111100010
-  ];
+  ]
 
-  // Table of reserved characters specified by ECMAScript 5.
   static encodeFullTable = [
     //                     LSB            MSB
     //                      |              |
@@ -91,7 +97,7 @@ export class URI {
     0xfffe, // 0x60 - 0x6f  0111111111111111
     //                      pqrstuvwxyz   ~
     0x47ff, // 0x70 - 0x7f  1111111111100010
-  ];
+  ]
 
   // Characters allowed in the scheme.
   static schemeTable = [
@@ -111,7 +117,7 @@ export class URI {
     0xfffe, // 0x60 - 0x6f  0111111111111111
     //                      pqrstuvwxyz
     0x07ff, // 0x70 - 0x7f  1111111111100010
-  ];
+  ]
 
   // General delimiter characters, RFC 3986 section 2.2.
   // gen-delims  = ":" / "/" / "?" / "#" / "[" / "]" / "@"
@@ -133,7 +139,7 @@ export class URI {
     0x0000, // 0x60 - 0x6f  0000000000000000
     //
     0x0000, // 0x70 - 0x7f  0000000000000000
-  ];
+  ]
 
   // Characters allowed in the userinfo as of RFC 3986.
   // RFC 3986 Appendix A
@@ -177,7 +183,7 @@ export class URI {
     0xfffe, // 0x60 - 0x6f  0111111111111111
     //                      pqrstuvwxyz   ~
     0x47ff, // 0x70 - 0x7f  1111111111100010
-  ];
+  ]
 
   // Characters allowed in the path as of RFC 3986.
   // RFC 3986 section 3.3.
@@ -199,7 +205,7 @@ export class URI {
     0xfffe, // 0x60 - 0x6f  0111111111111111
     //                      pqrstuvwxyz   ~
     0x47ff, // 0x70 - 0x7f  1111111111100010
-  ];
+  ]
 
   // Characters allowed in the path as of RFC 3986.
   // RFC 3986 section 3.3 *and* slash.
@@ -267,7 +273,7 @@ export class URI {
   ]
 
   static get isWindows (): boolean {
-    return Boolean(false)
+    return isWindow
   }
 
   static fail(
@@ -314,13 +320,13 @@ export class URI {
       scheme = ''
       if (schemeEnd > start) {
         scheme = URI.makeScheme(uri, start, schemeEnd)
-      } else if (schemeEnd == start) {
+      } else if (schemeEnd === start) {
         URI.fail(uri, start, 'Invalid empty scheme')
       }
     }
     let userInfo: string = ''
-    let host: string
-    let port: number
+    let host: string | null = null
+    let port: number | null = null
     if (hostStart > start) {
       let userInfoStart = schemeEnd + 3
       if (userInfoStart < hostStart) {
@@ -379,6 +385,38 @@ export class URI {
     })
   }
 
+  static String URIEncode(List<int> canonicalTable, String text,
+    Encoding encoding, bool spaceToPlus);
+
+  static encodeQueryComponent(
+    component: string,
+    encoding: Encoding = utf8
+  ): string {
+    return URI.URIEncode(URI.unreservedTable, component, encoding, true)
+  }
+
+  static hexCharPairToByte(
+    s: string, 
+    pos: number
+  ): number {
+    let byte = 0
+    for (let i = 0; i < 2; i++) {
+      let charCode = s.charCodeAt(pos + i)
+      if (0x30 <= charCode && charCode <= 0x39) {
+        byte = byte * 16 + charCode - 0x30
+      } else {
+        // Check ranges A-F (0x41-0x46) and a-f (0x61-0x66).
+        charCode |= 0x20
+        if (0x61 <= charCode && charCode <= 0x66) {
+          byte = byte * 16 + charCode - 0x57
+        } else {
+          throw new ArgumentError('Invalid URL encoding')
+        }
+      }
+    }
+    return byte
+  }
+
   static URIDecode (
     text: string, 
     start: number, 
@@ -386,51 +424,50 @@ export class URI {
     encoding: Encoding, 
     plusToSpace: boolean
   ) {
-  invariant(0 <= start)
-  invariant(start <= end)
-  invariant(end <= text.length)
-  // First check whether there is any characters which need special handling.
-  let simple = true
-  for (let i = start; i < end; i++) {
-    var codeUnit = text.charCodeAt(i);
-    if (
-      codeUnit > 127 ||
-      codeUnit === kPercent ||
-      (plusToSpace && codeUnit === kPlus)
-    ) {
-      simple = false
-      break
-    }
-  }
-  List<int> bytes;
-  if (simple) {
-    if (utf8 == encoding || latin1 == encoding || ascii == encoding) {
-      return text.substring(start, end);
-    } else {
-      bytes = text.substring(start, end).codeUnits;
-    }
-  } else {
-    bytes = <int>[];
-    for (int i = start; i < end; i++) {
-      var codeUnit = text.codeAt(i);
-      if (codeUnit > 127) {
-        throw ArgumentError("Illegal percent encoding in URI");
+    invariant(0 <= start)
+    invariant(start <= end)
+    invariant(end <= text.length)
+    let simple = true
+    for (let i = start; i < end; i++) {
+      var codeUnit = text.charCodeAt(i)
+      if (
+        codeUnit > 127 ||
+        codeUnit === kPercent ||
+        (plusToSpace && codeUnit === kPlus)
+      ) {
+        simple = false
+        break
       }
-      if (codeUnit == kPercent) {
-        if (i + 3 > text.length) {
-          throw ArgumentError('Truncated URI');
-        }
-        bytes.add(_hexCharPairToByte(text, i + 1));
-        i += 2;
-      } else if (plusToSpace && codeUnit == kPlus) {
-        bytes.add(kSpace);
+    }
+    let bytes: number[]
+    if (simple) {
+      if (utf8 == encoding || latin1 == encoding || ascii == encoding) {
+        return text.substring(start, end);
       } else {
-        bytes.add(codeUnit);
+        bytes = text.substring(start, end).codeUnits;
+      }
+    } else {
+      bytes = [];
+      for (let i = start; i < end; i++) {
+        const codeUnit = text.charCodeAt(i)
+        if (codeUnit > 127) {
+          throw new ArgumentError('Illegal percent encoding in URI')
+        }
+        if (codeUnit == kPercent) {
+          if (i + 3 > text.length) {
+            throw new ArgumentError('Truncated URI')
+          }
+          bytes.add(hexCharPairToByte(text, i + 1));
+          i += 2;
+        } else if (plusToSpace && codeUnit == kPlus) {
+          bytes.add(kSpace);
+        } else {
+          bytes.add(codeUnit);
+        }
       }
     }
+    return encoding.decode(bytes);
   }
-  return encoding.decode(bytes);
-}
 
   static isSchemeCharacter (ch: number): boolean {
     return ch < 128 && ((URI.schemeTable[ch >> 4] & (1 << (ch & 0x0f))) != 0);
@@ -446,8 +483,11 @@ export class URI {
   static isAlphabeticCharacter (
     code: number
   ): boolean {
-    const lowerCase = codeUnit | 0x20
-    return (kLowerCaseA <= lowerCase && lowerCase <= kLowerCaseZ)
+    const lowerCase = code | 0x20
+    return (
+      kLowerCaseA <= lowerCase && 
+      lowerCase <= kLowerCaseZ
+    )
   }
 
   static isUnreservedChar (char: number): boolean {
@@ -537,7 +577,10 @@ export class URI {
         flag = 0x80 // Following bytes have only high bit set.
       }
     }
-    return String.fromCharCodes(codeUnits)
+
+    return codeUnits.map(codeUnit => {
+      return String.fromCharCode(codeUnit)
+    }).toString()
   }
 
   static canonicalizeScheme (scheme: string): string {
@@ -649,13 +692,13 @@ export class URI {
     hasAuthority: boolean
   ): string {
     if (
-      scheme.isEmpty && 
+      scheme.length === 0 && 
       !hasAuthority && 
       !path.startsWith('/')
     ) {
       return URI.normalizeRelativePath(
         path, 
-        scheme.isNotEmpty || hasAuthority
+        scheme.length !== 0 || hasAuthority
       )
     }
     return URI.removeDotSegments(path);
@@ -673,7 +716,7 @@ export class URI {
       }
       return path;
     }
-    invariant(path.isNotEmpty) // An empty path would not have dot segments.
+    invariant(path.length !== 0) // An empty path would not have dot segments.
     const output: string[] = []
     let appendSlash = false
     for (let segment in path.split('/')) {
@@ -695,7 +738,7 @@ export class URI {
       }
     }
     if (
-      output.isEmpty || 
+      output.length === 0 || 
       (output.length === 1 && output[0].isEmpty)
     ) {
       return './'
@@ -828,7 +871,7 @@ export class URI {
         return isFile ? '/' : ''
       }
 
-      result = pathSegments.map((s) => URIEncode(_pathCharTable, s, utf8, false)).join('/');
+      result = pathSegments.map((s) => URI.URIEncode(_pathCharTable, s, utf8, false)).join('/');
     } else if (pathSegments !== null) {
       throw new ArgumentError('Both path and pathSegments specified')
     } else {
@@ -881,7 +924,7 @@ export class URI {
   const writeParameter = (key: string, value: string | null) => {
     result.write(separator)
     separator = '&'
-    result.write(Uri.encodeQueryComponent(key))
+    result.write(URI.encodeQueryComponent(key))
     if (value !== null && value.isNotEmpty) {
       result.write('=')
       result.write(URI.encodeQueryComponent(value))
@@ -1036,22 +1079,23 @@ static makeFragment (
     } else if (parts.length != 8) {
       error('an address without a wildcard must contain exactly 8 parts', null);
     }
-    List<int> bytes = Uint8List(16);
-    for (int i = 0, index = 0; i < parts.length; i++) {
-      int value = parts[i];
+    const bytes = new Uint8Array(16)
+    for (let i = 0, index = 0; i < parts.length; i++) {
+      const value = parts[i]
       if (value == -1) {
-        int wildCardLength = 9 - parts.length;
-        for (int j = 0; j < wildCardLength; j++) {
-          bytes[index] = 0;
-          bytes[index + 1] = 0;
-          index += 2;
+        const wildCardLength = 9 - parts.length;
+        for (let j = 0; j < wildCardLength; j++) {
+          bytes[index] = 0
+          bytes[index + 1] = 0
+          index += 2
         }
       } else {
-        bytes[index] = value >> 8;
-        bytes[index + 1] = value & 0xff;
-        index += 2;
+        bytes[index] = value >> 8
+        bytes[index + 1] = value & 0xff
+        index += 2
       }
     }
+
     return bytes
   }
 
@@ -1117,7 +1161,7 @@ static makeFragment (
 
   static file (
     path: string, 
-    windows?: boolean
+    windows?: boolean = false
   ) {
     return (windows ?? URI.isWindows) ? 
       URI.makeWindowsFileURL(path, false)
@@ -1506,7 +1550,7 @@ static makeFragment (
     return sb.toString()
   }
 
-  constructor ({
+  constructor (options: {
     scheme,
     userInfo,
     host,
@@ -1516,7 +1560,7 @@ static makeFragment (
     query,
     queryParameters,
     fragment
-  }: URIInitOptions) {
+  }) {
     if (scheme === null) {
       scheme = ''
     } else {
@@ -2331,12 +2375,9 @@ static makeFragment (
     return result;
   }
 
-  external static String URIEncode(List<int> canonicalTable, String text,
-      Encoding encoding, bool spaceToPlus);
-
   /// Convert a byte (2 character hex sequence) in string [s] starting
   /// at position [pos] to its ordinal value
-  static int _hexCharPairToByte(String s, int pos) {
+  static int hexCharPairToByte(String s, int pos) {
     int byte = 0;
     for (int i = 0; i < 2; i++) {
       var charCode = s.codeAt(pos + i);
@@ -2354,15 +2395,4 @@ static makeFragment (
     }
     return byte;
   }
-
-  /// Uri-decode a percent-encoded string.
-  ///
-  /// It unescapes the string [text] and returns the unescaped string.
-  ///
-  /// This function is similar to the JavaScript-function `decodeURI`.
-  ///
-  /// If [plusToSpace] is `true`, plus characters will be converted to spaces.
-  ///
-  /// The decoder will create a byte-list of the percent-encoded parts, and then
-  /// decode the byte-list using [encoding]. The default encoding is UTF-8.
 }
