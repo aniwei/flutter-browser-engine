@@ -1,0 +1,16 @@
+{
+  "extends": "../../tsconfig",
+  "compilerOptions": {
+    "typeRoots": [".", "./node_modules/@types"],
+    "baseUrl": "./",
+    "rootDir": "./src",
+    "outDir": "dist"
+  },
+  "include": [
+    "src/**/*.ts", 
+    "__tests__/**/*.test.ts"
+  ],
+  "references": [
+   
+  ]
+}

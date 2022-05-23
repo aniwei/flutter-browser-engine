@@ -1,3 +1,5 @@
+import { Encoding, utf8 } from './Encoding';
+import { StringBuffer } from './StringBuffer';
 
 export enum TargetPlatform {
   Android,
@@ -14,9 +16,13 @@ export const isWindow = (
   process.platform === 'win32'
 )
 
+
 export type VoidCallback = { (): void }
 
+export * from './URI'
 export * from './Locale'
 export * from './Encoding'
 export * from './TypedData'
 export * from './StringBuffer'
+export * from './ArgumentError'
+export * from './UnsupportedError'
