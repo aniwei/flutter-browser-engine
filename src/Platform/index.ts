@@ -1,6 +1,3 @@
-import { Encoding, utf8 } from './Encoding';
-import { StringBuffer } from './StringBuffer';
-
 export enum TargetPlatform {
   Android,
   Fuchsia,

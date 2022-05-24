@@ -272,6 +272,41 @@ function hexDigitValue (char: number) {
   return -1
 }
 
+function stringOrNullLength (s: string | null) {
+  return (s === null) ? 0 : s.length
+}
+
+function toUnmodifiableStringList (
+  key: string, 
+  list: string[]
+) {
+  return Array.from(list)
+}
+
+function skipPackageNameChars (
+  source: string, 
+  start: number, 
+  end: number
+) {
+  let dots = 0;
+  for (let i = start; i < end; i++) {
+    var char = source.charCodeAt(i)
+    if (char === kSlash) {
+      return (dots !== 0) ? i : -1
+    }
+    if (
+      char === kPercent || 
+      char === kColon
+    ) {
+      return -1
+    }
+
+    dots |= char ^ kDot
+  }
+
+  return -1
+}
+
 class URIFormatError extends Error { 
   public uri: string
   public offset: number | null
@@ -289,13 +324,15 @@ class URIFormatError extends Error {
 
 
 export type URIInitOptions = {
-  scheme: string | null,
-  userInfo: string | null,
-  host: string | null,
-  port: number | null,
-  path: string | null,
-  query: string | null,
-  fragment: string | null,
+  scheme?: string | null,
+  userInfo?: string | null,
+  host?: string | null,
+  port?: number | null,
+  path?: string | null,
+  query?: string | null,
+  fragment?: string | null,
+  pathSegments?: string[] | null
+  queryParameters?:  Map<string, string[]> | null
 }
 
 export class URI {
@@ -313,19 +350,198 @@ export class URI {
     return 0
   }
 
+  static compareScheme (
+    scheme: string, 
+    uri: string
+  ): boolean {
+    for (let i = 0; i < scheme.length; i++) {
+      const schemeChar = scheme.charCodeAt(i)
+      let uriChar = uri.charCodeAt(i)
+      let delta = schemeChar ^ uriChar;
+      if (delta !== 0) {
+        if (delta === 0x20) {
+          // Might be a case difference.
+          let lowerChar = uriChar | delta
+          if (0x61 /*a*/ <= lowerChar && lowerChar <= 0x7a /*z*/) {
+            continue
+          }
+        }
+        return false
+      }
+    }
+    return true
+  }
+
+  static packageNameEnd (
+    uri: URI, 
+    path: string
+  ) {
+    if (
+      uri.isScheme('package') && 
+      !uri.hasAuthority
+    ) {
+      return skipPackageNameChars(path, 0, path.length)
+    }
+
+    return -1
+  }
+
+  static splitQueryStringAll (
+    query: string,
+    encoding: Encoding = utf8
+  ): Map<string, string[]> {
+    const result = new Map()
+    let i = 0
+    let start = 0
+    let equalsIndex = -1
+
+    const parsePair = (
+      start: number, 
+      equalsIndex: number, 
+      end: number
+    ) => {
+      let key: string
+      let value: string
+
+      if (start === end) {
+        return
+      }
+
+      if (equalsIndex < 0) {
+        key = URI.URIDecode(query, start, end, encoding, true)
+        value = ''
+      } else {
+        key = URI.URIDecode(query, start, equalsIndex, encoding, true)
+        value = URI.URIDecode(query, equalsIndex + 1, end, encoding, true)
+      }
+
+      if (result.has(key)){
+        result.get(key).push(value)
+      } else {
+        result.set(key, [value])
+      }
+    }
+
+    while (i < query.length) {
+      const char = query.charCodeAt(i)
+      if (char === kEquals) {
+        if (equalsIndex < 0) {
+          equalsIndex = i
+        }
+      } else if (char === kAmpersand) {
+        parsePair(start, equalsIndex, i)
+        start = i + 1
+        equalsIndex = -1
+      }
+      i++
+    }
+    parsePair(start, equalsIndex, i)
+    return result
+  }
+
+  static splitQueryString (
+    query: string,
+    encoding: Encoding = utf8
+  ): Map<string, string>  {
+  return query.split('&').reduce((map, element) => {
+    let index = element.indexOf('=')
+    if (index === -1) {
+      if (element !== '') {
+        map.set(URI.decodeQueryComponent(element, encoding), '')
+      }
+    } else if (index !== 0) {
+      const key = element.substring(0, index)
+      const value = element.substring(index + 1)
+      map.set(
+        URI.decodeQueryComponent(key, encoding), 
+        URI.decodeQueryComponent(value, encoding)
+      )
+    }
+
+    return map
+  }, new Map())
+}
+
+  static computeQueryParametersAll (query: string | null): Map<string, string[]>  {
+    if (query === null || query.length === 0)  {
+      return new Map()
+    }
+
+    const queryParameterLists = URI.splitQueryStringAll(query)
+
+    for (const [key, list] of queryParameterLists) {
+      queryParameterLists.set(key, toUnmodifiableStringList(key, list))
+    }
+
+    return queryParameterLists
+  }
+
+  static checkWindowsDriveLetter (
+    charCode: number, 
+    argumentError: boolean
+  ) {
+    if (
+      (kUpperCaseA <= charCode && charCode <= kUpperCaseZ) ||
+      (kLowerCaseA <= charCode && charCode <= kLowerCaseZ)
+    ) {
+      return
+    }
+    if (argumentError) {
+      throw new ArgumentError(
+        'Illegal drive letter ' + String.fromCharCode(charCode)
+      )
+    } else {
+      throw new UnsupportedError(
+        'Illegal drive letter ' + String.fromCharCode(charCode)
+      )
+    }
+  }
+
+  static checkWindowsPathReservedCharacters (
+    segments: string[], 
+    argumentError: boolean,
+    firstSegment: number = 0
+  ) {
+    for (var segment in segments.slice(firstSegment)) {
+      if (segment.match(/["*/:<>?\\|]/)) {
+        if (argumentError) {
+          throw new ArgumentError('Illegal character in path')
+        } else {
+          throw new UnsupportedError(`Illegal character in path: ${segment}`)
+        }
+      }
+    }
+  }
+
+  static checkNonWindowsPathReservedCharacters (
+    segments: string[], 
+    argumentError: boolean
+  ) {
+  for (const segment in segments) {
+    if (segment.includes('/')) {
+      if (argumentError) {
+        throw new ArgumentError(`Illegal path character ${segment}`)
+      } else {
+        throw new UnsupportedError(`Illegal path character ${segment}`)
+      }
+    }
+  }
+}
+
   static toWindowsFilePath (uri: URI): string {
     let hasDriveLetter = false
     const segments = uri.pathSegments
     if (
+      segments &&
       segments.length > 0 &&
       segments[0].length === 2 &&
       segments[0].charCodeAt(1) === kColon
     ) {
-      _checkWindowsDriveLetter(segments[0].charCodeAt(0), false)
-      _checkWindowsPathReservedCharacters(segments, false, 1)
+      URI.checkWindowsDriveLetter(segments[0].charCodeAt(0), false)
+      URI.checkWindowsPathReservedCharacters(segments, false, 1)
       hasDriveLetter = true
     } else {
-      _checkWindowsPathReservedCharacters(segments, false, 0)
+      URI.checkWindowsPathReservedCharacters(segments, false, 0)
     }
     const result = new StringBuffer()
     if (
@@ -359,6 +575,13 @@ export class URI {
       : Array.from(pathToSplit.split('/').map(URI.decodeComponent))
   }
 
+  static decodeQueryComponent (
+    encodedComponent: string,
+    encoding: Encoding = utf8
+  ): string {
+    return URI.URIDecode(encodedComponent, 0, encodedComponent.length, encoding, true)
+  }
+
   static decodeComponent (encodedComponent: string): string {
     return URI.URIDecode(
       encodedComponent, 
@@ -369,50 +592,88 @@ export class URI {
     )
   }
 
-  static URIDecode( 
-    String text, int start, int end, Encoding encoding, bool plusToSpace) {
-    assert(0 <= start);
-    assert(start <= end);
-    assert(end <= text.length);
-    // First check whether there is any characters which need special handling.
-    bool simple = true;
-    for (int i = start; i < end; i++) {
-      var codeUnit = text.codeUnitAt(i);
-      if (codeUnit > 127 ||
-          codeUnit == _PERCENT ||
-          (plusToSpace && codeUnit == _PLUS)) {
-        simple = false;
-        break;
+  static hexCharPairToByte (
+    s: string, 
+    pos: number
+  ) {
+    let byte = 0
+    for (let i = 0; i < 2; i++) {
+      let charCode = s.charCodeAt(pos + i)
+      if (0x30 <= charCode && charCode <= 0x39) {
+        byte = byte * 16 + charCode - 0x30
+      } else {
+        // Check ranges A-F (0x41-0x46) and a-f (0x61-0x66).
+        charCode |= 0x20
+        if (0x61 <= charCode && charCode <= 0x66) {
+          byte = byte * 16 + charCode - 0x57;
+        } else {
+          throw new ArgumentError('Invalid URL encoding')
+        }
       }
     }
-    List<int> bytes;
+
+    return byte
+  }
+
+  static URIDecode ( 
+    text: string, 
+    start: number, 
+    end: number, 
+    encoding: Encoding, 
+    plusToSpace: boolean
+  ) {
+    invariant(0 <= start)
+    invariant(start <= end)
+    invariant(end <= text.length)
+    // First check whether there is any characters which need special handling.
+    let simple = true
+    for (let i = start; i < end; i++) {
+      var codeUnit = text.charCodeAt(i)
+      if (codeUnit > 127 ||
+          codeUnit === kPercent ||
+          (plusToSpace && codeUnit === kPlus)) {
+        simple = false
+        break
+      }
+    }
+    let bytes: number[] = []
     if (simple) {
-      if (utf8 == encoding || latin1 == encoding || ascii == encoding) {
-        return text.substring(start, end);
+      if (
+        utf8 === encoding 
+        // @TODO
+        // latin1 == encoding || 
+        // ascii == encoding
+      ) {
+        return text.substring(start, end)
       } else {
-        bytes = text.substring(start, end).codeUnits;
+        const strings = text.substring(start, end)
+
+        for (let i = 0; i < strings.length; i++) {
+          bytes.push(strings.charCodeAt(i))
+        }
+
       }
     } else {
-      bytes = <int>[];
-      for (int i = start; i < end; i++) {
-        var codeUnit = text.codeUnitAt(i);
+      bytes = []
+      for (let i = start; i < end; i++) {
+        const codeUnit = text.charCodeAt(i)
         if (codeUnit > 127) {
-          throw ArgumentError("Illegal percent encoding in URI");
+          throw new ArgumentError('Illegal percent encoding in URI')
         }
-        if (codeUnit == _PERCENT) {
+        if (codeUnit === kPercent) {
           if (i + 3 > text.length) {
-            throw ArgumentError('Truncated URI');
+            throw new ArgumentError('Truncated URI')
           }
-          bytes.add(_hexCharPairToByte(text, i + 1));
-          i += 2;
-        } else if (plusToSpace && codeUnit == _PLUS) {
-          bytes.add(_SPACE);
+          bytes.push(URI.hexCharPairToByte(text, i + 1))
+          i += 2
+        } else if (plusToSpace && codeUnit === kPlus) {
+          bytes.push(kSpace)
         } else {
-          bytes.add(codeUnit);
+          bytes.push(codeUnit)
         }
       }
     }
-    return encoding.decode(bytes);
+    return encoding.decode(new Uint8Array(bytes))
   }
 
   static URIEncode (
@@ -532,7 +793,8 @@ export class URI {
     indices.push(i)
     const isBase64 = indices.length % 2 > 0
     if (isBase64) {
-      text = base64.normalize(text, i + 1, text.length)
+      // @TODO
+      // text = base64.normalize(text, i + 1, text.length)
     } else {
       const data = URI.normalize(
         text, 
@@ -543,19 +805,20 @@ export class URI {
       )
       
       if (data !== null) {
-        text = text.replaceRange(i + 1, text.length, data)
+        text = text.slice(0, i + 1) + data + text.slice(text.length) 
       }
     }
-    return new UriData(text, indices, sourceURI)
+
+    // @TODO
+    // return new UriData(text, indices, sourceURI)
   }
 
 
   static parseIPv6Address (
     host: string, 
     start = 0, 
-    end: number | null
-  ): Uint8Array {
-    end ??= host.length
+    end: number = host.length
+  ): number[] {
     // An IPv6 address consists of exactly 8 parts of 1-4 hex digits, separated
     // by `:`'s, with the following exceptions:
     //
@@ -652,31 +915,31 @@ export class URI {
     } else if (parts.length != 8) {
       error('an address without a wildcard must contain exactly 8 parts', null)
     }
-    const bytes = new Uint8Array(16)
+    const result: number[] = []
     for (let i = 0, index = 0; i < parts.length; i++) {
       const value = parts[i]
       if (value == -1) {
         const wildCardLength = 9 - parts.length;
         for (let j = 0; j < wildCardLength; j++) {
-          bytes[index] = 0
-          bytes[index + 1] = 0
+          result[index] = 0
+          result[index + 1] = 0
           index += 2
         }
       } else {
-        bytes[index] = value >> 8
-        bytes[index + 1] = value & 0xff
+        result[index] = value >> 8
+        result[index + 1] = value & 0xff
         index += 2
       }
     }
 
-    return bytes
+    return result
   }
 
   static parseIPv4Address (
     host: string, 
-    start: number, 
-    end: number
-  ) {
+    start: number = 0, 
+    end: number = host.length
+  ): number[] {
     const error = (
       msg: string, 
       position: number
@@ -684,7 +947,7 @@ export class URI {
       throw new URIFormatError(`Illegal IPv4 address, ${msg}`, host, position)
     }
 
-    const result = new Uint8Array(4)
+    const result: number[] = []
     let partIndex = 0
     let partStart = start
     for (let i = start; i < end; i++) {
@@ -1615,6 +1878,240 @@ export class URI {
     )
   }
 
+  static makeWindowsFileURL (
+    path: string, 
+    slashTerminated: boolean
+  ) {
+    if (path.startsWith('\\?\\')) {
+      if (path.startsWith('UNC\\', 4)) {
+        path = '\\' + path.slice(0, 7)
+      } else {
+        path = path.substring(4)
+        if (
+          path.length < 3 ||
+          path.charCodeAt(1) !== kColon ||
+          path.charCodeAt(2) !== kBackSlash
+        ) {
+          throw new ArgumentError('Windows paths with \\?\ prefix must be absolute')
+        }
+      }
+    } else {
+      path = path.replaceAll('/', '\\')
+    }
+    const sep = '\\'
+    if (
+      path.length > 1 && 
+      path.charCodeAt(1) === kColon
+    ) {
+      URI.checkWindowsDriveLetter(path.charCodeAt(0), true)
+      if (
+        path.length === 2 || 
+        path.charCodeAt(2) !== kBackSlash
+      ) {
+        throw new ArgumentError('Windows paths with drive letter must be absolute')
+      }
+      // Absolute file://C:/ URI.
+      const pathSegments = path.split(sep)
+      if (
+        slashTerminated && 
+        pathSegments[pathSegments.length - 1].length > 0
+      ) {
+        pathSegments.push() // Extra separator at end.
+      }
+      URI.checkWindowsPathReservedCharacters(pathSegments, true, 1)
+      return new URI({ 
+        scheme: 'file', 
+        pathSegments
+      })
+    }
+
+    if (path.startsWith(sep)) {
+      if (path.startsWith(sep, 1)) {
+        // Absolute file:// URI with host.
+        let pathStart = path.indexOf('\\', 2)
+        let hostPart = pathStart < 0 ? 
+          path.substring(2) 
+          : path.substring(2, pathStart)
+        let pathPart = pathStart < 0 ? 
+          '' 
+          : path.substring(pathStart + 1)
+        let pathSegments = pathPart.split(sep)
+        URI.checkWindowsPathReservedCharacters(pathSegments, true)
+        
+        if (
+          slashTerminated && 
+          pathSegments[pathSegments.length - 1].length > 0
+        ) {
+          pathSegments.push('') // Extra separator at end.
+        }
+
+        return new URI({ 
+          scheme: 'file', 
+          host: hostPart, 
+          pathSegments
+        })
+      } else {
+        // Absolute file:// URI.
+        const pathSegments = path.split(sep)
+        if (
+          slashTerminated && 
+          pathSegments[pathSegments.length - 1].length > 0
+        ) {
+          pathSegments.push('') // Extra separator at end.
+        }
+        URI.checkWindowsPathReservedCharacters(pathSegments, true)
+        return new URI({ 
+          scheme: 'file', 
+          pathSegments 
+        })
+      }
+    } else {
+      // Relative URI.
+      const pathSegments = path.split(sep)
+      URI.checkWindowsPathReservedCharacters(pathSegments, true)
+      if (
+        slashTerminated &&
+        pathSegments.length > 0 &&
+        pathSegments[pathSegments.length - 1].length > 0
+      ) {
+        pathSegments.push('') // Extra separator at end.
+      }
+      return new URI({ pathSegments })
+    }
+  }
+
+  static makeFileURI (
+    path: string, 
+    slashTerminated: boolean
+  ) {
+    const sep = '/'
+    const segments = path.split(sep)
+    if (
+      slashTerminated && 
+      segments.length > 0 && 
+      segments[segments.length -1].length > 0
+    ) {
+      segments.push('') // Extra separator at end.
+    }
+    if (path.startsWith(sep)) {
+      // Absolute file:// URI.
+      return new URI({ 
+        scheme: 'file',
+        pathSegments: segments 
+      })
+    } else {
+      // Relative URI.
+      return new URI({ pathSegments: segments })
+    }
+  }
+
+  static makeHTTPURI (
+    scheme: string, 
+    authority: string | null,
+    unencodedPath: string, 
+    queryParameters?: Map<string, string[]> 
+  ) {
+    let userInfo = ''
+    let host: string
+    let port: number
+
+    if (
+      authority !== null && 
+      authority.length > 0
+    ) {
+      let hostStart = 0
+      // Split off the user info.
+      for (let i = 0; i < authority.length; i++) {
+        const atSign = 0x40;
+        if (authority.charCodeAt(i) === atSign) {
+          userInfo = authority.substring(0, i)
+          hostStart = i + 1
+          break
+        }
+      }
+      let hostEnd = hostStart
+      if (
+        hostStart < authority.length &&
+        authority.charCodeAt(hostStart) === kLeftBracket
+      ) {
+        // IPv6 host.
+        let escapeForZoneID = -1
+        for (; hostEnd < authority.length; hostEnd++) {
+          let char = authority.charCodeAt(hostEnd);
+          if (
+            char === kPercent && 
+            escapeForZoneID < 0
+          ) {
+            escapeForZoneID = hostEnd
+            if (authority.startsWith('25', hostEnd + 1)) {
+              hostEnd += 2 // Might as well skip the already checked escape.
+            }
+          } else if (char === kRightBracket) {
+            break
+          }
+        }
+        if (hostEnd === authority.length) {
+          throw new URIFormatError(
+            'Invalid IPv6 host entry.', 
+            authority, 
+            hostStart
+          )
+        }
+        
+        URI.parseIPv6Address(
+          authority, 
+          hostStart + 1,
+          (escapeForZoneID < 0) ? hostEnd : escapeForZoneID
+        )
+        hostEnd++ // Skip the closing bracket.
+        if (
+          hostEnd !== authority.length &&
+          authority.charCodeAt(hostEnd) !== kColon
+        ) {
+          throw new URIFormatError('Invalid end of authority', authority, hostEnd)
+        }
+      }
+      // Split host and port.
+      for (; hostEnd < authority.length; hostEnd++) {
+        if (authority.charCodeAt(hostEnd) === kColon) {
+          const portString = authority.substring(hostEnd + 1)
+          // We allow the empty port - falling back to initial value.
+          if (portString.length > 0) {
+            port = parseInt(portString)
+          }
+          break
+        }
+      }
+      host = authority.substring(hostStart, hostEnd)
+    }
+
+    return new URI({
+      scheme: scheme,
+      userInfo: userInfo,
+      host: host,
+      port: port,
+      pathSegments: unencodedPath.split('/'),
+      queryParameters
+    })
+  }
+
+  static directory (
+    path: string, 
+    windows?: boolean | null
+  ) {
+    return (windows ?? URI.isWindows) ? 
+      URI.makeWindowsFileURL(path, true)
+      : URI.makeFileURI(path, true);
+  }
+
+  HTTP (
+    authority: string, 
+    unencodedPath: string,
+    queryParameters?: Map<string, string[]> | null 
+  ) {
+    return URI.makeHTTPURI('http', authority, unencodedPath, queryParameters)
+  }
+
   @property(function (this) {
     return this.scheme?.length > 0
   }) public hasScheme!: boolean
@@ -1667,9 +2164,9 @@ export class URI {
     return `${this.scheme}://${this.host}:${this.port}`
   }) public origin!: string
 
-  @property() public scheme: string | null
+  @property() public scheme: string
 
-  @property() public userInfo: string | null
+  @property() public userInfo: string
 
   @property<string>(function (host: string | null) {
     if (host === null) {
@@ -1679,21 +2176,21 @@ export class URI {
     }
 
     return host
-  }) public host: string | null
+  }) public host: string
 
   @property<number>(function (this, port: number | null) {
     return port ?? URI.getDefaultPort(this.scheme)
-  }) public port: number | null
+  }) public port: number
 
-  @property() public path: string | null
+  @property() public path: string
 
   @property<string>(function (query: string | null) {
     return query ?? ''
-  }) public query: string | null
+  }) public query: string
 
   @property<string>(function (fragment: string | null) {
     return fragment ?? ''
-  }) public fragment: string | null
+  }) public fragment: string
 
   @property<string>(function (this, authority: string | null) {
     if (!this.hasAuthority) {
@@ -1701,26 +2198,36 @@ export class URI {
     }
 
     const string = new StringBuffer()
-    _writeAuthority(string)
+    this.writeAuthority(string)
     return string.toString()
   }) public authority!: string
 
-  @property<string>(function (this, authority: string | null) {
+  @property<string[]>(function (this) {
     return URI.computePathSegments(this.path)
   }) public pathSegments!: string[]
 
+  @property<Map<string, string>>(function (this) {
+    return URI.splitQueryString(this.query)
+  }) public queryParameters!: Map<string, string>
+
+  @property<Map<string, string[]>>(function (this) {
+    return URI.computeQueryParametersAll(this.query)
+  }) public queryParametersAll!: Map<string, string[]>
+  
+
   constructor (options: URIInitOptions) {
     this.scheme = options.scheme
-    this.userInfo = options.userInfo
-    this.host = options.host
-    this.port = options.port
-    this.path = options.path
-    this.query = options.query
-    this.fragment = options.fragment
+    this.userInfo = options.userInfo ?? null
+    this.host = options.host ?? null
+    this.port = options.port ?? null
+    this.path = options.path ?? null
+    this.query = options.query ?? null
+    this.fragment = options.fragment ?? null
+    this.pathSegments = options.pathSegments ?? []
+    this.queryParameters = options.queryParameters ?? new Map()
   }
 
   toFilePath (windows?: boolean | null) {
-
     if (
       this.scheme !== '' && 
       this.scheme !== 'file'
@@ -1735,7 +2242,7 @@ export class URI {
       throw new UnsupportedError('Cannot extract a file path from a URI with a fragment component')
     }
 
-    if (window ?? URI.isWindows) {
+    if (windows ?? URI.isWindows) {
       return URI.toWindowsFilePath(this)
     } else {
       if (
@@ -1746,7 +2253,7 @@ export class URI {
       }
       // Use path segments to have any escapes unescaped.
       const pathSegments = this.pathSegments
-      _checkNonWindowsPathReservedCharacters(pathSegments, false)
+      URI.checkNonWindowsPathReservedCharacters(pathSegments, false)
       
       const result = new StringBuffer()
       if (this.hasAbsolutePath) {
@@ -1757,5 +2264,193 @@ export class URI {
       
       return result.toString()
     }
+  }
+
+  writeAuthority (ss: StringBuffer) {
+    if (this.userInfo && this.userInfo.length > 0) {
+      ss.write(this.userInfo)
+      ss.write('@')
+    }
+    if (this.host !== null) {
+      ss.write(this.host)
+    }
+    if (this.port !== null) {
+      ss.write(':')
+      ss.write(this.port.toString())
+    }
+  }
+
+  resolve (reference: string): URI {
+    return this.resolveURI(URI.parse(reference))
+  }
+
+  resolveURI (reference: URI): URI {
+    // From RFC 3986.
+    let targetScheme: string
+    let targetUserInfo: string = ''
+    let targetHost: string | null = null
+    let targetPort: number | null = null
+    let targetPath: string
+    let targetQuery: string | null = null
+    if (
+      reference.scheme && 
+      reference.scheme.length > 0
+    ) {
+      targetScheme = reference.scheme
+      if (reference.hasAuthority) {
+        targetUserInfo = reference.userInfo as string
+        targetHost = reference.host
+        targetPort = reference.hasPort ? 
+          reference.port : null
+      }
+
+      targetPath = URI.removeDotSegments(reference.path)
+      if (reference.hasQuery) {
+        targetQuery = reference.query;
+      }
+    } else {
+      targetScheme = this.scheme
+      if (reference.hasAuthority) {
+        targetUserInfo = reference.userInfo;
+        targetHost = reference.host;
+        targetPort = URI.makePort(reference.hasPort ? reference.port : null, targetScheme)
+        targetPath = URI.removeDotSegments(reference.path)
+        if (reference.hasQuery) {
+          targetQuery = reference.query
+        }
+      } else {
+        targetUserInfo = this.userInfo
+        targetHost = this.host
+        targetPort = this.port
+        if (reference.path === '') {
+          targetPath = this.path
+          if (reference.hasQuery) {
+            targetQuery = reference.query
+          } else {
+            targetQuery = this.query
+          }
+        } else {
+          const basePath = this.path
+          const packageNameEnd = URI.packageNameEnd(this, basePath)
+          if (packageNameEnd > 0) {
+            invariant(targetScheme === 'package')
+            invariant(!this.hasAuthority)
+            invariant(!this.hasEmptyPath)
+            // Merging a path into a package URI.
+            const packageName = basePath.substring(0, packageNameEnd)
+            if (reference.hasAbsolutePath) {
+              targetPath = packageName + URI.removeDotSegments(reference.path)
+            } else {
+              targetPath = packageName + URI.removeDotSegments(
+                this.mergePaths(basePath.substring(packageName.length), reference.path)
+              )
+            }
+          } else if (reference.hasAbsolutePath) {
+            targetPath = URI.removeDotSegments(reference.path)
+          } else {
+            // This is the RFC 3986 behavior for merging.
+            if (this.hasEmptyPath) {
+              if (!this.hasAuthority) {
+                if (!this.hasScheme) {
+                  // Keep the path relative if no scheme or authority.
+                  targetPath = reference.path;
+                } else {
+                  // Remove leading dot-segments if the path is put
+                  // beneath a scheme.
+                  targetPath = URI.removeDotSegments(reference.path)
+                }
+              } else {
+                // RFC algorithm for base with authority and empty path.
+                targetPath = URI.removeDotSegments('/' + reference.path)
+              }
+            } else {
+              const mergedPath = this.mergePaths(this.path, reference.path)
+              if (
+                this.hasScheme || 
+                this.hasAuthority || 
+                this.hasAbsolutePath
+              ) {
+                targetPath = URI.removeDotSegments(mergedPath)
+              } else {
+                // Non-RFC 3986 behavior.
+                // If both base and reference are relative paths,
+                // allow the merged path to start with "..".
+                // The RFC only specifies the case where the base has a scheme.
+                targetPath = URI.normalizeRelativePath(
+                  mergedPath, 
+                  this.hasScheme || this.hasAuthority
+                )
+              }
+            }
+          }
+          if (reference.hasQuery) targetQuery = reference.query;
+        }
+      }
+    }
+
+    const fragment: string | null = reference.hasFragment ? reference.fragment : null
+    return URI.internal({ 
+      scheme: targetScheme, 
+      userInfo: targetUserInfo, 
+      host: targetHost, 
+      port: targetPort,
+      path: targetPath, 
+      query: targetQuery, 
+      fragment
+    })
+  }
+
+  isScheme (scheme: string): boolean {
+    const thisScheme = this.scheme
+    if (scheme === null) {
+      return thisScheme.length === 0
+    }
+
+    if (scheme.length !== thisScheme.length) {
+      return false
+    }
+
+    return URI.compareScheme(scheme, thisScheme)
+  }
+
+  mergePaths (
+    base: string, 
+    reference: string
+  ): string {
+    // Optimize for the case: absolute base, reference beginning with "../".
+    let backCount = 0
+    let refStart = 0
+    // Count number of "../" at beginning of reference.
+    while (reference.startsWith('../', refStart)) {
+      refStart += 3
+      backCount++
+    }
+
+    // Drop last segment - everything after last '/' of base.
+    let baseEnd = base.lastIndexOf('/')
+    // Drop extra segments for each leading "../" of reference.
+    while (
+      baseEnd > 0 && 
+      backCount > 0
+    ) {
+      let newEnd = base.lastIndexOf('/', baseEnd - 1)
+      if (newEnd < 0) {
+        break
+      }
+      let delta = baseEnd - newEnd
+      // If we see a "." or ".." segment in base, stop here and let
+      // _removeDotSegments handle it.
+      if (
+        (delta == 2 || delta == 3) &&
+        base.charCodeAt(newEnd + 1) === kDot &&
+        (delta == 2 || base.charCodeAt(newEnd + 2) === kDot)
+      ) {
+        break
+      }
+      baseEnd = newEnd
+      backCount--
+    }
+
+    return base.slice(0, baseEnd) + reference.substring(refStart - 3 * backCount)
   }
 }

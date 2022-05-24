@@ -1,4 +1,4 @@
-import { ByteData, utf8 } from '@Platform'
+import { ByteData, URI, utf8 } from '@Platform'
 
 export abstract class AssetBundle {
   static  utf8decode (data: ByteData) {
@@ -42,7 +42,7 @@ export class NetworkAssetBundle extends AssetBundle {
   public baseURI: URI
   public httpClient: HttpClient
 
-  constructor (baseURI: string) {
+  constructor (baseURI: URI) {
     super()
     this.baseURI = baseURI
     this.httpClient = new HttpClient()
