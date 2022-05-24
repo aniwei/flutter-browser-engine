@@ -901,66 +901,66 @@ export class URI {
     end: number,
     queryParameters: Map<string, unknown> | null
   ): string | null {
-  if (query !== null) {
-    if (queryParameters !== null) {
-      throw new ArgumentError('Both query and queryParameters specified');
+    if (query !== null) {
+      if (queryParameters !== null) {
+        throw new ArgumentError('Both query and queryParameters specified');
+      }
+      return URI.normalizeOrSubstring(
+        query, 
+        start, 
+        end, 
+        URI.queryCharTable,
+        true
+      )
     }
+
+    if (queryParameters === null) {
+      return null
+    }
+
+    const result = StringBuffer()
+    let separator = ''
+
+    const writeParameter = (key: string, value: string | null) => {
+      result.write(separator)
+      separator = '&'
+      result.write(URI.encodeQueryComponent(key))
+      if (value !== null && value.isNotEmpty) {
+        result.write('=')
+        result.write(URI.encodeQueryComponent(value))
+      }
+    }
+
+    queryParameters.forEach((key, value) => {
+      if (value === null || typeof value === 'string') {
+        writeParameter(key, value)
+      } else {
+        Iterable values = value;
+        for (String value in values) {
+          writeParameter(key, value);
+        }
+      }
+    });
+    return result.toString()
+  }
+
+  static makeFragment (
+    fragment: string | null, 
+    start: number, 
+    end: number
+  ): string | null {
+    if (fragment === null) {
+      return null
+    }
+
     return URI.normalizeOrSubstring(
-      query, 
+      fragment, 
       start, 
       end, 
       URI.queryCharTable,
       true
     )
   }
-
-  if (queryParameters === null) {
-    return null
-  }
-
-  const result = StringBuffer()
-  let separator = ''
-
-  const writeParameter = (key: string, value: string | null) => {
-    result.write(separator)
-    separator = '&'
-    result.write(URI.encodeQueryComponent(key))
-    if (value !== null && value.isNotEmpty) {
-      result.write('=')
-      result.write(URI.encodeQueryComponent(value))
-    }
-  }
-
-  queryParameters.forEach((key, value) => {
-    if (value === null || typeof value === 'string') {
-      writeParameter(key, value)
-    } else {
-      Iterable values = value;
-      for (String value in values) {
-        writeParameter(key, value);
-      }
-    }
-  });
-  return result.toString()
-}
-
-static makeFragment (
-  fragment: string | null, 
-  start: number, 
-  end: number
-): string | null {
-  if (fragment === null) {
-    return null
-  }
-
-  return URI.normalizeOrSubstring(
-    fragment, 
-    start, 
-    end, 
-    URI.queryCharTable,
-    true
-  )
-}
 
   static makeUserInfo (
     userInfo: string | null, 

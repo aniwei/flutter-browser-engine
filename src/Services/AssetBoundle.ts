@@ -1,7 +1,7 @@
-import { ByteData, utf8, URI } from '@Platform'
+import { ByteData, URI, utf8 } from '@Platform'
 
 export abstract class AssetBundle {
-  static  utf8decode (data: ByteData) {
+  static  UTF8Decode (data: ByteData) {
     return utf8.decode(new Uint8Array(data.buffer))
   }
   
@@ -20,7 +20,7 @@ export abstract class AssetBundle {
       return utf8.decode(new Uint8Array(data.buffer))
     }
    
-    return compute(_utf8decode, data, debugLabel: 'UTF8 decode for "$key"');
+    return compute(AssetBundle.UTF8Decode, data, 'UTF8 decode for "$key"');
   }
 
   abstract loadStructuredData<T>(
