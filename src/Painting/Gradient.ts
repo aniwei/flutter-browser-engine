@@ -335,6 +335,17 @@ export class LinearGradient extends Gradient {
   }
 }
 
+export type RadialGradientInitOptions = {
+  center?: AlignmentGeometry | null,
+  radius?: number | null,
+  colors?: Color[] | null,
+  stops?: number[] | null,
+  tileMode?: SkiaTileMode | null,
+  focal?,
+  focalRadius?: number | null,
+  transform?: GradientTransform | null
+}
+
 
 export class RadialGradient extends Gradient {
   public center: AlignmentGeometry
@@ -343,20 +354,11 @@ export class RadialGradient extends Gradient {
   public focal: AlignmentGeometry
   public focalRadius: number
 
-  constructor (
-    center = Alignment.center,
-    radius = 0.5,
-    colors: Color[],
-    stops: number[],
-    tileMode = Skia.TileMode.Clamp,
-    focal,
-    focalRadius = 0.0,
-    transform: GradientTransform | null,
-  ) {
-    invariant(center !== null)
-    invariant(radius !== null)
-    invariant(tileMode !== null)
-    invariant(focalRadius !== null)
+  constructor (options: RadialGradientInitOptions) {
+    invariant(options.center !== null)
+    invariant(options.radius !== null)
+    invariant(options.tileMode !== null)
+    invariant(options.focalRadius !== null)
     super(colors: colors, stops: stops, transform: transform);
 
   
@@ -374,14 +376,9 @@ export class RadialGradient extends Gradient {
       focalRadius * rect.shortestSide,
     );
   }
-
   
-  
-  
-  
-  @override
-  RadialGradient scale(double factor) {
-    return RadialGradient(
+  scale (factor: number): RadialGradient {
+    return new RadialGradient(
       center: center,
       radius: radius,
       colors: colors.map<Color>((Color color) => Color.lerp(null, color, factor)!).toList(),
