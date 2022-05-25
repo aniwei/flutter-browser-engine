@@ -1,58 +1,78 @@
-import invariant from 'ts-invariant';
+import invariant from 'ts-invariant'
+import { ArgumentError } from '@Platform'
+import { clamp } from './clamp'
 
 export class Matrix4 extends Float32Array {
-  static Zero () {
-    return new Matrix4(16)
-  }
-
-  static factory (
-    arg0: number,
-    arg1: number,
-    arg2: number,
-    arg3: number,
-    arg4: number,
-    arg5: number,
-    arg6: number,
-    arg7: number,
-    arg8: number,
-    arg9: number,
-    arg10: number,
-    arg11: number,
-    arg12: number,
-    arg13: number,
-    arg14: number,
-    arg15: number
-  ) {
-    
-    const matrix = Matrix4.Zero()
-    matrix.setValues(
-      arg0, 
-      arg1, 
-      arg2, 
-      arg3, 
-      arg4, 
-      arg5, 
-      arg6, 
-      arg7, 
-      arg8, 
-      arg9,
-      arg10, 
-      arg11, 
-      arg12, 
-      arg13, 
-      arg14, 
-      arg15
-    )
+  static zero () {
+    return new Matrix4()
   }
   
   static identity() {
-    const matrix = new Matrix4(16)
+    const matrix = new Matrix4()
 
     matrix[15] = 1.0
     matrix[0] = 1.0
     matrix[5] = 1.0
     matrix[10] = 1.0
+
+    return matrix
   } 
+
+  static copy (other: Matrix4) {
+    const m = Matrix4.zero()
+    m.setFrom(other)
+    return m
+  }
+
+  static inverted (other: Matrix4) {
+    const r = Matrix4.zero()
+    const determinant: number = r.copyInverse(other)
+
+    if (determinant === 0.0) {
+      throw new ArgumentError(`Matrix cannot be inverted`)
+    }
+    
+    return r
+  }
+
+  static rotationX (radians: number) {
+    const m = Matrix4.zero()
+    m[15] = 1.0
+    m.setRotationX(radians)
+  }
+
+  static rotationY (radians: number) {
+    const m = Matrix4.zero()
+    m[15] = 1.0
+    m.setRotationY(radians)
+  }
+
+  static rotationZ (radians: number) {
+    const m = Matrix4.zero()
+    m[15] = 1.0
+    m.setRotationZ(radians)
+  }
+
+  static translation (translation: Vector3) {
+    const m = Matrix4.identity()
+    m.setTranslation(translation)
+  }
+
+  static translationValues (
+    x: number,
+    y: number,
+    z: number
+  ) {
+    const m = Matrix4.zero()
+    m[15] = 1.0
+    m[10] = z
+    m[5] = y
+    m[0] = x
+  } 
+
+  static fromFloat32Array (m4storage: Float32Array) {
+    return new Matrix4(...m4storage)
+  }
 
   static tryInvert(other: Matrix4): Matrix4 | null {
     const r = Matrix4.zero();
@@ -63,6 +83,23 @@ export class Matrix4 extends Float32Array {
     return r
   }
 
+  static diagonal3Values (
+    x: number, 
+    y: number, 
+    z: number
+  ) {
+    const m = Matrix4.zero()
+    m[15] = 1.0
+    m[10] = z
+    m[5] = y
+    m[0] = x
+    return m
+  }
+
+  static fromBuffer (buffer: ArrayBuffer, offset: number) {
+
+  }
+
   public get storage () {
     return this
   }
@@ -71,81 +108,38 @@ export class Matrix4 extends Float32Array {
     return 4
   }
 
-  constructor () {
-    
+  constructor (...values: number[]) {
+    super(values)
   }
   
-  index (row: number, col: number): number {
+  index (
+    row: number, 
+    col: number
+  ): number {
     return (col * 4) + row
   }
 
-  entry (row: number, col: number): number {
-    invariant((row >= 0) && (row < dimension));
-    invariant((col >= 0) && (col < dimension));
+  entry (
+    row: number, 
+    col: number
+  ): number {
+    invariant((row >= 0) && (row < this.dimension))
+    invariant((col >= 0) && (col < this.dimension))
 
-    return m4storage[index(row, col)];
+    return this[this.index(row, col)]
   }
 
   
-  setEntry(row: number, col: number, double v): void {
-    invariant((row >= 0) && (row < dimension));
-    invariant((col >= 0) && (col < dimension));
+  setEntry (
+    row: number, 
+    col: number, 
+    v: number
+  ): void {
+    invariant((row >= 0) && (row < this.dimension))
+    invariant((col >= 0) && (col < this.dimension))
 
-    m4storage[index(row, col)] = v;
+    this[this.index(row, col)] = v
   }  
-
-  /// Copies values from [other].
-  factory Matrix4.copy(other: Matrix4) => Matrix4.zero()..setFrom(other);
-
-  /// Constructs a matrix that is the inverse of [other].
-  factory Matrix4.inverted(other: Matrix4) {
-    const r = Matrix4.zero();
-    final double determinant = r.copyInverse(other);
-    if (determinant == 0.0) {
-      throw ArgumentError.value(other, 'other', 'Matrix cannot be inverted');
-    }
-    return r;
-  }
-
-  /// Rotation of [radians_] around X.
-  factory Matrix4.rotationX(double radians) => Matrix4.zero()
-    ..m4storage[15] = 1.0
-    ..setRotationX(radians);
-
-  /// Rotation of [radians_] around Y.
-  factory Matrix4.rotationY(double radians) => Matrix4.zero()
-    ..m4storage[15] = 1.0
-    ..setRotationY(radians);
-
-  /// Rotation of [radians_] around Z.
-  factory Matrix4.rotationZ(double radians) => Matrix4.zero()
-    ..m4storage[15] = 1.0
-    ..setRotationZ(radians);
-
-  /// Translation matrix.
-  factory Matrix4.translation(Vector3 translation) => Matrix4.identity()
-    ..setTranslation(translation);
-
-  /// Translation matrix.
-  factory Matrix4.translationValues(double x, double y, double z) =>
-      Matrix4.identity()
-        ..setTranslationRaw(x, y, z);
-
-  /// Scale matrix.
-  factory Matrix4.diagonal3Values(double x, double y, double z) =>
-      Matrix4.zero()
-        ..m4storage[15] = 1.0
-        ..m4storage[10] = z
-        ..m4storage[5] = y
-        ..m4storage[0] = x;
-
-  /// Constructs Matrix4 with given [Float32List] as [storage].
-  Matrix4.fromFloat32List(this.m4storage);
-
-  /// Constructs Matrix4 with a [storage] that views given [buffer] starting at
-  /// [offset]. [offset] has to be multiple of [Float32List.bytesPerElement].
-  Matrix4.fromBuffer(ByteBuffer buffer, int offset)
-      : m4storage = Float32List.view(buffer, offset, 16);
 
   /// Sets the matrix with specified values.
   setValues (
@@ -203,1210 +197,1273 @@ export class Matrix4 extends Float32Array {
     this[0] = arg[0]
   }
 
-  /// Access the element of the matrix at the index [i].
-  double operator [](int i) => m4storage[i];
-
-  /// Set the element of the matrix at the index [i].
-  void operator []=(int i, double v) {
-    m4storage[i] = v;
-  }
-
   clone (): Matrix4 {
     return Matrix4.copy(this)
   }
 
-  /// Copy into [arg].
-  Matrix4 copyInto(Matrix4 arg) {
-    final Float32List argStorage = arg.m4storage;
-    // Start reading from the last element to eliminate range checks
-    // in subsequent reads.
-    argStorage[15] = m4storage[15];
-    argStorage[0] = m4storage[0];
-    argStorage[1] = m4storage[1];
-    argStorage[2] = m4storage[2];
-    argStorage[3] = m4storage[3];
-    argStorage[4] = m4storage[4];
-    argStorage[5] = m4storage[5];
-    argStorage[6] = m4storage[6];
-    argStorage[7] = m4storage[7];
-    argStorage[8] = m4storage[8];
-    argStorage[9] = m4storage[9];
-    argStorage[10] = m4storage[10];
-    argStorage[11] = m4storage[11];
-    argStorage[12] = m4storage[12];
-    argStorage[13] = m4storage[13];
-    argStorage[14] = m4storage[14];
-    return arg;
+  copyInto (m: Matrix4) {
+    m[15] = this[15]
+    m[0] = this[0]
+    m[1] = this[1]
+    m[2] = this[2]
+    m[3] = this[3]
+    m[4] = this[4]
+    m[5] = this[5]
+    m[6] = this[6]
+    m[7] = this[7]
+    m[8] = this[8]
+    m[9] = this[9]
+    m[10] = this[10]
+    m[11] = this[11]
+    m[12] = this[12]
+    m[13] = this[13]
+    m[14] = this[14]
+    return m
   }
 
-  /// Translate this matrix by x, y, and z.
-  void translate(double x, [double y = 0.0, double z = 0.0]) {
-    const double tw = 1.0;
-    final double t1 = m4storage[0] * x +
-        m4storage[4] * y +
-        m4storage[8] * z +
-        m4storage[12] * tw;
-    final double t2 = m4storage[1] * x +
-        m4storage[5] * y +
-        m4storage[9] * z +
-        m4storage[13] * tw;
-    final double t3 = m4storage[2] * x +
-        m4storage[6] * y +
-        m4storage[10] * z +
-        m4storage[14] * tw;
-    final double t4 = m4storage[3] * x +
-        m4storage[7] * y +
-        m4storage[11] * z +
-        m4storage[15] * tw;
-    m4storage[12] = t1;
-    m4storage[13] = t2;
-    m4storage[14] = t3;
-    m4storage[15] = t4;
+  translate (
+    x: number, 
+    y = 0.0, 
+    z = 0.0
+  ) {
+    const tw = 1.0
+    const t1 = (
+      this[0] * x +
+      this[4] * y +
+      this[8] * z +
+      this[12] * tw
+    )
+
+    const t2 = (
+      this[1] * x +
+      this[5] * y +
+      this[9] * z +
+      this[13] * tw
+    )
+
+    const t3 = (
+      this[2] * x +
+      this[6] * y +
+      this[10] * z +
+      this[14] * tw
+    )
+
+    const t4 = (
+      this[3] * x +
+      this[7] * y +
+      this[11] * z +
+      this[15] * tw
+    )
+    this[12] = t1
+    this[13] = t2
+    this[14] = t3
+    this[15] = t4
   }
 
-  /// Scale this matrix by a [Vector3], [Vector4], or x,y,z
-  void scale(double x, [double? y, double? z]) {
-    final double sx = x;
-    final double sy = y ?? x;
-    final double sz = z ?? x;
-    const double sw = 1.0;
-    m4storage[15] *= sw;
-    m4storage[0] *= sx;
-    m4storage[1] *= sx;
-    m4storage[2] *= sx;
-    m4storage[3] *= sx;
-    m4storage[4] *= sy;
-    m4storage[5] *= sy;
-    m4storage[6] *= sy;
-    m4storage[7] *= sy;
-    m4storage[8] *= sz;
-    m4storage[9] *= sz;
-    m4storage[10] *= sz;
-    m4storage[11] *= sz;
-    m4storage[12] *= sw;
-    m4storage[13] *= sw;
-    m4storage[14] *= sw;
+  scale (
+    x: number, 
+    y?: number, 
+    z?: number
+  ) {
+    const sx = x
+    const sy = y ?? x
+    const sz = z ?? x
+    const sw = 1.0
+    this[15] *= sw
+    this[0] *= sx
+    this[1] *= sx
+    this[2] *= sx
+    this[3] *= sx
+    this[4] *= sy
+    this[5] *= sy
+    this[6] *= sy
+    this[7] *= sy
+    this[8] *= sz
+    this[9] *= sz
+    this[10] *= sz
+    this[11] *= sz
+    this[12] *= sw
+    this[13] *= sw
+    this[14] *= sw
   }
 
-  /// Create a copy of [this] scaled by a [Vector3], [Vector4] or [x],[y], and
-  /// [z].
-  Matrix4 scaled(double x, [double? y, double? z]) => clone()..scale(x, y, z);
+  
+  scaled (
+    x: number, 
+    y?: number, 
+    z?: number
+  ) {
+    const m = this.clone()
+    m.scale(x, y, z)
 
-  /// Zeros [this].
-  void setZero() {
-    m4storage[15] = 0.0;
-    m4storage[0] = 0.0;
-    m4storage[1] = 0.0;
-    m4storage[2] = 0.0;
-    m4storage[3] = 0.0;
-    m4storage[4] = 0.0;
-    m4storage[5] = 0.0;
-    m4storage[6] = 0.0;
-    m4storage[7] = 0.0;
-    m4storage[8] = 0.0;
-    m4storage[9] = 0.0;
-    m4storage[10] = 0.0;
-    m4storage[11] = 0.0;
-    m4storage[12] = 0.0;
-    m4storage[13] = 0.0;
-    m4storage[14] = 0.0;
+    return m
   }
 
-  /// Makes [this] into the identity matrix.
-  void setIdentity() {
-    m4storage[15] = 1.0;
-    m4storage[0] = 1.0;
-    m4storage[1] = 0.0;
-    m4storage[2] = 0.0;
-    m4storage[3] = 0.0;
-    m4storage[4] = 0.0;
-    m4storage[5] = 1.0;
-    m4storage[6] = 0.0;
-    m4storage[7] = 0.0;
-    m4storage[8] = 0.0;
-    m4storage[9] = 0.0;
-    m4storage[10] = 1.0;
-    m4storage[11] = 0.0;
-    m4storage[12] = 0.0;
-    m4storage[13] = 0.0;
-    m4storage[14] = 0.0;
+  setZero () {
+    this[15] = 0.0
+    this[0] = 0.0
+    this[1] = 0.0
+    this[2] = 0.0
+    this[3] = 0.0
+    this[4] = 0.0
+    this[5] = 0.0
+    this[6] = 0.0
+    this[7] = 0.0
+    this[8] = 0.0
+    this[9] = 0.0
+    this[10] = 0.0
+    this[11] = 0.0
+    this[12] = 0.0
+    this[13] = 0.0
+    this[14] = 0.0
   }
 
-  /// Returns the tranpose of this.
-  Matrix4 transposed() => clone()..transpose();
-
-  void transpose() {
-    double temp;
-    temp = m4storage[4];
-    m4storage[4] = m4storage[1];
-    m4storage[1] = temp;
-    temp = m4storage[8];
-    m4storage[8] = m4storage[2];
-    m4storage[2] = temp;
-    temp = m4storage[12];
-    m4storage[12] = m4storage[3];
-    m4storage[3] = temp;
-    temp = m4storage[9];
-    m4storage[9] = m4storage[6];
-    m4storage[6] = temp;
-    temp = m4storage[13];
-    m4storage[13] = m4storage[7];
-    m4storage[7] = temp;
-    temp = m4storage[14];
-    m4storage[14] = m4storage[11];
-    m4storage[11] = temp;
+  setIdentity () {
+    this[15] = 1.0
+    this[0] = 1.0
+    this[1] = 0.0
+    this[2] = 0.0
+    this[3] = 0.0
+    this[4] = 0.0
+    this[5] = 1.0
+    this[6] = 0.0
+    this[7] = 0.0
+    this[8] = 0.0
+    this[9] = 0.0
+    this[10] = 1.0
+    this[11] = 0.0
+    this[12] = 0.0
+    this[13] = 0.0
+    this[14] = 0.0
   }
 
-  /// Returns the determinant of this matrix.
-  double determinant() {
-    final Float32List m = m4storage;
-    final double det2_01_01 =
-        m[0] * m[5] - m[1] * m[4];
-    final double det2_01_02 =
-        m[0] * m[6] - m[2] * m[4];
-    final double det2_01_03 =
-        m[0] * m[7] - m[3] * m[4];
-    final double det2_01_12 =
-        m[1] * m[6] - m[2] * m[5];
-    final double det2_01_13 =
-        m[1] * m[7] - m[3] * m[5];
-    final double det2_01_23 =
-        m[2] * m[7] - m[3] * m[6];
-    final double det3_201_012 = m[8] * det2_01_12 -
-        m[9] * det2_01_02 +
-        m[10] * det2_01_01;
-    final double det3_201_013 = m[8] * det2_01_13 -
-        m[9] * det2_01_03 +
-        m[11] * det2_01_01;
-    final double det3_201_023 = m[8] * det2_01_23 -
-        m[10] * det2_01_03 +
-        m[11] * det2_01_02;
-    final double det3_201_123 = m[9] * det2_01_23 -
-        m[10] * det2_01_13 +
-        m[11] * det2_01_12;
-    return -det3_201_123 * m[12] +
-        det3_201_023 * m[13] -
-        det3_201_013 * m[14] +
-        det3_201_012 * m[15];
+  transposed () {
+    const m = this.clone()
+    m.transpose()
+    return m
   }
 
-  /// Transform [arg] of type [Vector3] using the perspective transformation
-  /// defined by [this].
-  Vector3 perspectiveTransform(Vector3 arg) {
-    final Float32List argStorage = arg._v3storage;
-
-    final double x = (m4storage[0] * argStorage[0]) +
-        (m4storage[4] * argStorage[1]) +
-        (m4storage[8] * argStorage[2]) +
-        m4storage[12];
-    final double y = (m4storage[1] * argStorage[0]) +
-        (m4storage[5] * argStorage[1]) +
-        (m4storage[9] * argStorage[2]) +
-        m4storage[13];
-    final double z = (m4storage[2] * argStorage[0]) +
-        (m4storage[6] * argStorage[1]) +
-        (m4storage[10] * argStorage[2]) +
-        m4storage[14];
-    final double w = 1.0 /
-        ((m4storage[3] * argStorage[0]) +
-            (m4storage[7] * argStorage[1]) +
-            (m4storage[11] * argStorage[2]) +
-            m4storage[15]);
-    argStorage[0] = x * w;
-    argStorage[1] = y * w;
-    argStorage[2] = z * w;
-    return arg;
+  transpose () {
+    let temp
+    temp = this[4]
+    this[4] = this[1]
+    this[1] = temp
+    temp = this[8]
+    this[8] = this[2]
+    this[2] = temp
+    temp = this[12]
+    this[12] = this[3]
+    this[3] = temp
+    temp = this[9]
+    this[9] = this[6]
+    this[6] = temp
+    temp = this[13]
+    this[13] = this[7]
+    this[7] = temp
+    temp = this[14]
+    this[14] = this[11]
+    this[11] = temp
   }
 
-  bool isIdentity() =>
-      m4storage[0] == 1.0 && // col 1
-      m4storage[1] == 0.0 &&
-      m4storage[2] == 0.0 &&
-      m4storage[3] == 0.0 &&
-      m4storage[4] == 0.0 && // col 2
-      m4storage[5] == 1.0 &&
-      m4storage[6] == 0.0 &&
-      m4storage[7] == 0.0 &&
-      m4storage[8] == 0.0 && // col 3
-      m4storage[9] == 0.0 &&
-      m4storage[10] == 1.0 &&
-      m4storage[11] == 0.0 &&
-      m4storage[12] == 0.0 && // col 4
-      m4storage[13] == 0.0 &&
-      m4storage[14] == 0.0 &&
-      m4storage[15] == 1.0;
-
-  /// Whether transform is identity or simple translation using m[12,13,14].
-  ///
-  /// We check for [15] first since that will eliminate bounds checks for rest.
-  bool isIdentityOrTranslation() =>
-      m4storage[15] == 1.0 &&
-      m4storage[0] == 1.0 && // col 1
-          m4storage[1] == 0.0 &&
-          m4storage[2] == 0.0 &&
-          m4storage[3] == 0.0 &&
-          m4storage[4] == 0.0 && // col 2
-          m4storage[5] == 1.0 &&
-          m4storage[6] == 0.0 &&
-          m4storage[7] == 0.0 &&
-          m4storage[8] == 0.0 && // col 3
-          m4storage[9] == 0.0 &&
-          m4storage[10] == 1.0 &&
-          m4storage[11] == 0.0;
-
-  /// Returns the translation vector from this homogeneous transformation matrix.
-  Vector3 getTranslation() {
-    final double z = m4storage[14];
-    final double y = m4storage[13];
-    final double x = m4storage[12];
-    return Vector3(x, y, z);
+  determinant () {
+    const det2_01_01 = this[0] * this[5] - this[1] * this[4]
+    const det2_01_02 = this[0] * this[6] - this[2] * this[4]
+    const det2_01_03 = this[0] * this[7] - this[3] * this[4]
+    const det2_01_12 = this[1] * this[6] - this[2] * this[5]
+    const det2_01_13 = this[1] * this[7] - this[3] * this[5]
+    const det2_01_23 = this[2] * this[7] - this[3] * this[6]
+    const det3_201_012 = this[8] * det2_01_12 - this[9] * det2_01_02 + this[10] * det2_01_01
+    const det3_201_013 = this[8] * det2_01_13 - this[9] * det2_01_03 + this[11] * det2_01_01
+    const det3_201_023 = this[8] * det2_01_23 - this[10] * det2_01_03 + this[11] * det2_01_02
+    const det3_201_123 = this[9] * det2_01_23 - this[10] * det2_01_13 + this[11] * det2_01_12
+    return -det3_201_123 * this[12] + det3_201_023 * this[13] - det3_201_013 * this[14] + det3_201_012 * this[15]
   }
 
-  void rotate(Vector3 axis, double angle) {
-    final double len = axis.length;
-    final Float32List axisStorage = axis._v3storage;
-    final double x = axisStorage[0] / len;
-    final double y = axisStorage[1] / len;
-    final double z = axisStorage[2] / len;
-    final double c = math.cos(angle);
-    final double s = math.sin(angle);
-    final double C = 1.0 - c;
-    final double m11 = x * x * C + c;
-    final double m12 = x * y * C - z * s;
-    final double m13 = x * z * C + y * s;
-    final double m21 = y * x * C + z * s;
-    final double m22 = y * y * C + c;
-    final double m23 = y * z * C - x * s;
-    final double m31 = z * x * C - y * s;
-    final double m32 = z * y * C + x * s;
-    final double m33 = z * z * C + c;
-    final double t1 =
-        m4storage[0] * m11 + m4storage[4] * m21 + m4storage[8] * m31;
-    final double t2 =
-        m4storage[1] * m11 + m4storage[5] * m21 + m4storage[9] * m31;
-    final double t3 =
-        m4storage[2] * m11 + m4storage[6] * m21 + m4storage[10] * m31;
-    final double t4 =
-        m4storage[3] * m11 + m4storage[7] * m21 + m4storage[11] * m31;
-    final double t5 =
-        m4storage[0] * m12 + m4storage[4] * m22 + m4storage[8] * m32;
-    final double t6 =
-        m4storage[1] * m12 + m4storage[5] * m22 + m4storage[9] * m32;
-    final double t7 =
-        m4storage[2] * m12 + m4storage[6] * m22 + m4storage[10] * m32;
-    final double t8 =
-        m4storage[3] * m12 + m4storage[7] * m22 + m4storage[11] * m32;
-    final double t9 =
-        m4storage[0] * m13 + m4storage[4] * m23 + m4storage[8] * m33;
-    final double t10 =
-        m4storage[1] * m13 + m4storage[5] * m23 + m4storage[9] * m33;
-    final double t11 =
-        m4storage[2] * m13 + m4storage[6] * m23 + m4storage[10] * m33;
-    final double t12 =
-        m4storage[3] * m13 + m4storage[7] * m23 + m4storage[11] * m33;
-    m4storage[0] = t1;
-    m4storage[1] = t2;
-    m4storage[2] = t3;
-    m4storage[3] = t4;
-    m4storage[4] = t5;
-    m4storage[5] = t6;
-    m4storage[6] = t7;
-    m4storage[7] = t8;
-    m4storage[8] = t9;
-    m4storage[9] = t10;
-    m4storage[10] = t11;
-    m4storage[11] = t12;
+  perspectiveTransform (v: Vector3) {
+    const x = (
+      (this[0] * v[0]) +
+      (this[4] * v[1]) +
+      (this[8] * v[2]) +
+      this[12]
+    )
+    const y = (
+      (this[1] * v[0]) +
+      (this[5] * v[1]) +
+      (this[9] * v[2]) +
+      this[13]
+    )
+    const z = (
+      (this[2] * v[0]) +
+      (this[6] * v[1]) +
+      (this[10] * v[2]) +
+      this[14]
+    )
+    const w = ( 
+      1.0 / (
+        (this[3] * v[0]) +
+        (this[7] * v[1]) +
+        (this[11] * v[2]) +
+        this[15]
+      )
+    )
+    v[0] = x * w
+    v[1] = y * w
+    v[2] = z * w
+    return v
   }
 
-  void rotateZ(double angle) {
-    final double cosAngle = math.cos(angle);
-    final double sinAngle = math.sin(angle);
-    final double t1 = m4storage[0] * cosAngle + m4storage[4] * sinAngle;
-    final double t2 = m4storage[1] * cosAngle + m4storage[5] * sinAngle;
-    final double t3 = m4storage[2] * cosAngle + m4storage[6] * sinAngle;
-    final double t4 = m4storage[3] * cosAngle + m4storage[7] * sinAngle;
-    final double t5 = m4storage[0] * -sinAngle + m4storage[4] * cosAngle;
-    final double t6 = m4storage[1] * -sinAngle + m4storage[5] * cosAngle;
-    final double t7 = m4storage[2] * -sinAngle + m4storage[6] * cosAngle;
-    final double t8 = m4storage[3] * -sinAngle + m4storage[7] * cosAngle;
-    m4storage[0] = t1;
-    m4storage[1] = t2;
-    m4storage[2] = t3;
-    m4storage[3] = t4;
-    m4storage[4] = t5;
-    m4storage[5] = t6;
-    m4storage[6] = t7;
-    m4storage[7] = t8;
+  isIdentity (): boolean {
+    return (
+      this[0] === 1.0 && // col 1
+      this[1] === 0.0 &&
+      this[2] === 0.0 &&
+      this[3] === 0.0 &&
+      this[4] === 0.0 && // col 2
+      this[5] === 1.0 &&
+      this[6] === 0.0 &&
+      this[7] === 0.0 &&
+      this[8] === 0.0 && // col 3
+      this[9] === 0.0 &&
+      this[10] === 1.0 &&
+      this[11] === 0.0 &&
+      this[12] === 0.0 && // col 4
+      this[13] === 0.0 &&
+      this[14] === 0.0 &&
+      this[15] === 1.0
+    )
+  }
+  
+  isIdentityOrTranslation (): boolean {
+    return (
+      this[15] === 1.0 &&
+      this[0] === 1.0 && // col 1
+      this[1] === 0.0 &&
+      this[2] === 0.0 &&
+      this[3] === 0.0 &&
+      this[4] === 0.0 && // col 2
+      this[5] === 1.0 &&
+      this[6] === 0.0 &&
+      this[7] === 0.0 &&
+      this[8] === 0.0 && // col 3
+      this[9] === 0.0 &&
+      this[10] === 1.0 &&
+      this[11] === 0.0
+    )
   }
 
-  /// Sets the translation vector in this homogeneous transformation matrix.
-  void setTranslation(Vector3 t) {
-    final Float32List tStorage = t._v3storage;
-    final double z = tStorage[2];
-    final double y = tStorage[1];
-    final double x = tStorage[0];
-    m4storage[14] = z;
-    m4storage[13] = y;
-    m4storage[12] = x;
+  
+  getTranslation () {
+    const z = this[14]
+    const y = this[13]
+    const x = this[12]
+    return new Vector3(x, y, z)
   }
 
-  /// Sets the translation vector in this homogeneous transformation matrix.
-  void setTranslationRaw(double x, double y, double z) {
-    m4storage[14] = z;
-    m4storage[13] = y;
-    m4storage[12] = x;
+  rotate (
+    axis: Vector3, 
+    angle: number
+  ) {
+    const len = axis.length
+    const x = axis[0] / len
+    const y = axis[1] / len
+    const z = axis[2] / len
+    const c = Math.cos(angle)
+    const s = Math.sin(angle)
+    const C = 1.0 - c
+    const m11 = x * x * C + c
+    const m12 = x * y * C - z * s
+    const m13 = x * z * C + y * s
+    const m21 = y * x * C + z * s
+    const m22 = y * y * C + c
+    const m23 = y * z * C - x * s
+    const m31 = z * x * C - y * s
+    const m32 = z * y * C + x * s
+    const m33 = z * z * C + c
+    const t1 = this[0] * m11 + this[4] * m21 + this[8] * m31
+    const t2 = this[1] * m11 + this[5] * m21 + this[9] * m31
+    const t3 = this[2] * m11 + this[6] * m21 + this[10] * m31
+    const t4 = this[3] * m11 + this[7] * m21 + this[11] * m31
+    const t5 = this[0] * m12 + this[4] * m22 + this[8] * m32
+    const t6 = this[1] * m12 + this[5] * m22 + this[9] * m32
+    const t7 = this[2] * m12 + this[6] * m22 + this[10] * m32
+    const t8 = this[3] * m12 + this[7] * m22 + this[11] * m32
+    const t9 = this[0] * m13 + this[4] * m23 + this[8] * m33
+    const t10 = this[1] * m13 + this[5] * m23 + this[9] * m33
+    const t11 = this[2] * m13 + this[6] * m23 + this[10] * m33
+    const t12 = this[3] * m13 + this[7] * m23 + this[11] * m33
+    this[0] = t1
+    this[1] = t2
+    this[2] = t3
+    this[3] = t4
+    this[4] = t5
+    this[5] = t6
+    this[6] = t7
+    this[7] = t8
+    this[8] = t9
+    this[9] = t10
+    this[10] = t11
+    this[11] = t12
   }
 
-  /// Transposes just the upper 3x3 rotation matrix.
-  void transposeRotation() {
-    double temp;
-    temp = m4storage[1];
-    m4storage[1] = m4storage[4];
-    m4storage[4] = temp;
-    temp = m4storage[2];
-    m4storage[2] = m4storage[8];
-    m4storage[8] = temp;
-    temp = m4storage[4];
-    m4storage[4] = m4storage[1];
-    m4storage[1] = temp;
-    temp = m4storage[6];
-    m4storage[6] = m4storage[9];
-    m4storage[9] = temp;
-    temp = m4storage[8];
-    m4storage[8] = m4storage[2];
-    m4storage[2] = temp;
-    temp = m4storage[9];
-    m4storage[9] = m4storage[6];
-    m4storage[6] = temp;
+  rotateZ (angle: number) {
+    const cosAngle = Math.cos(angle)
+    const sinAngle = Math.sin(angle)
+    const t1 = this[0] * cosAngle + this[4] * sinAngle
+    const t2 = this[1] * cosAngle + this[5] * sinAngle
+    const t3 = this[2] * cosAngle + this[6] * sinAngle
+    const t4 = this[3] * cosAngle + this[7] * sinAngle
+    const t5 = this[0] * -sinAngle + this[4] * cosAngle
+    const t6 = this[1] * -sinAngle + this[5] * cosAngle
+    const t7 = this[2] * -sinAngle + this[6] * cosAngle
+    const t8 = this[3] * -sinAngle + this[7] * cosAngle
+    this[0] = t1
+    this[1] = t2
+    this[2] = t3
+    this[3] = t4
+    this[4] = t5
+    this[5] = t6
+    this[6] = t7
+    this[7] = t8
   }
 
-  /// Invert [this].
-  double invert() => copyInverse(this);
+  setTranslation (t: Vector3) {
+    const z = t[2]
+    const y = t[1]
+    const x = t[0]
+    this[14] = z
+    this[13] = y
+    this[12] = x
+  }
+
+  setTranslationRaw (
+    x: number, 
+    y: number, 
+    z: number
+  ) {
+    this[14] = z
+    this[13] = y
+    this[12] = x
+  }
+
+  transposeRotation () {
+    let temp
+    temp = this[1]
+    this[1] = this[4]
+    this[4] = temp
+    temp = this[2]
+    this[2] = this[8]
+    this[8] = temp
+    temp = this[4]
+    this[4] = this[1]
+    this[1] = temp
+    temp = this[6]
+    this[6] = this[9]
+    this[9] = temp
+    temp = this[8]
+    this[8] = this[2]
+    this[2] = temp
+    temp = this[9]
+    this[9] = this[6]
+    this[6] = temp
+  }
+
+  
+  invert () {
+    return this.copyInverse(this)
+  }
 
   /// Set this matrix to be the inverse of [arg]
-  double copyInverse(Matrix4 arg) {
-    final Float32List argStorage = arg.m4storage;
-    final double a00 = argStorage[0];
-    final double a01 = argStorage[1];
-    final double a02 = argStorage[2];
-    final double a03 = argStorage[3];
-    final double a10 = argStorage[4];
-    final double a11 = argStorage[5];
-    final double a12 = argStorage[6];
-    final double a13 = argStorage[7];
-    final double a20 = argStorage[8];
-    final double a21 = argStorage[9];
-    final double a22 = argStorage[10];
-    final double a23 = argStorage[11];
-    final double a30 = argStorage[12];
-    final double a31 = argStorage[13];
-    final double a32 = argStorage[14];
-    final double a33 = argStorage[15];
-    final double b00 = a00 * a11 - a01 * a10;
-    final double b01 = a00 * a12 - a02 * a10;
-    final double b02 = a00 * a13 - a03 * a10;
-    final double b03 = a01 * a12 - a02 * a11;
-    final double b04 = a01 * a13 - a03 * a11;
-    final double b05 = a02 * a13 - a03 * a12;
-    final double b06 = a20 * a31 - a21 * a30;
-    final double b07 = a20 * a32 - a22 * a30;
-    final double b08 = a20 * a33 - a23 * a30;
-    final double b09 = a21 * a32 - a22 * a31;
-    final double b10 = a21 * a33 - a23 * a31;
-    final double b11 = a22 * a33 - a23 * a32;
-    final double det =
-        b00 * b11 - b01 * b10 + b02 * b09 + b03 * b08 - b04 * b07 + b05 * b06;
-    if (det == 0.0) {
-      setFrom(arg);
-      return 0.0;
+  copyInverse (m: Matrix4) {
+    const a01 = m[1]
+    const a00 = m[0]
+    const a02 = m[2]
+    const a03 = m[3]
+    const a10 = m[4]
+    const a11 = m[5]
+    const a12 = m[6]
+    const a13 = m[7]
+    const a20 = m[8]
+    const a21 = m[9]
+    const a22 = m[10]
+    const a23 = m[11]
+    const a30 = m[12]
+    const a31 = m[13]
+    const a32 = m[14]
+    const a33 = m[15]
+    const b00 = a00 * a11 - a01 * a10
+    const b01 = a00 * a12 - a02 * a10
+    const b02 = a00 * a13 - a03 * a10
+    const b03 = a01 * a12 - a02 * a11
+    const b04 = a01 * a13 - a03 * a11
+    const b05 = a02 * a13 - a03 * a12
+    const b06 = a20 * a31 - a21 * a30
+    const b07 = a20 * a32 - a22 * a30
+    const b08 = a20 * a33 - a23 * a30
+    const b09 = a21 * a32 - a22 * a31
+    const b10 = a21 * a33 - a23 * a31
+    const b11 = a22 * a33 - a23 * a32
+    const det = b00 * b11 - b01 * b10 + b02 * b09 + b03 * b08 - b04 * b07 + b05 * b06
+    if (det === 0.0) {
+      this.setFrom(m)
+      return 0.0
     }
-    final double invDet = 1.0 / det;
-    m4storage[0] = (a11 * b11 - a12 * b10 + a13 * b09) * invDet;
-    m4storage[1] = (-a01 * b11 + a02 * b10 - a03 * b09) * invDet;
-    m4storage[2] = (a31 * b05 - a32 * b04 + a33 * b03) * invDet;
-    m4storage[3] = (-a21 * b05 + a22 * b04 - a23 * b03) * invDet;
-    m4storage[4] = (-a10 * b11 + a12 * b08 - a13 * b07) * invDet;
-    m4storage[5] = (a00 * b11 - a02 * b08 + a03 * b07) * invDet;
-    m4storage[6] = (-a30 * b05 + a32 * b02 - a33 * b01) * invDet;
-    m4storage[7] = (a20 * b05 - a22 * b02 + a23 * b01) * invDet;
-    m4storage[8] = (a10 * b10 - a11 * b08 + a13 * b06) * invDet;
-    m4storage[9] = (-a00 * b10 + a01 * b08 - a03 * b06) * invDet;
-    m4storage[10] = (a30 * b04 - a31 * b02 + a33 * b00) * invDet;
-    m4storage[11] = (-a20 * b04 + a21 * b02 - a23 * b00) * invDet;
-    m4storage[12] = (-a10 * b09 + a11 * b07 - a12 * b06) * invDet;
-    m4storage[13] = (a00 * b09 - a01 * b07 + a02 * b06) * invDet;
-    m4storage[14] = (-a30 * b03 + a31 * b01 - a32 * b00) * invDet;
-    m4storage[15] = (a20 * b03 - a21 * b01 + a22 * b00) * invDet;
-    return det;
+    const invDet = 1.0 / det
+    this[0] = (a11 * b11 - a12 * b10 + a13 * b09) * invDet
+    this[1] = (-a01 * b11 + a02 * b10 - a03 * b09) * invDet
+    this[2] = (a31 * b05 - a32 * b04 + a33 * b03) * invDet
+    this[3] = (-a21 * b05 + a22 * b04 - a23 * b03) * invDet
+    this[4] = (-a10 * b11 + a12 * b08 - a13 * b07) * invDet
+    this[5] = (a00 * b11 - a02 * b08 + a03 * b07) * invDet
+    this[6] = (-a30 * b05 + a32 * b02 - a33 * b01) * invDet
+    this[7] = (a20 * b05 - a22 * b02 + a23 * b01) * invDet
+    this[8] = (a10 * b10 - a11 * b08 + a13 * b06) * invDet
+    this[9] = (-a00 * b10 + a01 * b08 - a03 * b06) * invDet
+    this[10] = (a30 * b04 - a31 * b02 + a33 * b00) * invDet
+    this[11] = (-a20 * b04 + a21 * b02 - a23 * b00) * invDet
+    this[12] = (-a10 * b09 + a11 * b07 - a12 * b06) * invDet
+    this[13] = (a00 * b09 - a01 * b07 + a02 * b06) * invDet
+    this[14] = (-a30 * b03 + a31 * b01 - a32 * b00) * invDet
+    this[15] = (a20 * b03 - a21 * b01 + a22 * b00) * invDet
+    return det
   }
 
-  double invertRotation() {
-    final double det = determinant();
-    if (det == 0.0) {
-      return 0.0;
+  invertRotation () {
+    const det = this.determinant()
+    if (det === 0.0) {
+      return 0.0
     }
-    final double invDet = 1.0 / det;
-    double ix;
-    double iy;
-    double iz;
-    double jx;
-    double jy;
-    double jz;
-    double kx;
-    double ky;
-    double kz;
-    ix = invDet *
-        (m4storage[5] * m4storage[10] - m4storage[6] * m4storage[9]);
-    iy = invDet *
-        (m4storage[2] * m4storage[9] - m4storage[1] * m4storage[10]);
-    iz = invDet *
-        (m4storage[1] * m4storage[6] - m4storage[2] * m4storage[5]);
-    jx = invDet *
-        (m4storage[6] * m4storage[8] - m4storage[4] * m4storage[10]);
-    jy = invDet *
-        (m4storage[0] * m4storage[10] - m4storage[2] * m4storage[8]);
-    jz = invDet *
-        (m4storage[2] * m4storage[4] - m4storage[0] * m4storage[6]);
-    kx = invDet *
-        (m4storage[4] * m4storage[9] - m4storage[5] * m4storage[8]);
-    ky = invDet *
-        (m4storage[1] * m4storage[8] - m4storage[0] * m4storage[9]);
-    kz = invDet *
-        (m4storage[0] * m4storage[5] - m4storage[1] * m4storage[4]);
-    m4storage[0] = ix;
-    m4storage[1] = iy;
-    m4storage[2] = iz;
-    m4storage[4] = jx;
-    m4storage[5] = jy;
-    m4storage[6] = jz;
-    m4storage[8] = kx;
-    m4storage[9] = ky;
-    m4storage[10] = kz;
-    return det;
+    const invDet = 1.0 / det
+    let ix: number
+    let iy: number
+    let iz: number
+    let jx: number
+    let jy: number
+    let jz: number
+    let kx: number
+    let ky: number
+    let kz: number
+    ix = invDet * (this[5] * this[10] - this[6] * this[9])
+    iy = invDet * (this[2] * this[9] - this[1] * this[10])
+    iz = invDet * (this[1] * this[6] - this[2] * this[5])
+    jx = invDet * (this[6] * this[8] - this[4] * this[10])
+    jy = invDet * (this[0] * this[10] - this[2] * this[8])
+    jz = invDet * (this[2] * this[4] - this[0] * this[6])
+    kx = invDet * (this[4] * this[9] - this[5] * this[8])
+    ky = invDet * (this[1] * this[8] - this[0] * this[9])
+    kz = invDet * (this[0] * this[5] - this[1] * this[4])
+    this[0] = ix
+    this[1] = iy
+    this[2] = iz
+    this[4] = jx
+    this[5] = jy
+    this[6] = jz
+    this[8] = kx
+    this[9] = ky
+    this[10] = kz
+    return det
   }
 
-  /// Sets the upper 3x3 to a rotation of [radians] around X
-  void setRotationX(double radians) {
-    final double c = math.cos(radians);
-    final double s = math.sin(radians);
-    m4storage[0] = 1.0;
-    m4storage[1] = 0.0;
-    m4storage[2] = 0.0;
-    m4storage[4] = 0.0;
-    m4storage[5] = c;
-    m4storage[6] = s;
-    m4storage[8] = 0.0;
-    m4storage[9] = -s;
-    m4storage[10] = c;
-    m4storage[3] = 0.0;
-    m4storage[7] = 0.0;
-    m4storage[11] = 0.0;
+  setRotationX (radians: number) {
+    const c = Math.cos(radians)
+    const s = Math.sin(radians)
+    this[0] = 1.0
+    this[1] = 0.0
+    this[2] = 0.0
+    this[4] = 0.0
+    this[5] = c
+    this[6] = s
+    this[8] = 0.0
+    this[9] = -s
+    this[10] = c
+    this[3] = 0.0
+    this[7] = 0.0
+    this[11] = 0.0
   }
 
-  /// Sets the upper 3x3 to a rotation of [radians] around Y
-  void setRotationY(double radians) {
-    final double c = math.cos(radians);
-    final double s = math.sin(radians);
-    m4storage[0] = c;
-    m4storage[1] = 0.0;
-    m4storage[2] = -s;
-    m4storage[4] = 0.0;
-    m4storage[5] = 1.0;
-    m4storage[6] = 0.0;
-    m4storage[8] = s;
-    m4storage[9] = 0.0;
-    m4storage[10] = c;
-    m4storage[3] = 0.0;
-    m4storage[7] = 0.0;
-    m4storage[11] = 0.0;
+  setRotationY (radians: number) {
+    const c = Math.cos(radians)
+    const s = Math.sin(radians)
+    this[0] = c
+    this[1] = 0.0
+    this[2] = -s
+    this[4] = 0.0
+    this[5] = 1.0
+    this[6] = 0.0
+    this[8] = s
+    this[9] = 0.0
+    this[10] = c
+    this[3] = 0.0
+    this[7] = 0.0
+    this[11] = 0.0
   }
 
-  /// Sets the upper 3x3 to a rotation of [radians] around Z
-  void setRotationZ(double radians) {
-    final double c = math.cos(radians);
-    final double s = math.sin(radians);
-    m4storage[0] = c;
-    m4storage[1] = s;
-    m4storage[2] = 0.0;
-    m4storage[4] = -s;
-    m4storage[5] = c;
-    m4storage[6] = 0.0;
-    m4storage[8] = 0.0;
-    m4storage[9] = 0.0;
-    m4storage[10] = 1.0;
-    m4storage[3] = 0.0;
-    m4storage[7] = 0.0;
-    m4storage[11] = 0.0;
+  
+  setRotationZ (radians: number) {
+    const c = Math.cos(radians)
+    const s = Math.sin(radians)
+    this[0] = c
+    this[1] = s
+    this[2] = 0.0
+    this[4] = -s
+    this[5] = c
+    this[6] = 0.0
+    this[8] = 0.0
+    this[9] = 0.0
+    this[10] = 1.0
+    this[3] = 0.0
+    this[7] = 0.0
+    this[11] = 0.0
   }
 
-  /// Multiply [this] by [arg].
-  void multiply(Matrix4 arg) {
-    final double m33 = m4storage[15];
-    final double m00 = m4storage[0];
-    final double m01 = m4storage[4];
-    final double m02 = m4storage[8];
-    final double m03 = m4storage[12];
-    final double m10 = m4storage[1];
-    final double m11 = m4storage[5];
-    final double m12 = m4storage[9];
-    final double m13 = m4storage[13];
-    final double m20 = m4storage[2];
-    final double m21 = m4storage[6];
-    final double m22 = m4storage[10];
-    final double m23 = m4storage[14];
-    final double m30 = m4storage[3];
-    final double m31 = m4storage[7];
-    final double m32 = m4storage[11];
-    final Float32List argStorage = arg.m4storage;
-    final double n33 = argStorage[15];
-    final double n00 = argStorage[0];
-    final double n01 = argStorage[4];
-    final double n02 = argStorage[8];
-    final double n03 = argStorage[12];
-    final double n10 = argStorage[1];
-    final double n11 = argStorage[5];
-    final double n12 = argStorage[9];
-    final double n13 = argStorage[13];
-    final double n20 = argStorage[2];
-    final double n21 = argStorage[6];
-    final double n22 = argStorage[10];
-    final double n23 = argStorage[14];
-    final double n30 = argStorage[3];
-    final double n31 = argStorage[7];
-    final double n32 = argStorage[11];
-    m4storage[0] = (m00 * n00) + (m01 * n10) + (m02 * n20) + (m03 * n30);
-    m4storage[4] = (m00 * n01) + (m01 * n11) + (m02 * n21) + (m03 * n31);
-    m4storage[8] = (m00 * n02) + (m01 * n12) + (m02 * n22) + (m03 * n32);
-    m4storage[12] = (m00 * n03) + (m01 * n13) + (m02 * n23) + (m03 * n33);
-    m4storage[1] = (m10 * n00) + (m11 * n10) + (m12 * n20) + (m13 * n30);
-    m4storage[5] = (m10 * n01) + (m11 * n11) + (m12 * n21) + (m13 * n31);
-    m4storage[9] = (m10 * n02) + (m11 * n12) + (m12 * n22) + (m13 * n32);
-    m4storage[13] = (m10 * n03) + (m11 * n13) + (m12 * n23) + (m13 * n33);
-    m4storage[2] = (m20 * n00) + (m21 * n10) + (m22 * n20) + (m23 * n30);
-    m4storage[6] = (m20 * n01) + (m21 * n11) + (m22 * n21) + (m23 * n31);
-    m4storage[10] = (m20 * n02) + (m21 * n12) + (m22 * n22) + (m23 * n32);
-    m4storage[14] = (m20 * n03) + (m21 * n13) + (m22 * n23) + (m23 * n33);
-    m4storage[3] = (m30 * n00) + (m31 * n10) + (m32 * n20) + (m33 * n30);
-    m4storage[7] = (m30 * n01) + (m31 * n11) + (m32 * n21) + (m33 * n31);
-    m4storage[11] = (m30 * n02) + (m31 * n12) + (m32 * n22) + (m33 * n32);
-    m4storage[15] = (m30 * n03) + (m31 * n13) + (m32 * n23) + (m33 * n33);
+  
+  multiply (m: Matrix4) {
+    const m33 = this[15]
+    const m00 = this[0]
+    const m01 = this[4]
+    const m02 = this[8]
+    const m03 = this[12]
+    const m10 = this[1]
+    const m11 = this[5]
+    const m12 = this[9]
+    const m13 = this[13]
+    const m20 = this[2]
+    const m21 = this[6]
+    const m22 = this[10]
+    const m23 = this[14]
+    const m30 = this[3]
+    const m31 = this[7]
+    const m32 = this[11]
+    const n33 = m[15]
+    const n00 = m[0]
+    const n01 = m[4]
+    const n02 = m[8]
+    const n03 = m[12]
+    const n10 = m[1]
+    const n11 = m[5]
+    const n12 = m[9]
+    const n13 = m[13]
+    const n20 = m[2]
+    const n21 = m[6]
+    const n22 = m[10]
+    const n23 = m[14]
+    const n30 = m[3]
+    const n31 = m[7]
+    const n32 = m[11]
+    this[0] = (m00 * n00) + (m01 * n10) + (m02 * n20) + (m03 * n30)
+    this[4] = (m00 * n01) + (m01 * n11) + (m02 * n21) + (m03 * n31)
+    this[8] = (m00 * n02) + (m01 * n12) + (m02 * n22) + (m03 * n32)
+    this[12] = (m00 * n03) + (m01 * n13) + (m02 * n23) + (m03 * n33)
+    this[1] = (m10 * n00) + (m11 * n10) + (m12 * n20) + (m13 * n30)
+    this[5] = (m10 * n01) + (m11 * n11) + (m12 * n21) + (m13 * n31)
+    this[9] = (m10 * n02) + (m11 * n12) + (m12 * n22) + (m13 * n32)
+    this[13] = (m10 * n03) + (m11 * n13) + (m12 * n23) + (m13 * n33)
+    this[2] = (m20 * n00) + (m21 * n10) + (m22 * n20) + (m23 * n30)
+    this[6] = (m20 * n01) + (m21 * n11) + (m22 * n21) + (m23 * n31)
+    this[10] = (m20 * n02) + (m21 * n12) + (m22 * n22) + (m23 * n32)
+    this[14] = (m20 * n03) + (m21 * n13) + (m22 * n23) + (m23 * n33)
+    this[3] = (m30 * n00) + (m31 * n10) + (m32 * n20) + (m33 * n30)
+    this[7] = (m30 * n01) + (m31 * n11) + (m32 * n21) + (m33 * n31)
+    this[11] = (m30 * n02) + (m31 * n12) + (m32 * n22) + (m33 * n32)
+    this[15] = (m30 * n03) + (m31 * n13) + (m32 * n23) + (m33 * n33)
   }
 
-  /// Multiply a copy of [this] with [arg].
-  Matrix4 multiplied(Matrix4 arg) => clone()..multiply(arg);
-
-  /// Multiply a transposed [this] with [arg].
-  void transposeMultiply(Matrix4 arg) {
-    final double m33 = m4storage[15];
-    final double m00 = m4storage[0];
-    final double m01 = m4storage[1];
-    final double m02 = m4storage[2];
-    final double m03 = m4storage[3];
-    final double m10 = m4storage[4];
-    final double m11 = m4storage[5];
-    final double m12 = m4storage[6];
-    final double m13 = m4storage[7];
-    final double m20 = m4storage[8];
-    final double m21 = m4storage[9];
-    final double m22 = m4storage[10];
-    final double m23 = m4storage[11];
-    final double m30 = m4storage[12];
-    final double m31 = m4storage[13];
-    final double m32 = m4storage[14];
-
-    final Float32List argStorage = arg.m4storage;
-    m4storage[0] = (m00 * argStorage[0]) +
-        (m01 * argStorage[1]) +
-        (m02 * argStorage[2]) +
-        (m03 * argStorage[3]);
-    m4storage[4] = (m00 * argStorage[4]) +
-        (m01 * argStorage[5]) +
-        (m02 * argStorage[6]) +
-        (m03 * argStorage[7]);
-    m4storage[8] = (m00 * argStorage[8]) +
-        (m01 * argStorage[9]) +
-        (m02 * argStorage[10]) +
-        (m03 * argStorage[11]);
-    m4storage[12] = (m00 * argStorage[12]) +
-        (m01 * argStorage[13]) +
-        (m02 * argStorage[14]) +
-        (m03 * argStorage[15]);
-    m4storage[1] = (m10 * argStorage[0]) +
-        (m11 * argStorage[1]) +
-        (m12 * argStorage[2]) +
-        (m13 * argStorage[3]);
-    m4storage[5] = (m10 * argStorage[4]) +
-        (m11 * argStorage[5]) +
-        (m12 * argStorage[6]) +
-        (m13 * argStorage[7]);
-    m4storage[9] = (m10 * argStorage[8]) +
-        (m11 * argStorage[9]) +
-        (m12 * argStorage[10]) +
-        (m13 * argStorage[11]);
-    m4storage[13] = (m10 * argStorage[12]) +
-        (m11 * argStorage[13]) +
-        (m12 * argStorage[14]) +
-        (m13 * argStorage[15]);
-    m4storage[2] = (m20 * argStorage[0]) +
-        (m21 * argStorage[1]) +
-        (m22 * argStorage[2]) +
-        (m23 * argStorage[3]);
-    m4storage[6] = (m20 * argStorage[4]) +
-        (m21 * argStorage[5]) +
-        (m22 * argStorage[6]) +
-        (m23 * argStorage[7]);
-    m4storage[10] = (m20 * argStorage[8]) +
-        (m21 * argStorage[9]) +
-        (m22 * argStorage[10]) +
-        (m23 * argStorage[11]);
-    m4storage[14] = (m20 * argStorage[12]) +
-        (m21 * argStorage[13]) +
-        (m22 * argStorage[14]) +
-        (m23 * argStorage[15]);
-    m4storage[3] = (m30 * argStorage[0]) +
-        (m31 * argStorage[1]) +
-        (m32 * argStorage[2]) +
-        (m33 * argStorage[3]);
-    m4storage[7] = (m30 * argStorage[4]) +
-        (m31 * argStorage[5]) +
-        (m32 * argStorage[6]) +
-        (m33 * argStorage[7]);
-    m4storage[11] = (m30 * argStorage[8]) +
-        (m31 * argStorage[9]) +
-        (m32 * argStorage[10]) +
-        (m33 * argStorage[11]);
-    m4storage[15] = (m30 * argStorage[12]) +
-        (m31 * argStorage[13]) +
-        (m32 * argStorage[14]) +
-        (m33 * argStorage[15]);
+  multiplied (m: Matrix4) {
+    const mat = this.clone()
+    mat.multiply(m)
+    return mat
   }
 
-  /// Multiply [this] with a transposed [arg].
-  void multiplyTranspose(Matrix4 arg) {
-    final double m00 = m4storage[0];
-    final double m01 = m4storage[4];
-    final double m02 = m4storage[8];
-    final double m03 = m4storage[12];
-    final double m10 = m4storage[1];
-    final double m11 = m4storage[5];
-    final double m12 = m4storage[9];
-    final double m13 = m4storage[13];
-    final double m20 = m4storage[2];
-    final double m21 = m4storage[6];
-    final double m22 = m4storage[10];
-    final double m23 = m4storage[14];
-    final double m30 = m4storage[3];
-    final double m31 = m4storage[7];
-    final double m32 = m4storage[11];
-    final double m33 = m4storage[15];
-    final Float32List argStorage = arg.m4storage;
-    m4storage[0] = (m00 * argStorage[0]) +
-        (m01 * argStorage[4]) +
-        (m02 * argStorage[8]) +
-        (m03 * argStorage[12]);
-    m4storage[4] = (m00 * argStorage[1]) +
-        (m01 * argStorage[5]) +
-        (m02 * argStorage[9]) +
-        (m03 * argStorage[13]);
-    m4storage[8] = (m00 * argStorage[2]) +
-        (m01 * argStorage[6]) +
-        (m02 * argStorage[10]) +
-        (m03 * argStorage[14]);
-    m4storage[12] = (m00 * argStorage[3]) +
-        (m01 * argStorage[7]) +
-        (m02 * argStorage[11]) +
-        (m03 * argStorage[15]);
-    m4storage[1] = (m10 * argStorage[0]) +
-        (m11 * argStorage[4]) +
-        (m12 * argStorage[8]) +
-        (m13 * argStorage[12]);
-    m4storage[5] = (m10 * argStorage[1]) +
-        (m11 * argStorage[5]) +
-        (m12 * argStorage[9]) +
-        (m13 * argStorage[13]);
-    m4storage[9] = (m10 * argStorage[2]) +
-        (m11 * argStorage[6]) +
-        (m12 * argStorage[10]) +
-        (m13 * argStorage[14]);
-    m4storage[13] = (m10 * argStorage[3]) +
-        (m11 * argStorage[7]) +
-        (m12 * argStorage[11]) +
-        (m13 * argStorage[15]);
-    m4storage[2] = (m20 * argStorage[0]) +
-        (m21 * argStorage[4]) +
-        (m22 * argStorage[8]) +
-        (m23 * argStorage[12]);
-    m4storage[6] = (m20 * argStorage[1]) +
-        (m21 * argStorage[5]) +
-        (m22 * argStorage[9]) +
-        (m23 * argStorage[13]);
-    m4storage[10] = (m20 * argStorage[2]) +
-        (m21 * argStorage[6]) +
-        (m22 * argStorage[10]) +
-        (m23 * argStorage[14]);
-    m4storage[14] = (m20 * argStorage[3]) +
-        (m21 * argStorage[7]) +
-        (m22 * argStorage[11]) +
-        (m23 * argStorage[15]);
-    m4storage[3] = (m30 * argStorage[0]) +
-        (m31 * argStorage[4]) +
-        (m32 * argStorage[8]) +
-        (m33 * argStorage[12]);
-    m4storage[7] = (m30 * argStorage[1]) +
-        (m31 * argStorage[5]) +
-        (m32 * argStorage[9]) +
-        (m33 * argStorage[13]);
-    m4storage[11] = (m30 * argStorage[2]) +
-        (m31 * argStorage[6]) +
-        (m32 * argStorage[10]) +
-        (m33 * argStorage[14]);
-    m4storage[15] = (m30 * argStorage[3]) +
-        (m31 * argStorage[7]) +
-        (m32 * argStorage[11]) +
-        (m33 * argStorage[15]);
+  transposeMultiply (m: Matrix4) {
+    const m33 = this[15]
+    const m00 = this[0]
+    const m01 = this[1]
+    const m02 = this[2]
+    const m03 = this[3]
+    const m10 = this[4]
+    const m11 = this[5]
+    const m12 = this[6]
+    const m13 = this[7]
+    const m20 = this[8]
+    const m21 = this[9]
+    const m22 = this[10]
+    const m23 = this[11]
+    const m30 = this[12]
+    const m31 = this[13]
+    const m32 = this[14]
+
+    this[0] = (
+      (m00 * m[0]) +
+      (m01 * m[1]) +
+      (m02 * m[2]) +
+      (m03 * m[3])
+    )
+    this[4] = (
+      (m00 * m[4]) +
+      (m01 * m[5]) +
+      (m02 * m[6]) +
+      (m03 * m[7])
+    )
+    this[8] = (
+      (m00 * m[8]) +
+      (m01 * m[9]) +
+      (m02 * m[10]) +
+      (m03 * m[11])
+    )
+    this[12] = (
+      (m00 * m[12]) +
+      (m01 * m[13]) +
+      (m02 * m[14]) +
+      (m03 * m[15])
+    )
+    this[1] = (
+      (m10 * m[0]) +
+      (m11 * m[1]) +
+      (m12 * m[2]) +
+      (m13 * m[3])
+    )
+    this[5] = (
+      (m10 * m[4]) +
+      (m11 * m[5]) +
+      (m12 * m[6]) +
+      (m13 * m[7])
+    )
+    this[9] = (
+      (m10 * m[8]) +
+      (m11 * m[9]) +
+      (m12 * m[10]) +
+      (m13 * m[11])
+    )
+    this[13] = (
+      (m10 * m[12]) +
+      (m11 * m[13]) +
+      (m12 * m[14]) +
+      (m13 * m[15])
+    )
+    this[2] = (
+      (m20 * m[0]) +
+      (m21 * m[1]) +
+      (m22 * m[2]) +
+      (m23 * m[3])
+    )
+    this[6] = (
+      (m20 * m[4]) +
+      (m21 * m[5]) +
+      (m22 * m[6]) +
+      (m23 * m[7])
+    )
+    this[10] = (
+      (m20 * m[8]) +
+      (m21 * m[9]) +
+      (m22 * m[10]) +
+      (m23 * m[11])
+    )
+    this[14] = (
+      (m20 * m[12]) +
+      (m21 * m[13]) +
+      (m22 * m[14]) +
+      (m23 * m[15])
+    )
+    this[3] = (
+      (m30 * m[0]) +
+      (m31 * m[1]) +
+      (m32 * m[2]) +
+      (m33 * m[3])
+    )
+    this[7] = (
+      (m30 * m[4]) +
+      (m31 * m[5]) +
+      (m32 * m[6]) +
+      (m33 * m[7])
+    )
+    this[11] = (
+      (m30 * m[8]) +
+      (m31 * m[9]) +
+      (m32 * m[10]) +
+      (m33 * m[11])
+    )
+    this[15] = (
+      (m30 * m[12]) +
+      (m31 * m[13]) +
+      (m32 * m[14]) +
+      (m33 * m[15])
+    )
   }
 
-  /// Rotate [arg] of type [Vector3] using the rotation defined by [this].
-  Vector3 rotate3(Vector3 arg) {
-    final Float32List argStorage = arg._v3storage;
-    final double x = (m4storage[0] * argStorage[0]) +
-        (m4storage[4] * argStorage[1]) +
-        (m4storage[8] * argStorage[2]);
-    final double y = (m4storage[1] * argStorage[0]) +
-        (m4storage[5] * argStorage[1]) +
-        (m4storage[9] * argStorage[2]);
-    final double z = (m4storage[2] * argStorage[0]) +
-        (m4storage[6] * argStorage[1]) +
-        (m4storage[10] * argStorage[2]);
-    argStorage[0] = x;
-    argStorage[1] = y;
-    argStorage[2] = z;
-    return arg;
+  multiplyTranspose (m: Matrix4) {
+    const m00 = this[0]
+    const m01 = this[4]
+    const m02 = this[8]
+    const m03 = this[12]
+    const m10 = this[1]
+    const m11 = this[5]
+    const m12 = this[9]
+    const m13 = this[13]
+    const m20 = this[2]
+    const m21 = this[6]
+    const m22 = this[10]
+    const m23 = this[14]
+    const m30 = this[3]
+    const m31 = this[7]
+    const m32 = this[11]
+    const m33 = this[15]
+    this[0] = (
+      (m00 * m[0]) +
+      (m01 * m[4]) +
+      (m02 * m[8]) +
+      (m03 * m[12])
+    )
+    this[4] = (
+      (m00 * m[1]) +
+      (m01 * m[5]) +
+      (m02 * m[9]) +
+      (m03 * m[13])
+    )
+    this[8] = (
+      (m00 * m[2]) +
+      (m01 * m[6]) +
+      (m02 * m[10]) +
+      (m03 * m[14])
+    )
+    this[12] =( 
+      (m00 * m[3]) +
+      (m01 * m[7]) +
+      (m02 * m[11]) +
+      (m03 * m[15])
+    )
+    this[1] = (
+      (m10 * m[0]) +
+      (m11 * m[4]) +
+      (m12 * m[8]) +
+      (m13 * m[12])
+    )
+    this[5] = (
+      (m10 * m[1]) +
+      (m11 * m[5]) +
+      (m12 * m[9]) +
+      (m13 * m[13])
+    )
+    this[9] = (
+      (m10 * m[2]) +
+      (m11 * m[6]) +
+      (m12 * m[10]) +
+      (m13 * m[14])
+    )
+    this[13] =( 
+      (m10 * m[3]) +
+      (m11 * m[7]) +
+      (m12 * m[11]) +
+      (m13 * m[15])
+    )
+    this[2] = (
+      (m20 * m[0]) +
+      (m21 * m[4]) +
+      (m22 * m[8]) +
+      (m23 * m[12])
+    )
+    this[6] = (
+      (m20 * m[1]) +
+      (m21 * m[5]) +
+      (m22 * m[9]) +
+      (m23 * m[13])
+    )
+    this[10] =( 
+      (m20 * m[2]) +
+      (m21 * m[6]) +
+      (m22 * m[10]) +
+      (m23 * m[14])
+    )
+    this[14] =( 
+      (m20 * m[3]) +
+      (m21 * m[7]) +
+      (m22 * m[11]) +
+      (m23 * m[15])
+    )
+    this[3] = (
+      (m30 * m[0]) +
+      (m31 * m[4]) +
+      (m32 * m[8]) +
+      (m33 * m[12])
+    )
+    this[7] = (
+      (m30 * m[1]) +
+      (m31 * m[5]) +
+      (m32 * m[9]) +
+      (m33 * m[13])
+    )
+    this[11] =( 
+      (m30 * m[2]) +
+      (m31 * m[6]) +
+      (m32 * m[10]) +
+      (m33 * m[14])
+    )
+    this[15] =( 
+      (m30 * m[3]) +
+      (m31 * m[7]) +
+      (m32 * m[11]) +
+      (m33 * m[15])
+    )
   }
 
-  /// Rotate a copy of [arg] of type [Vector3] using the rotation defined by
-  /// [this]. If a [out] parameter is supplied, the copy is stored in [out].
-  Vector3 rotated3(Vector3 arg, [Vector3? out]) {
-    if (out == null) {
-      out = Vector3.copy(arg);
+  rotate3 (v: Vector3): Vector3  {
+    const x = ( 
+      (this[0] * v[0]) +
+      (this[4] * v[1]) +
+      (this[8] * v[2])
+    )
+    const y = ( 
+      (this[1] * v[0]) +
+      (this[5] * v[1]) +
+      (this[9] * v[2])
+    )
+    const z = ( 
+      (this[2] * v[0]) +
+      (this[6] * v[1]) +
+      (this[10] * v[2])
+    )
+    v[0] = x
+    v[1] = y
+    v[2] = z
+    return v
+  }
+
+  rotated3 (
+    v: Vector3, 
+    out?: Vector3 | null
+  ): Vector3  {
+    if (out === null || out === undefined) {
+      out = Vector3.copy(v)
     } else {
-      out.setFrom(arg);
+      out.setFrom(v)
     }
-    return rotate3(out);
+
+    return this.rotate3(out as Vector3)
   }
 
-  /// Transforms a 3-component vector in-place.
-  void transform3(Float32List vector) {
-    final double x = (m4storage[0] * vector[0]) +
-        (m4storage[4] * vector[1]) +
-        (m4storage[8] * vector[2]) +
-        m4storage[12];
-    final double y = (m4storage[1] * vector[0]) +
-        (m4storage[5] * vector[1]) +
-        (m4storage[9] * vector[2]) +
-        m4storage[13];
-    final double z = (m4storage[2] * vector[0]) +
-        (m4storage[6] * vector[1]) +
-        (m4storage[10] * vector[2]) +
-        m4storage[14];
-    vector[0] = x;
-    vector[1] = y;
-    vector[2] = z;
+  transform3 (vector: Float32Array) {
+    const x = (
+      (this[0] * vector[0]) +
+      (this[4] * vector[1]) +
+      (this[8] * vector[2]) +
+      this[12]
+    )
+    const y = (
+      (this[1] * vector[0]) +
+      (this[5] * vector[1]) +
+      (this[9] * vector[2]) +
+      this[13]
+    )
+    const z = (
+      (this[2] * vector[0]) +
+      (this[6] * vector[1]) +
+      (this[10] * vector[2]) +
+      this[14]
+    )
+    vector[0] = x
+    vector[1] = y
+    vector[2] = z
   }
 
-  /// Transforms a 2-component vector in-place.
-  ///
-  /// This transformation forgets the final Z component. If you need the
-  /// Z component, see [transform3].
-  void transform2(Float32List vector) {
-    final double x = vector[0];
-    final double y = vector[1];
-    vector[0] = (m4storage[0] * x) +
-        (m4storage[4] * y) +
-        m4storage[12];
-    vector[1] = (m4storage[1] * x) +
-        (m4storage[5] * y) +
-        m4storage[13];
+  transform2 (vector: Float32Array) {
+    const x = vector[0]
+    const y = vector[1]
+    vector[0] = (
+      (this[0] * x) +
+      (this[4] * y) +
+      this[12]
+    )
+    vector[1] = (
+      (this[1] * x) +
+      (this[5] * y) +
+      this[13]
+    )
   }
 
-  /// Copies [this] into [array] starting at [offset].
-  void copyIntoArray(List<num> array, [int offset = 0]) {
-    final int i = offset;
-    array[i + 15] = m4storage[15];
-    array[i + 14] = m4storage[14];
-    array[i + 13] = m4storage[13];
-    array[i + 12] = m4storage[12];
-    array[i + 11] = m4storage[11];
-    array[i + 10] = m4storage[10];
-    array[i + 9] = m4storage[9];
-    array[i + 8] = m4storage[8];
-    array[i + 7] = m4storage[7];
-    array[i + 6] = m4storage[6];
-    array[i + 5] = m4storage[5];
-    array[i + 4] = m4storage[4];
-    array[i + 3] = m4storage[3];
-    array[i + 2] = m4storage[2];
-    array[i + 1] = m4storage[1];
-    array[i + 0] = m4storage[0];
+  copyIntoArray (
+    array: number[], 
+    offset = 0
+  ) {
+    const i = offset
+    array[i + 15] = this[15]
+    array[i + 14] = this[14]
+    array[i + 13] = this[13]
+    array[i + 12] = this[12]
+    array[i + 11] = this[11]
+    array[i + 10] = this[10]
+    array[i + 9] = this[9]
+    array[i + 8] = this[8]
+    array[i + 7] = this[7]
+    array[i + 6] = this[6]
+    array[i + 5] = this[5]
+    array[i + 4] = this[4]
+    array[i + 3] = this[3]
+    array[i + 2] = this[2]
+    array[i + 1] = this[1]
+    array[i + 0] = this[0]
   }
 
-  /// Copies elements from [array] into [this] starting at [offset].
-  void copyFromArray(List<double> array, [int offset = 0]) {
-    final int i = offset;
-    m4storage[15] = array[i + 15];
-    m4storage[14] = array[i + 14];
-    m4storage[13] = array[i + 13];
-    m4storage[12] = array[i + 12];
-    m4storage[11] = array[i + 11];
-    m4storage[10] = array[i + 10];
-    m4storage[9] = array[i + 9];
-    m4storage[8] = array[i + 8];
-    m4storage[7] = array[i + 7];
-    m4storage[6] = array[i + 6];
-    m4storage[5] = array[i + 5];
-    m4storage[4] = array[i + 4];
-    m4storage[3] = array[i + 3];
-    m4storage[2] = array[i + 2];
-    m4storage[1] = array[i + 1];
-    m4storage[0] = array[i + 0];
+  copyFromArray (
+    array: number[], 
+    offset = 0
+  ) {
+    const i = offset
+    this[15] = array[i + 15]
+    this[14] = array[i + 14]
+    this[13] = array[i + 13]
+    this[12] = array[i + 12]
+    this[11] = array[i + 11]
+    this[10] = array[i + 10]
+    this[9] = array[i + 9]
+    this[8] = array[i + 8]
+    this[7] = array[i + 7]
+    this[6] = array[i + 6]
+    this[5] = array[i + 5]
+    this[4] = array[i + 4]
+    this[3] = array[i + 3]
+    this[2] = array[i + 2]
+    this[1] = array[i + 1]
+    this[0] = array[i + 0]
   }
 
-  /// Converts this matrix to a [Float64List].
-  ///
-  /// Generally we try to stick with 32-bit floats inside the engine code
-  /// because it's faster (see [toMatrix32]). However, this method is handy
-  /// in tests that use the public `dart:ui` surface.
-  ///
-  /// This method is not optimized, but also is not meant to be fast, only
-  /// convenient.
-  Float64List toFloat64() {
-    return Float64List.fromList(m4storage);
+  toFloat64 () {
+    return Float64Array.from(this)
   }
 
-  @override
-  String toString() {
-    if (invariantionsEnabled) {
-      String fmt(int index) {
-        return storage[index].toStringAsFixed(2);
-      }
-
-      return '[${fmt(0)}, ${fmt(4)}, ${fmt(8)}, ${fmt(12)}]\n'
-             '[${fmt(1)}, ${fmt(5)}, ${fmt(9)}, ${fmt(13)}]\n'
-             '[${fmt(2)}, ${fmt(6)}, ${fmt(10)}, ${fmt(14)}]\n'
-             '[${fmt(3)}, ${fmt(7)}, ${fmt(11)}, ${fmt(15)}]';
-    } else {
-      return super.toString();
+  
+  toString () {
+    const fmt = (index: number) => {
+      return this[index].toFixed(2)
     }
+
+    return `[${fmt(0)}, ${fmt(4)}, ${fmt(8)}, ${fmt(12)}]
+           [${fmt(1)}, ${fmt(5)}, ${fmt(9)}, ${fmt(13)}]
+           [${fmt(2)}, ${fmt(6)}, ${fmt(10)}, ${fmt(14)}]
+           [${fmt(3)}, ${fmt(7)}, ${fmt(11)}, ${fmt(15)}]`;
   }
 }
 
-/// 3D column vector.
-class Vector3 {
-  final Float32List _v3storage;
+export class Vector3 extends Float32Array  {
+  static zero () {
+    return new Vector3()
+  }
 
-  /// The components of the vector.
-  Float32List get storage => _v3storage;
-
-  /// Set the values of [result] to the minimum of [a] and [b] for each line.
-  static void min(Vector3 a, Vector3 b, Vector3 result) {
-    result
-      ..x = math.min(a.x, b.x)
-      ..y = math.min(a.y, b.y)
-      ..z = math.min(a.z, b.z);
+  static min (
+    a: Vector3, 
+    b: Vector3, 
+    result: Vector3
+  ) {
+    result.x = Math.min(a.x, b.x)
+    result.y = Math.min(a.y, b.y)
+    result.z = Math.min(a.z, b.z)
   }
 
   /// Set the values of [result] to the maximum of [a] and [b] for each line.
-  static void max(Vector3 a, Vector3 b, Vector3 result) {
-    result
-      ..x = math.max(a.x, b.x)
-      ..y = math.max(a.y, b.y)
-      ..z = math.max(a.z, b.z);
+  static max (
+    a: Vector3, 
+    b: Vector3, 
+    result: Vector3
+  ) {
+      result.x = Math.max(a.x, b.x)
+      result.y = Math.max(a.y, b.y)
+      result.z = Math.max(a.z, b.z)
   }
 
   /// Interpolate between [min] and [max] with the amount of [a] using a linear
   /// interpolation and store the values in [result].
-  static void mix(Vector3 min, Vector3 max, double a, Vector3 result) {
-    result
-      ..x = min.x + a * (max.x - min.x)
-      ..y = min.y + a * (max.y - min.y)
-      ..z = min.z + a * (max.z - min.z);
+  static mix (
+    min: Vector3, 
+    max: Vector3, 
+    a: number, 
+    result: Vector3
+  ) {
+      result.x = min.x + a * (max.x - min.x)
+      result.y = min.y + a * (max.y - min.y)
+      result.z = min.z + a * (max.z - min.z)
   }
 
-  /// Construct a new vector with the specified values.
-  factory Vector3(double x, double y, double z) =>
-      Vector3.zero()..setValues(x, y, z);
-
-  /// Zero vector.
-  Vector3.zero() : _v3storage = Float32List(3);
-
-  /// Splat [value] into all lanes of the vector.
-  factory Vector3.all(double value) => Vector3.zero()..splat(value);
-
-  /// Copy of [other].
-  factory Vector3.copy(Vector3 other) => Vector3.zero()..setFrom(other);
-
-  /// Constructs Vector3 with given Float32List as [storage].
-  Vector3.fromFloat32List(this._v3storage);
-
-  /// Constructs Vector3 with a [storage] that views given [buffer] starting at
-  /// [offset]. [offset] has to be multiple of [Float32List.bytesPerElement].
-  Vector3.fromBuffer(ByteBuffer buffer, int offset)
-      : _v3storage = Float32List.view(buffer, offset, 3);
-
-  /// Generate random vector in the range (0, 0, 0) to (1, 1, 1). You can
-  /// optionally pass your own random number generator.
-  factory Vector3.random([math.Random? rng]) {
-    rng ??= math.Random();
-    return Vector3(rng.nextDouble(), rng.nextDouble(), rng.nextDouble());
+  static  fromFloat32Array (v: Float32Array) {
+    return new Vector3(...v)
   }
 
-  /// Set the values of the vector.
-  void setValues(double x, double y, double z) {
-    _v3storage[0] = x;
-    _v3storage[1] = y;
-    _v3storage[2] = z;
+  static fromBuffer (
+    buffer: ArrayBuffer, 
+    offset: number
+  ) {
+    // @TODO
+  }
+    
+  static random (random?: { (): number }) {
+    random ??= () => Math.random()
+    return new Vector3(random(), random(), random())
   }
 
-  /// Zero vector.
-  void setZero() {
-    _v3storage[2] = 0.0;
-    _v3storage[1] = 0.0;
-    _v3storage[0] = 0.0;
+  
+  static all (value: number) {
+    const v = Vector3.zero()
+    v.splat(value)
+    return v
   }
 
-  /// Set the values by copying them from [other].
-  void setFrom(Vector3 other) {
-    final Float32List otherStorage = other._v3storage;
-    _v3storage[0] = otherStorage[0];
-    _v3storage[1] = otherStorage[1];
-    _v3storage[2] = otherStorage[2];
+  static copy (other: Vector3) {
+    const v = Vector3.zero()
+    v.setFrom(other)
+
+    return v
   }
 
-  /// Splat [arg] into all lanes of the vector.
-  void splat(double arg) {
-    _v3storage[2] = arg;
-    _v3storage[1] = arg;
-    _v3storage[0] = arg;
+  get storage () {
+    return this
   }
 
-  /// Access the component of the vector at the index [i].
-  double operator [](int i) => _v3storage[i];
-
-  /// Set the component of the vector at the index [i].
-  void operator []=(int i, double v) {
-    _v3storage[i] = v;
-  }
-
-  /// Set the length of the vector. A negative [value] will change the vectors
-  /// orientation and a [value] of zero will set the vector to zero.
-  set length(double value) {
-    if (value == 0.0) {
-      setZero();
+  set length (value: number) {
+    if (value === 0.0) {
+      this.setZero()
     } else {
-      double l = length;
-      if (l == 0.0) {
-        return;
+      let l = length
+      if (l === 0.0) {
+        return
       }
-      l = value / l;
-      _v3storage[0] *= l;
-      _v3storage[1] *= l;
-      _v3storage[2] *= l;
+
+      l = value / l
+      this[0] *= l
+      this[1] *= l
+      this[2] *= l
     }
   }
 
-  /// Length.
-  double get length => math.sqrt(length2);
-
-  /// Length squared.
-  double get length2 {
-    double sum;
-    sum = _v3storage[0] * _v3storage[0];
-    sum += _v3storage[1] * _v3storage[1];
-    sum += _v3storage[2] * _v3storage[2];
-    return sum;
+  get length () {
+    return Math.sqrt(this.length2)
   }
 
-  /// Normalizes [this].
-  double normalize() {
-    final double l = length;
-    if (l == 0.0) {
-      return 0.0;
+  get length2 () {
+    let sum
+    sum = this[0] * this[0]
+    sum += this[1] * this[1]
+    sum += this[2] * this[2]
+    return sum
+  }
+
+  set x (arg: number) {
+    this[0] = arg
+  }
+  set y (arg: number) {
+    this[1] = arg
+  }
+  set z (arg: number) {
+    this[2] = arg
+  }
+
+  get x () {
+    return this[0]
+  }
+  get y () {
+    return this[1]
+  }
+  get z () {
+    return this[2]
+  }
+
+  constructor (...values: number[]) {
+    super(values)
+  }
+
+  setValues (
+    x: number, 
+    y: number, 
+    z: number
+  ) {
+    this[0] = x
+    this[1] = y
+    this[2] = z
+  }
+
+  setZero () {
+    this[2] = 0.0
+    this[1] = 0.0
+    this[0] = 0.0
+  }
+
+  setFrom (other: Vector3) {
+    this[0] = this[0]
+    this[1] = this[1]
+    this[2] = this[2]
+  }
+
+  splat (arg: number) {
+    this[2] = arg
+    this[1] = arg
+    this[0] = arg
+  }
+
+  normalize () {
+    const l = this.length
+    if (l === 0.0) {
+      return 0.0
     }
-    final double d = 1.0 / l;
-    _v3storage[0] *= d;
-    _v3storage[1] *= d;
-    _v3storage[2] *= d;
-    return l;
+    const d = 1.0 / l
+    this[0] *= d
+    this[1] *= d
+    this[2] *= d
+    return l
   }
 
-  /// Normalizes copy of [this].
-  Vector3 normalized() => Vector3.copy(this)..normalize();
-
-  /// Normalize vector into [out].
-  Vector3 normalizeInto(Vector3 out) {
-    out
-      ..setFrom(this)
-      ..normalize();
-    return out;
+  normalized () {
+    const v = Vector3.copy(this)
+    v.normalize()
+    return v
   }
 
-  /// Distance from [this] to [arg]
-  double distanceTo(Vector3 arg) => math.sqrt(distanceToSquared(arg));
-
-  /// Squared distance from [this] to [arg]
-  double distanceToSquared(Vector3 arg) {
-    final Float32List argStorage = arg._v3storage;
-    final double dx = _v3storage[0] - argStorage[0];
-    final double dy = _v3storage[1] - argStorage[1];
-    final double dz = _v3storage[2] - argStorage[2];
-
-    return dx * dx + dy * dy + dz * dz;
+  normalizeInto (out: Vector3) {
+    out.setFrom(this)
+    out.normalize()
+    return out
   }
 
-  /// Returns the angle between [this] vector and [other] in radians.
-  double angleTo(Vector3 other) {
-    final Float32List otherStorage = other._v3storage;
-    if (_v3storage[0] == otherStorage[0] &&
-        _v3storage[1] == otherStorage[1] &&
-        _v3storage[2] == otherStorage[2]) {
-      return 0.0;
+  distanceTo (v: Vector3) {
+    return Math.sqrt(this.distanceToSquared(v))
+  }
+
+  distanceToSquared (v: Vector3) {
+    const dx = this[0] - v[0]
+    const dy = this[1] - v[1]
+    const dz = this[2] - v[2]
+
+    return dx * dx + dy * dy + dz * dz
+  }
+
+  angleTo (other: Vector3) {
+    if (
+      this[0] === other[0] &&
+      this[1] === other[1] &&
+      this[2] === other[2]
+    ) {
+      return 0.0
     }
 
-    final double d = dot(other) / (length * other.length);
+    const d = this.dot(other) / (length * other.length)
 
-    return math.acos(d.clamp(-1.0, 1.0));
+    return Math.acos(clamp(d, -1.0, 1.0))
   }
 
-  /// Inner product.
-  double dot(Vector3 other) {
-    final Float32List otherStorage = other._v3storage;
-    double sum;
-    sum = _v3storage[0] * otherStorage[0];
-    sum += _v3storage[1] * otherStorage[1];
-    sum += _v3storage[2] * otherStorage[2];
-    return sum;
+  
+  dot (other: Vector3) {
+    let sum
+    sum = this[0] * other[0]
+    sum += this[1] * other[1]
+    sum += this[2] * other[2]
+    return sum
   }
 
-  /// Projects [this] using the projection matrix [arg]
-  void applyProjection(Matrix4 arg) {
-    final Float32List argStorage = arg.storage;
-    final double x = _v3storage[0];
-    final double y = _v3storage[1];
-    final double z = _v3storage[2];
-    final double d = 1.0 /
-        (argStorage[3] * x +
-            argStorage[7] * y +
-            argStorage[11] * z +
-            argStorage[15]);
-    _v3storage[0] = (argStorage[0] * x +
-            argStorage[4] * y +
-            argStorage[8] * z +
-            argStorage[12]) *
-        d;
-    _v3storage[1] = (argStorage[1] * x +
-            argStorage[5] * y +
-            argStorage[9] * z +
-            argStorage[13]) *
-        d;
-    _v3storage[2] = (argStorage[2] * x +
-            argStorage[6] * y +
-            argStorage[10] * z +
-            argStorage[14]) *
-        d;
+  applyProjection (m: Matrix4) {
+    const x = this[0]
+    const y = this[1]
+    const z = this[2]
+    const d = (
+      1.0 / (
+        m[3] * x +
+        m[7] * y +
+        m[11] * z +
+        m[15]
+      )
+    )
+    this[0] = (
+      m[0] * x +
+      m[4] * y +
+      m[8] * z +
+      m[12]
+    ) * d
+    this[1] = (
+      m[1] * x +
+      m[5] * y +
+      m[9] * z +
+      m[13]
+    ) * d
+    this[2] = (
+      m[2] * x +
+      m[6] * y +
+      m[10] * z +
+      m[14]
+    ) * d
   }
 
-  /// True if any component is infinite.
-  bool get isInfinite {
-    bool isInfinite = false;
-    isInfinite = isInfinite || _v3storage[0].isInfinite;
-    isInfinite = isInfinite || _v3storage[1].isInfinite;
-    isInfinite = isInfinite || _v3storage[2].isInfinite;
-    return isInfinite;
+  get isInfinite () {
+    let isInfinite = false
+    isInfinite = isInfinite || Number.isFinite(this[0])
+    isInfinite = isInfinite || Number.isFinite(this[1])
+    isInfinite = isInfinite || Number.isFinite(this[2])
+    return isInfinite
   }
 
-  /// True if any component is NaN.
-  bool get isNaN {
-    bool isNan = false;
-    isNan = isNan || _v3storage[0].isNaN;
-    isNan = isNan || _v3storage[1].isNaN;
-    isNan = isNan || _v3storage[2].isNaN;
-    return isNan;
+  get isNaN () {
+    let isNan = false
+    isNan = isNan || isNaN(this[0])
+    isNan = isNan || isNaN(this[1])
+    isNan = isNan || isNaN(this[2])
+    return isNan
   }
 
-  /// Add [arg] to [this].
-  void add(Vector3 arg) {
-    final Float32List argStorage = arg._v3storage;
-    _v3storage[0] = _v3storage[0] + argStorage[0];
-    _v3storage[1] = _v3storage[1] + argStorage[1];
-    _v3storage[2] = _v3storage[2] + argStorage[2];
+  add (v: Vector3) {
+    this[0] = this[0] + v[0]
+    this[1] = this[1] + v[1]
+    this[2] = this[2] + v[2]
   }
 
-  /// Add [arg] scaled by [factor] to [this].
-  void addScaled(Vector3 arg, double factor) {
-    final Float32List argStorage = arg._v3storage;
-    _v3storage[0] = _v3storage[0] + argStorage[0] * factor;
-    _v3storage[1] = _v3storage[1] + argStorage[1] * factor;
-    _v3storage[2] = _v3storage[2] + argStorage[2] * factor;
+  addScaled (
+    v: Vector3, 
+    factor: number
+  ) {
+    this[0] = this[0] + v[0] * factor
+    this[1] = this[1] + v[1] * factor
+    this[2] = this[2] + v[2] * factor
   }
 
-  /// Subtract [arg] from [this].
-  void sub(Vector3 arg) {
-    final Float32List argStorage = arg._v3storage;
-    _v3storage[0] = _v3storage[0] - argStorage[0];
-    _v3storage[1] = _v3storage[1] - argStorage[1];
-    _v3storage[2] = _v3storage[2] - argStorage[2];
+  subtract (v: Vector3) {
+    this[0] = this[0] - v[0]
+    this[1] = this[1] - v[1]
+    this[2] = this[2] - v[2]
   }
 
-  /// Multiply entries in [this] with entries in [arg].
-  void multiply(Vector3 arg) {
-    final Float32List argStorage = arg._v3storage;
-    _v3storage[0] = _v3storage[0] * argStorage[0];
-    _v3storage[1] = _v3storage[1] * argStorage[1];
-    _v3storage[2] = _v3storage[2] * argStorage[2];
+  multiply (v: Vector3) {
+    this[0] = this[0] * v[0]
+    this[1] = this[1] * v[1]
+    this[2] = this[2] * v[2]
   }
 
-  /// Divide entries in [this] with entries in [arg].
-  void divide(Vector3 arg) {
-    final Float32List argStorage = arg._v3storage;
-    _v3storage[0] = _v3storage[0] / argStorage[0];
-    _v3storage[1] = _v3storage[1] / argStorage[1];
-    _v3storage[2] = _v3storage[2] / argStorage[2];
+  divide (v: Vector3) {
+    this[0] = this[0] / v[0]
+    this[1] = this[1] / v[1]
+    this[2] = this[2] / v[2]
   }
 
-  /// Scale [this].
-  void scale(double arg) {
-    _v3storage[2] = _v3storage[2] * arg;
-    _v3storage[1] = _v3storage[1] * arg;
-    _v3storage[0] = _v3storage[0] * arg;
+  scale (arg: number) {
+    this[2] = this[2] * arg
+    this[1] = this[1] * arg
+    this[0] = this[0] * arg
   }
 
-  /// Create a copy of [this] and scale it by [arg].
-  Vector3 scaled(double arg) => clone()..scale(arg);
+  scaled (arg: number) {
+    const v = this.clone()
+    v.scale(arg)
 
-  /// Clone of [this].
-  Vector3 clone() => Vector3.copy(this);
-
-  /// Copy [this] into [arg].
-  Vector3 copyInto(Vector3 arg) {
-    final Float32List argStorage = arg._v3storage;
-    argStorage[0] = _v3storage[0];
-    argStorage[1] = _v3storage[1];
-    argStorage[2] = _v3storage[2];
-    return arg;
+    return v
   }
 
-  /// Copies [this] into [array] starting at [offset].
-  void copyIntoArray(List<double> array, [int offset = 0]) {
-    array[offset + 2] = _v3storage[2];
-    array[offset + 1] = _v3storage[1];
-    array[offset + 0] = _v3storage[0];
+  clone () {
+    return Vector3.copy(this)
   }
 
-  set x(double arg) => _v3storage[0] = arg;
-  set y(double arg) => _v3storage[1] = arg;
-  set z(double arg) => _v3storage[2] = arg;
+  copyInto (v: Vector3) {
+    v[0] = this[0]
+    v[1] = this[1]
+    v[2] = this[2]
+    return v
+  }
 
-  double get x => _v3storage[0];
-  double get y => _v3storage[1];
-  double get z => _v3storage[2];
+  copyIntoArray (
+    array: number[], 
+    offset = 0
+  ) {
+    array[offset + 2] = this[2]
+    array[offset + 1] = this[1]
+    array[offset + 0] = this[0]
+  }
 }
