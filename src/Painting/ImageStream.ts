@@ -197,11 +197,11 @@ abstract class ImageStreamCompleter {
     if (this.currentImage !== null) {
       try {
         listener.onImage(this.currentImage!.clone(), true)
-      } catch (exception) {
+      } catch (error) {
         if (listener.onError !== null) {
-          listener.onError(exception)
+          listener.onError(error)
         } else {
-          throw exception
+          throw error
         }
       }
     }
@@ -305,17 +305,19 @@ abstract class ImageStreamCompleter {
 
 
 export class OneFrameImageStreamCompleter extends ImageStreamCompleter {
-  OneFrameImageStreamCompleter(Future<ImageInfo> image, { InformationCollector? informationCollector })
-      : assert(image != null) {
-    image.then<void>(setImage, onError: (Object error, StackTrace stack) {
-      reportError(
-        context: ErrorDescription('resolving a single-frame image stream'),
-        exception: error,
-        stack: stack,
-        informationCollector: informationCollector,
-        silent: true,
-      );
-    });
+  constructor (
+    image: Promise<ImageInfo>,
+    informationCollector : InformationCollector | null
+  ) {
+    invariant(image !== null)
+
+    super()
+
+    image.then(() => {
+
+    }).catch(error => {
+
+    })
   }
 }
 
@@ -370,20 +372,24 @@ export class MultiFrameImageStreamCompleter extends ImageStreamCompleter {
     }
   }
 
-  void _handleCodecReady(ui.Codec codec) {
+  handleCodecReady (ui.Codec codec) {
     _codec = codec;
-    assert(_codec != null);
+    
+    invariant(_codec !== null)
 
-    if (hasListeners) {
-      _decodeNextFrameAndSchedule();
+    if (this.hasListeners) {
+      this.decodeNextFrameAndSchedule()
     }
   }
 
-  void _handleAppFrame(Duration timestamp) {
-    _frameCallbackScheduled = false;
-    if (!hasListeners)
-      return;
-    assert(_nextFrame != null);
+  handleAppFrame (timestamp: number) {
+    this.frameCallbackScheduled = false
+    if (!this.hasListeners) {
+      return
+    }
+
+    invariant(_nextFrame !== null)
+
     if (_isFirstFrame() || _hasFrameDurationPassed(timestamp)) {
       _emitFrame(ImageInfo(
         image: _nextFrame!.image.clone(),
@@ -406,12 +412,12 @@ export class MultiFrameImageStreamCompleter extends ImageStreamCompleter {
     });
   }
 
-  bool _isFirstFrame() {
-    return _frameDuration == null;
+  isFirstFrame (): boolean {
+    return this.frameDuration == =null
   }
 
-  bool _hasFrameDurationPassed(Duration timestamp) {
-    return timestamp - _shownTimestamp >= _frameDuration!;
+  hasFrameDurationPassed (timestamp: number): boolean {
+    return timestamp - _shownTimestamp >= _frameDuration!
   }
 
   Future<void> _decodeNextFrameAndSchedule() async {
@@ -452,7 +458,7 @@ export class MultiFrameImageStreamCompleter extends ImageStreamCompleter {
     _scheduleAppFrame();
   }
 
-  void _scheduleAppFrame() {
+  _scheduleAppFrame() {
     if (_frameCallbackScheduled) {
       return;
     }
@@ -460,31 +466,28 @@ export class MultiFrameImageStreamCompleter extends ImageStreamCompleter {
     SchedulerBinding.instance!.scheduleFrameCallback(_handleAppFrame);
   }
 
-  void _emitFrame(ImageInfo imageInfo) {
-    setImage(imageInfo);
-    _framesEmitted += 1;
+  emitFrame (imageInfo: ImageInfo) {
+    setImage(imageInfo)
+    _framesEmitted += 1
   }
 
-  @override
-  void addListener(ImageStreamListener listener) {
+  addListener (listener: ImageStreamListener) {
     if (!hasListeners && _codec != null && (_currentImage == null || _codec!.frameCount > 1))
       _decodeNextFrameAndSchedule();
     super.addListener(listener);
   }
 
-  @override
-  void removeListener(ImageStreamListener listener) {
-    super.removeListener(listener);
-    if (!hasListeners) {
-      _timer?.cancel();
-      _timer = null;
+  removeListener (listener: ImageStreamListener) {
+    super.removeListener(listener)
+    if (!this.hasListeners) {
+      this._timer?.cancel()
+      this._timer = null
     }
   }
 
-  @override
-  void _maybeDispose() {
-    super._maybeDispose();
-    if (_disposed) {
+  maybeDispose () {
+    super.maybeDispose()
+    if (this.a6ZAdisposed) {
       _chunkSubscription?.onData(null);
       _chunkSubscription?.cancel();
       _chunkSubscription = null;
