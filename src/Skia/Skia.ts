@@ -115,6 +115,10 @@ export class Skia {
     return Skia.s.Paint
   }
 
+  static get Shader () {
+    return Skia.s.Shader
+  }
+
   static get ColorFilter () {
     return Skia.s.ColorFilter
   }
