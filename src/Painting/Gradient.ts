@@ -1,7 +1,6 @@
 import { invariant } from 'ts-invariant'
-import { Skia, SkiaTextDirection } from '@Skia'
+import { Skia, SkiaTextDirection, SkiaTileMode } from '@Skia'
 import { Color, Offset, Rect, Shader } from '@UI'
-import { TextDirection, TileMode } from 'canvaskit-wasm'
 import { lerpDouble, listEquals, Matrix4 } from '@Math'
 import { Alignment, AlignmentGeometry } from './Alignment'
 
@@ -183,7 +182,7 @@ export abstract class Gradient {
   
   abstract createShader (
     rect: Rect, 
-    textDirection: TextDirection | null
+    textDirection: SkiaTextDirection | null
   ): Shader 
 
   
@@ -209,7 +208,7 @@ export abstract class Gradient {
 
   resolveTransform (
     bounds: Rect, 
-    textDirection: TextDirection | null
+    textDirection: SkiaTextDirection | null
   ): Float64Array | null {
     return this.transform?.transform(bounds, textDirection)?.toFloat64()
   }
@@ -219,14 +218,14 @@ export class LinearGradient extends Gradient {
 
   public begin: AlignmentGeometry
   public end: AlignmentGeometry
-  public tileMode: TileMode
+  public tileMode: SkiaTileMode
 
   constructor (
     begin: Alignment = Alignment.centerLeft,
     end: Alignment = Alignment.centerRight,
     colors: Color[],
     stops: number[] | null,
-    tileMode: TileMode = Skia.TileMode.Clamp,
+    tileMode: SkiaTileMode = Skia.TileMode.Clamp,
     transform: GradientTransform | null
   ) {
     invariant(begin !== null)
@@ -246,7 +245,7 @@ export class LinearGradient extends Gradient {
 
   createShader (
     rect: Rect, 
-    textDirection: TextDirection | null
+    textDirection: SkiaTextDirection | null
   ): Shader {
     return ui.Gradient.linear(
       this.begin.resolve(textDirection).withinRect(rect),
@@ -340,7 +339,7 @@ export class LinearGradient extends Gradient {
 export class RadialGradient extends Gradient {
   public center: AlignmentGeometry
   public radius: number
-  public tileMode: TileMode
+  public tileMode: SkiaTileMode
   public focal: AlignmentGeometry
   public focalRadius: number
 
@@ -349,7 +348,7 @@ export class RadialGradient extends Gradient {
     radius = 0.5,
     colors: Color[],
     stops: number[],
-    tileMode = TileMode.Clamp,
+    tileMode = Skia.TileMode.Clamp,
     focal,
     focalRadius = 0.0,
     transform: GradientTransform | null,
