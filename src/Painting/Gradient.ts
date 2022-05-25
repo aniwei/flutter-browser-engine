@@ -2,7 +2,7 @@ import { invariant } from 'ts-invariant'
 import { Skia, SkiaTextDirection } from '@Skia'
 import { Color, Offset, Rect, Shader } from '@UI'
 import { TextDirection, TileMode } from 'canvaskit-wasm'
-import { lerpDouble, listEquals } from '@Math'
+import { lerpDouble, listEquals, Matrix4 } from '@Math'
 import { Alignment, AlignmentGeometry } from './Alignment'
 
 function sample (
@@ -103,6 +103,8 @@ export class GradientRotation extends GradientTransform {
     const matrix = Matrix4.identity()
     matrix.translate(originX, originY)
     matrix.rotateZ(this.radians)
+
+    return matrix
   }
 
   isEqual (other: GradientRotation) {
@@ -209,7 +211,7 @@ export abstract class Gradient {
     bounds: Rect, 
     textDirection: TextDirection | null
   ): Float64Array | null {
-    return this.transform?.transform(bounds, textDirection)?.storage
+    return this.transform?.transform(bounds, textDirection)?.toFloat64()
   }
 }
 
@@ -245,7 +247,7 @@ export class LinearGradient extends Gradient {
   createShader (
     rect: Rect, 
     textDirection: TextDirection | null
-  ): CkShader {
+  ): Shader {
     return ui.Gradient.linear(
       this.begin.resolve(textDirection).withinRect(rect),
       this.end.resolve(textDirection).withinRect(rect),
@@ -260,7 +262,7 @@ export class LinearGradient extends Gradient {
     return new LinearGradient(
       this.begin,
       this.end,
-      this.colors.map<Color>((color) => Color.lerp(null, color, factor)!).toList(),
+      this.colors.map<Color>((color) => Color.lerp(null, color, factor)!),
       this.stops,
       this.tileMode,
       this.transform
@@ -289,25 +291,6 @@ export class LinearGradient extends Gradient {
     return super.lerpTo(b, t)
   }
 
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
   static LinearGradient? lerp(LinearGradient? a, LinearGradient? b, double t) {
     assert(t != null);
     if (a == null && b == null)
@@ -332,36 +315,24 @@ export class LinearGradient extends Gradient {
     );
   }
 
-  @override
-  bool operator ==(Object other) {
-    if (identical(this, other))
-      return true;
-    if (other.runtimeType != runtimeType)
-      return false;
-    return other is LinearGradient
-        && other.begin == begin
-        && other.end == end
-        && other.tileMode == tileMode
-        && other.transform == transform
-        && listEquals<Color>(other.colors, colors)
-        && listEquals<double>(other.stops, stops);
+  isEqual (other: LinearGradient) {
+    if (this === other) {
+      return true
+    }
+    
+    return (
+      other instanceof LinearGradient &&
+      other.begin === this.begin &&
+      other.end === this.end &&
+      other.tileMode === this.tileMode &&
+      other.transform === this.transform &&
+      listEquals<Color>(other.colors, this.colors) &&
+      listEquals<number>(other.stops, this.stops) 
+    )
   }
 
-  @override
-  int get hashCode => hashValues(begin, end, tileMode, transform, hashList(colors), hashList(stops));
-
-  @override
-  String toString() {
-    final List<String> description = <String>[
-      'begin: $begin',
-      'end: $end',
-      'colors: $colors',
-      if (stops != null) 'stops: $stops',
-      'tileMode: $tileMode',
-      if (transform != null) 'transform: $transform',
-    ];
-
-    return '${objectRuntimeType(this, 'LinearGradient')}(${description.join(', ')})';
+  toString () {
+    return ``
   }
 }
 
@@ -382,13 +353,15 @@ export class RadialGradient extends Gradient {
     focal,
     focalRadius = 0.0,
     transform: GradientTransform | null,
-  }) : assert(center != null),
-       assert(radius != null),
-       assert(tileMode != null),
-       assert(focalRadius != null),
-       super(colors: colors, stops: stops, transform: transform);
+  ) {
+    invariant(center !== null)
+    invariant(radius !== null)
+    invariant(tileMode !== null)
+    invariant(focalRadius !== null)
+    super(colors: colors, stops: stops, transform: transform);
 
   
+  }
   
 
   @override
@@ -433,25 +406,6 @@ export class RadialGradient extends Gradient {
       return RadialGradient.lerp(this, b as RadialGradient?, t);
     return super.lerpTo(b, t);
   }
-
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
   
   static RadialGradient? lerp(RadialGradient? a, RadialGradient? b, double t) {
     assert(t != null);
@@ -496,23 +450,8 @@ export class RadialGradient extends Gradient {
         && other.focalRadius == focalRadius;
   }
 
-  @override
-  int get hashCode => hashValues(center, radius, tileMode, transform, hashList(colors), hashList(stops), focal, focalRadius);
-
-  @override
-  String toString() {
-    final List<String> description = <String>[
-      'center: $center',
-      'radius: ${debugFormatDouble(radius)}',
-      'colors: $colors',
-      if (stops != null) 'stops: $stops',
-      'tileMode: $tileMode',
-      if (focal != null) 'focal: $focal',
-      'focalRadius: ${debugFormatDouble(focalRadius)}',
-      if (transform != null) 'transform: $transform',
-    ];
-
-    return '${objectRuntimeType(this, 'RadialGradient')}(${description.join(', ')})';
+  toString () {
+    return ``
   }
 }
 
