@@ -27,7 +27,8 @@ function sample (
   invariant(index !== -1)
 
   return Color.lerp(
-    colors[index], colors[index + 1],
+    colors[index], 
+    colors[index + 1],
     (t - stops[index]) / (stops[index + 1] - stops[index]),
   )!
 }
@@ -50,7 +51,13 @@ function interpolateColorsAndStops (
 
   const interpolatedStops: number[] = stops.toList(false)
   // @TODO
-  const interpolatedColors: Color[] = interpolatedStops.map<Color>((stop: number) => Color.lerp(sample(aColors, aStops, stop), sample(bColors, bStops, stop), t)!)
+  const interpolatedColors: Color[] = interpolatedStops.map<Color>((stop: number) => {
+    return Color.lerp(
+      sample(aColors, aStops, stop), 
+      sample(bColors, bStops, stop), 
+      t
+    )!
+  })
   
   return new ColorsAndStops(
     interpolatedColors, 
@@ -75,7 +82,7 @@ export class ColorsAndStops {
 export abstract class GradientTransform {
   abstract transform (
     bounds: Rect, 
-    textDirection: TextDirection | null
+    textDirection?: SkiaTextDirection | null
   ): Matrix4 | null
 }
 
@@ -89,7 +96,7 @@ export class GradientRotation extends GradientTransform {
 
   transform (
     bounds: Rect, 
-    textDirection: TextDirection | null
+    textDirection?: SkiaTextDirection | null
   ): Matrix4 {
     invariant(bounds !== null)
 
@@ -143,6 +150,7 @@ export abstract class Gradient {
     if (a === null && b === null) {
       return null
     }
+    
     invariant(a !== null && b !== null)
 
     return t < 0.5 ? 
@@ -170,13 +178,15 @@ export abstract class Gradient {
     }
 
     invariant(this.colors.length >= 2, 'colors list must have at least two colors')
-    const separation = 1.0 / (this.colors.length - 1)-[[[[paq`1`]]]]
-    
-    return List<double>.generate(
-      colors.length,
-      (int index) => index * separation,
-      growable: false,
-    )
+    const separation = 1.0 / (this.colors.length - 1)
+
+    const array: number[] = []
+
+    for (let i = 0; i< this.colors.length; i++) {
+      array.push(i * separation)
+    }
+
+    return array
   }
 
   
@@ -208,10 +218,22 @@ export abstract class Gradient {
 
   resolveTransform (
     bounds: Rect, 
-    textDirection: SkiaTextDirection | null
+    textDirection?: SkiaTextDirection | null
   ): Float64Array | null {
-    return this.transform?.transform(bounds, textDirection)?.toFloat64()
+    return this.transform?.transform(
+      bounds, 
+      textDirection
+    )?.toFloat64() as Float64Array
   }
+}
+
+export type LinearGradientInitOptions = {
+  begin: Alignment = Alignment.centerLeft,
+  end: Alignment = Alignment.centerRight,
+  colors: Color[],
+  stops: number[] | null,
+  tileMode: SkiaTileMode,
+  transform: GradientTransform | null
 }
 
 export class LinearGradient extends Gradient {
@@ -220,27 +242,20 @@ export class LinearGradient extends Gradient {
   public end: AlignmentGeometry
   public tileMode: SkiaTileMode
 
-  constructor (
-    begin: Alignment = Alignment.centerLeft,
-    end: Alignment = Alignment.centerRight,
-    colors: Color[],
-    stops: number[] | null,
-    tileMode: SkiaTileMode = Skia.TileMode.Clamp,
-    transform: GradientTransform | null
-  ) {
-    invariant(begin !== null)
-    invariant(end !== null)
-    invariant(tileMode !== null)
+  constructor (options: LinearGradientInitOptions) {
+    invariant(options.begin !== null)
+    invariant(options.end !== null)
+    invariant(options.tileMode !== null)
 
     super(
-      colors,
-      stops,
-      transform
+      options.colors,
+      options.stops,
+      options.transform
     )
 
-    this.begin = begin
-    this.end = end
-    this.tileMode = tileMode
+    this.begin = options.begin
+    this.end = options.end
+    this.tileMode = options.tileMode
   }
 
   createShader (
@@ -366,7 +381,7 @@ export class RadialGradient extends Gradient {
   
 
   @override
-  Shader createShader(Rect rect, { TextDirection? textDirection }) {
+  Shader createShader(Rect rect, { SkiaTextDirection? textDirection }) {
     return ui.Gradient.radial(
       center.resolve(textDirection).withinRect(rect),
       radius * rect.shortestSide,
@@ -491,13 +506,13 @@ export class SweepGradient extends Gradient {
   public center: AlignmentGeometry
   public startAngle: number
   public endAngle: number
-  public tileMode: TileMode
+  public tileMode: SkiaTileMode
 
   constructor (
     center: AlignmentGeometry,
     startAngle: number,
     endAngle: number,
-    tileMode: TileMode,
+    tileMode: SkiaTileMode,
   ) {
     super()
     this.center = center
