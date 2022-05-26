@@ -73,6 +73,13 @@ export function toSkiaFilterQuality (filterQuality: SkiaFilterQuality): CubicRes
   } 
 }
 
+export function toSkFilterMode (
+  filterQuality: SkiaFilterQuality
+) {
+  return filterQuality === SkiaFilterQuality.None
+      ? Skia.FilterMode.Nearest
+      : Skia.FilterMode.Linear
+}
 
 export function toSkiaMipmapMode (filterQuality: SkiaFilterQuality) {
   return filterQuality === SkiaFilterQuality.Medium

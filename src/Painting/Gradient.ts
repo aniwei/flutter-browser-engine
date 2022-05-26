@@ -1,6 +1,6 @@
 import { invariant } from 'ts-invariant'
 import { Skia, SkiaTextDirection, SkiaTileMode } from '@Skia'
-import { Color, Offset, Rect, Shader } from '@UI'
+import { Color, Offset, Rect, Shader, Gradient as UIGradient } from '@UI'
 import { lerpDouble, listEquals, Matrix4 } from '@Math'
 import { Alignment, AlignmentGeometry } from './Alignment'
 
@@ -262,7 +262,7 @@ export class LinearGradient extends Gradient {
     rect: Rect, 
     textDirection: SkiaTextDirection | null
   ): Shader {
-    return ui.Gradient.linear(
+    return UIGradient.linear(
       this.begin.resolve(textDirection).withinRect(rect),
       this.end.resolve(textDirection).withinRect(rect),
       this.colors, 
@@ -305,21 +305,29 @@ export class LinearGradient extends Gradient {
     return super.lerpTo(b, t)
   }
 
-  static LinearGradient? lerp(LinearGradient? a, LinearGradient? b, double t) {
-    assert(t != null);
-    if (a == null && b == null)
-      return null;
-    if (a == null)
-      return b!.scale(t);
-    if (b == null)
+  static lerp (
+    a: LinearGradient | null, 
+    b: LinearGradient | null, 
+    t: number
+  ): LinearGradient | null {
+    invariant(t !== null);
+    if (a === null && b === null) {
+      return null
+    }
+    if (a === null) {
+      return b!.scale(t)
+    }
+    if (b === null) {
       return a.scale(1.0 - t);
-    final ColorsAndStops interpolated = _interpolateColorsAndStops(
+    }
+    const interpolated: ColorsAndStops = interpolateColorsAndStops(
         a.colors,
         a._impliedStops(),
         b.colors,
         b._impliedStops(),
         t,
-    );
+    )
+    
     return LinearGradient(
       begin: AlignmentGeometry.lerp(a.begin, b.begin, t)!,
       end: AlignmentGeometry.lerp(a.end, b.end, t)!,
@@ -374,22 +382,28 @@ export class RadialGradient extends Gradient {
     invariant(options.radius !== null)
     invariant(options.tileMode !== null)
     invariant(options.focalRadius !== null)
-    super(colors: colors, stops: stops, transform: transform);
+    super(colors, stops, transform);
 
-  
+    this.center = options.center
+    this.radius = options.radius
+    this.tileMode = options.tileMode
+    this.focal = options.focal
+    this.focalRadius = options.focalRadius
   }
   
 
-  @override
-  Shader createShader(Rect rect, { SkiaTextDirection? textDirection }) {
-    return ui.Gradient.radial(
-      center.resolve(textDirection).withinRect(rect),
-      radius * rect.shortestSide,
+  createShader (
+    rect: Rect, 
+    textDirection: SkiaTextDirection
+  ) {
+    return UIGradient.radial({
+      this.center.resolve(textDirection).withinRect(rect),
+      this.radius * rect.shortestSide,
       colors, _impliedStops(), tileMode,
       _resolveTransform(rect, textDirection),
       focal == null  ? null : focal!.resolve(textDirection).withinRect(rect),
       focalRadius * rect.shortestSide,
-    );
+    })
   }
   
   scale (factor: number): RadialGradient {

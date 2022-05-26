@@ -3,7 +3,7 @@ import { Skia, SkiaTileMode, toMatrix32 } from '@Skia'
 import { Offset } from './Geometry'
 import { Color } from './Painting'
 import { validateColorStops } from '.'
-import { CkGradientLinear, GradientRadial } from './Shader'
+import { GradientConical, GradientLinear, GradientRadial, GradientSweep } from './Shader'
 
 
 export abstract class Gradient {
@@ -17,7 +17,7 @@ export abstract class Gradient {
   ) {
     const matrix = matrix4 === null ? null : toMatrix32(matrix4)
 
-    return CkGradientLinear.malloc({
+    return GradientLinear.malloc({
       from, 
       to, 
       colors, 
@@ -59,7 +59,7 @@ export abstract class Gradient {
         focal !== Offset.Zero
       )
       
-      return GradientConical.malloc(
+      return GradientConical.malloc({
         focal, 
         focalRadius, 
         center, 
@@ -67,8 +67,8 @@ export abstract class Gradient {
         colors,
         colorStops, 
         tileMode, 
-        matrix32
-      )
+        matrix4: matrix32
+      })
     }
   }
 
@@ -81,7 +81,7 @@ export abstract class Gradient {
     endAngle: number = Math.PI * 2,
     matrix4: Float64Array,
   ) {
-      return GradientSweep.malloc(
+      return GradientSweep.malloc({
         center,
         colors,
         colorStops,
@@ -89,6 +89,6 @@ export abstract class Gradient {
         startAngle,
         endAngle,
         matrix4 != null ? toMatrix32(matrix4) : null
-      )    
+      })    
     }
 }

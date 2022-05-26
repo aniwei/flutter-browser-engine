@@ -1,7 +1,7 @@
 import { ArgumentError } from '@Platform';
 import { Color } from './Painting';
 
-function validateColorStops (
+export function validateColorStops (
   colors: Color[], 
   colorStops?: number[] | null,
 ) {
@@ -25,3 +25,4 @@ export * from './ImageFilter'
 
 export * from './Painting'
 export * from './Geometry'
+export * from './Gradient'

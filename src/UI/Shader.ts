@@ -1,5 +1,5 @@
 import invariant from 'ts-invariant'
-import { Skia, SkiaImage, ManagedSkiaObject, SkiaFilterQuality, SkiaShader, SkiaTileMode, toFlatColors, toSkiaColorStops, toSkiaMatrixFromFloat32, matrix4IsValid, toSkiaPoint, offsetIsValid, toSkiaMatrixFromFloat64, toSkiaFilterQuality, toSkiaMipmapMode } from '@Skia'
+import { Skia, ManagedSkiaObject, SkiaFilterQuality, SkiaShader, SkiaTileMode, toFlatColors, toSkiaColorStops, toSkiaMatrixFromFloat32, matrix4IsValid, toSkiaPoint, offsetIsValid, toSkiaMatrixFromFloat64, toSkiaFilterQuality, toSkiaMipmapMode, toSkiaFilterMode } from '@Skia'
 import { Offset } from './Geometry'
 import { Color } from './Painting'
 import { Image } from './Image'
@@ -391,9 +391,9 @@ export class ImageShader extends Shader {
         shader = this.image.skia.makeShaderOptions(
           this.tileModeX,
           this.tileModeY,
-          toSkiaFilterQuality(quality),
+          toSkiaFilterMode(quality),
           toSkiaMipmapMode(quality),
-          toSkiaMatrixFromFloat64(this.matrix4!),
+          toSkiaMatrixFromFloat64(this.matrix4!), 
         );
       }
       this.cachedQuality = quality
