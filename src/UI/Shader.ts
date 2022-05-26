@@ -1,7 +1,8 @@
 import invariant from 'ts-invariant'
-import { Skia, ManagedSkiaObject, SkiaFilterQuality, SkiaShader, SkiaTileMode } from '@Skia'
+import { Skia, SkiaImage, ManagedSkiaObject, SkiaFilterQuality, SkiaShader, SkiaTileMode, toFlatColors, toSkiaColorStops, toSkiaMatrixFromFloat32, matrix4IsValid, toSkiaPoint, offsetIsValid, toSkiaMatrixFromFloat64, toSkiaFilterQuality, toSkiaMipmapMode } from '@Skia'
 import { Offset } from './Geometry'
 import { Color } from './Painting'
+import { Image } from './Image'
 
 
 export abstract class Shader extends ManagedSkiaObject<SkiaShader> {
@@ -30,17 +31,17 @@ export class GradientSweep extends Shader {
     const toDegrees = 180.0 / Math.PI
     const skia =  Skia.Shader.MakeSweepGradient(
       options.center.dx,
-      options.dy,
-      toFlatColors(colors),
-      toSkColorStops(colorStops),
+      options.center.dy,
+      toFlatColors(options.colors),
+      toSkiaColorStops(options.colorStops),
       options.tileMode,
-      matrix4 !== null ? toSkMatrixFromFloat32(options.matrix4!) : null,
+      options.matrix4 !== null ? toSkiaMatrixFromFloat32(options.matrix4!) : null,
       0,
       toDegrees * options.startAngle,
       toDegrees * options.endAngle,
     );
 
-    return new CkGradientSweep(
+    return new GradientSweep(
       skia,
       options.center,
       options.colors,
@@ -88,31 +89,15 @@ export class GradientSweep extends Shader {
     this.matrix4 = matrix4
   }  
 
-  @override
-  SkShader createDefault() {
-    const double toDegrees = 180.0 / math.pi;
-    return canvasKit.Shader.MakeSweepGradient(
-      center.dx,
-      center.dy,
-      toFlatColors(colors),
-      toSkColorStops(colorStops),
-      toSkTileMode(tileMode),
-      matrix4 != null ? toSkMatrixFromFloat32(matrix4!) : null,
-      0,
-      toDegrees * startAngle,
-      toDegrees * endAngle,
-    );
-  }
-
   resurrect () {
     const toDegrees = 180.0 / Math.PI
     const skia =  Skia.Shader.MakeSweepGradient(
       this.center.dx,
       this.center.dy,
       toFlatColors(this.colors),
-      toSkColorStops(this.colorStops),
+      toSkiaColorStops(this.colorStops),
       this.tileMode,
-      this.matrix4 !== null ? toSkMatrixFromFloat32(this.matrix4!) : null,
+      this.matrix4 !== null ? toSkiaMatrixFromFloat32(this.matrix4!) : null,
       0,
       toDegrees * this.startAngle,
       toDegrees * this.endAngle,
@@ -131,15 +116,15 @@ export type GradientLinearInitOptions = {
   matrix4: Float32Array | null
 }
 
-export class CkGradientLinear extends Shader {
+export class GradientLinear extends Shader {
   static malloc(options: GradientLinearInitOptions) {
     Skia.Shader.MakeLinearGradient(
-      toSkPoint(options.from),
-      toSkPoint(options.to),
+      toSkiaPoint(options.from),
+      toSkiaPoint(options.to),
       toFlatColors(options.colors),
-      toSkColorStops(options.colorStops),
-      toSkTileMode(options.tileMode),
-      options.matrix4 != null ? toSkMatrixFromFloat32(options.matrix4!) : null,
+      toSkiaColorStops(options.colorStops),
+      options.tileMode,
+      options.matrix4 !== null ? toSkiaMatrixFromFloat32(options.matrix4!) : undefined,
     )
   }
 
@@ -165,7 +150,6 @@ export class CkGradientLinear extends Shader {
     invariant(colors !== null)
     invariant(tileMode !== null)
 
-
     // @TODO
     this.from = from
     this.to = to
@@ -177,127 +161,254 @@ export class CkGradientLinear extends Shader {
 
   resurrect () {
     return Skia.Shader.MakeLinearGradient(
-      toSkPoint(this.from),
-      toSkPoint(this.to),
+      toSkiaPoint(this.from),
+      toSkiaPoint(this.to),
       toFlatColors(this.colors),
-      toSkColorStops(this.colorStops),
-      toSkTileMode(this.tileMode),
-      this.matrix4 != null ? toSkMatrixFromFloat32(this.matrix4!) : null,
+      toSkiaColorStops(this.colorStops),
+      this.tileMode,
+      this.matrix4 != null ? toSkiaMatrixFromFloat32(this.matrix4!) : undefined,
     )
   }
 }
 
-class CkGradientRadial extends CkShader implements ui.Gradient {
-  CkGradientRadial(this.center, this.radius, this.colors, this.colorStops,
-      this.tileMode, this.matrix4);
-
-  final ui.Offset center;
-  final double radius;
-  final List<ui.Color> colors;
-  final List<double>? colorStops;
-  final ui.TileMode tileMode;
-  final Float32List? matrix4;
-
-  @override
-  SkShader createDefault() {
-    assert(useCanvasKit);
-
-    return canvasKit.Shader.MakeRadialGradient(
-      toSkPoint(center),
-      radius,
-      toFlatColors(colors),
-      toSkColorStops(colorStops),
-      toSkTileMode(tileMode),
-      matrix4 != null ? toSkMatrixFromFloat32(matrix4!) : null,
-      0,
-    );
-  }
-
-  @override
-  SkShader resurrect() => createDefault();
+export type GradientRadialInitOptions = {
+  center: Offset 
+  radius: number
+  colors: Color[]
+  colorStops: number[] | null
+  tileMode: SkiaTileMode
+  matrix4: Float32Array | null
 }
 
-class CkGradientConical extends CkShader implements ui.Gradient {
-  CkGradientConical(this.focal, this.focalRadius, this.center, this.radius,
-      this.colors, this.colorStops, this.tileMode, this.matrix4);
-
-  final ui.Offset focal;
-  final double focalRadius;
-  final ui.Offset center;
-  final double radius;
-  final List<ui.Color> colors;
-  final List<double>? colorStops;
-  final ui.TileMode tileMode;
-  final Float32List? matrix4;
-
-  @override
-  SkShader createDefault() {
-    assert(useCanvasKit);
-    return canvasKit.Shader.MakeTwoPointConicalGradient(
-      toSkPoint(focal),
-      focalRadius,
-      toSkPoint(center),
-      radius,
-      toFlatColors(colors),
-      toSkColorStops(colorStops),
-      toSkTileMode(tileMode),
-      matrix4 != null ? toSkMatrixFromFloat32(matrix4!) : null,
+export class GradientRadial extends Shader {
+  static malloc (options: GradientRadialInitOptions) {
+    const skia = Skia.Shader.MakeRadialGradient(
+      toSkiaPoint(options.center),
+      options.radius,
+      toFlatColors(options.colors),
+      toSkiaColorStops(options.colorStops),
+      options.tileMode,
+      options.matrix4 !== null ? toSkiaMatrixFromFloat32(options.matrix4!) : undefined,
       0,
-    );
+    )
+
+    return new GradientRadial(
+      skia,
+      options.center,
+      options.radius,
+      options.colors,
+      options.colorStops,
+      options.tileMode,
+      options.matrix4,
+    )
   }
 
-  @override
-  SkShader resurrect() => createDefault();
+  public center: Offset 
+  public radius: number
+  public colors: Color[]
+  public colorStops: number[] | null
+  public tileMode: SkiaTileMode
+  public matrix4: Float32Array | null
+
+  constructor (
+    skia: SkiaShader,
+    center: Offset,
+    radius: number,
+    colors: Color[],
+    colorStops: number[] | null,
+    tileMode: SkiaTileMode,
+    matrix4: Float32Array | null,
+  ) {
+    super(skia)
+
+    this.center = center
+    this.radius = radius
+    this.colors = colors
+    this.colorStops = colorStops
+    this.tileMode = tileMode
+    this.matrix4 = matrix4
+  }
+
+  resurrect () {
+    return Skia.Shader.MakeRadialGradient(
+      toSkiaPoint(this.center),
+      this.radius,
+      toFlatColors(this.colors),
+      toSkiaColorStops(this.colorStops),
+      this.tileMode,
+      this.matrix4 !== null ? toSkiaMatrixFromFloat32(this.matrix4!) : undefined,
+      0,
+    )
+  }
 }
 
-class CkImageShader extends CkShader implements ui.ImageShader {
-  CkImageShader(ui.Image image, this.tileModeX, this.tileModeY, this.matrix4,
-      this.filterQuality)
-      : _image = image as CkImage;
+export type GradientConicalInitOptions = {
+  focal: Offset
+  focalRadius: number
+  center: Offset 
+  radius: number
+  colors: Color[]
+  colorStops: number[] | null
+  tileMode: SkiaTileMode
+  matrix4: Float32Array | null
+}
 
-  final ui.TileMode tileModeX;
-  final ui.TileMode tileModeY;
-  final Float64List matrix4;
-  final ui.FilterQuality? filterQuality;
-  final CkImage _image;
+export class GradientConical extends Shader {
+  static malloc (options: GradientConicalInitOptions) {
+    const skia = Skia.Shader.MakeTwoPointConicalGradient(
+      toSkiaPoint(options.focal),
+      options.focalRadius,
+      toSkiaPoint(options.center),
+      options.radius,
+      toFlatColors(options.colors),
+      toSkiaColorStops(options.colorStops),
+      options.tileMode,
+      options.matrix4 !== null ? toSkiaMatrixFromFloat32(options.matrix4!) : undefined,
+      0,
+    )
 
-  ui.FilterQuality? _cachedQuality;
-  @override
-  SkShader withQuality(ui.FilterQuality contextualQuality) {
-    final ui.FilterQuality quality = filterQuality ?? contextualQuality;
-    SkShader? shader = rawSkiaObject;
-    if (_cachedQuality != quality || shader == null) {
-      if (quality == ui.FilterQuality.high) {
-        shader = _image.skImage.makeShaderCubic(
-          toSkTileMode(tileModeX),
-          toSkTileMode(tileModeY),
+    return new GradientConical(
+      skia,
+      options.focal,
+      options.focalRadius,
+      options.center,
+      options.radius,
+      options.colors,
+      options.colorStops,
+      options.tileMode,
+      options.matrix4,
+    )
+  }
+
+  public focal: Offset
+  public focalRadius: number
+  public center: Offset 
+  public radius: number
+  public colors: Color[]
+  public colorStops: number[] | null
+  public tileMode: SkiaTileMode
+  public matrix4: Float32Array | null
+  
+
+  constructor (
+    skia: SkiaShader,
+    focal: Offset, 
+    focalRadius: number, 
+    center: Offset , 
+    radius: number, 
+    colors: Color[], 
+    colorStops: number[] | null, 
+    tileMode: SkiaTileMode, 
+    matrix4: Float32Array | null, 
+  ) {
+    super(skia)
+
+    this.focal = focal
+    this.focalRadius = focalRadius
+    this.center = center
+    this.radius = radius
+    this.colors = colors
+    this.colorStops = colorStops
+    this.tileMode = tileMode
+    this.matrix4 = matrix4
+  }
+
+  resurrect () {
+    return Skia.Shader.MakeTwoPointConicalGradient(
+      toSkiaPoint(this.focal),
+      this.focalRadius,
+      toSkiaPoint(this.center),
+      this.radius,
+      toFlatColors(this.colors),
+      toSkiaColorStops(this.colorStops),
+      this.tileMode,
+      this.matrix4 !== null ? toSkiaMatrixFromFloat32(this.matrix4!) : undefined,
+      0,
+    )
+  }
+}
+
+export type ImageShaderInitOptions = {
+  image: Image,
+  tileModeX: SkiaTileMode
+  tileModeY: SkiaTileMode
+  matrix4: Float64Array | null
+  filterQuality: SkiaFilterQuality
+}
+
+export class ImageShader extends Shader {
+  static malloc (options: ImageShaderInitOptions) {
+
+    return new ImageShader(
+      options.image,
+      options.tileModeX,
+      options.tileModeY,
+      options.matrix4,
+      options.filterQuality
+    )
+  }
+  public tileModeX: SkiaTileMode
+  public tileModeY: SkiaTileMode
+  public matrix4: Float64Array | null
+  public filterQuality: SkiaFilterQuality
+  public image: Image
+  public cachedQuality: SkiaFilterQuality | null
+
+  constructor (
+    image: Image, 
+    tileModeX: SkiaTileMode, 
+    tileModeY: SkiaTileMode, 
+    matrix4: Float64Array | null,
+    filterQuality: SkiaFilterQuality
+  ) {
+    super(image.skia)
+
+    this.image = image
+    this.tileModeX = tileModeX
+    this.tileModeY = tileModeY
+    this.matrix4 = matrix4
+    this.filterQuality = filterQuality
+    this.cachedQuality = null
+  }
+  
+  withQuality (contextualQuality: SkiaFilterQuality) {
+    const quality = this.filterQuality ?? contextualQuality
+    let shader = this.skia
+    
+    if (
+      this.cachedQuality !== quality || 
+      shader === null
+    ) {
+      if (quality === SkiaFilterQuality.High) {
+        shader = this.image.skia.makeShaderCubic(
+          this.tileModeX,
+          this.tileModeY,
           1.0 / 3.0,
           1.0 / 3.0,
-          toSkMatrixFromFloat64(matrix4),
+          toSkiaMatrixFromFloat64(this.matrix4!),
         );
       } else {
-        shader = _image.skImage.makeShaderOptions(
-          toSkTileMode(tileModeX),
-          toSkTileMode(tileModeY),
-          toSkFilterMode(quality),
-          toSkMipmapMode(quality),
-          toSkMatrixFromFloat64(matrix4),
+        shader = this.image.skia.makeShaderOptions(
+          this.tileModeX,
+          this.tileModeY,
+          toSkiaFilterQuality(quality),
+          toSkiaMipmapMode(quality),
+          toSkiaMatrixFromFloat64(this.matrix4!),
         );
       }
-      _cachedQuality = quality;
-      rawSkiaObject = shader;
+      this.cachedQuality = quality
+      this.skia = shader
     }
-    return shader;
+
+    return shader
   }
 
-  @override
-  SkShader createDefault() => withQuality(ui.FilterQuality.none);
+  resurrect () {
+    return this.withQuality(this.cachedQuality ?? SkiaFilterQuality.None)
+  } 
 
-  @override
-  SkShader resurrect() => withQuality(_cachedQuality ?? ui.FilterQuality.none);
-
-  @override
-  void delete() {
-    rawSkiaObject?.delete();
+  
+  delete () {
+    this.skia?.delete();
   }
 }
