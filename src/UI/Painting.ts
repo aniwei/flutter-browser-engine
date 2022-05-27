@@ -45,7 +45,7 @@ export class Color extends Float32Array {
     o: number
   ) {
     const value = ((
-      (((Math.floor(o & 0xff / 1)) & 0xff) << 24) |
+      (((Math.floor(o * 0xff / 1)) & 0xff) << 24) |
       ((r & 0xff) << 16) |
       ((g & 0xff) << 8) |
       ((b & 0xff) << 0)

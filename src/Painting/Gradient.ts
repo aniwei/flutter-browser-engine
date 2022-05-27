@@ -241,8 +241,8 @@ export class LinearGradient extends Gradient {
   public tileMode: SkiaTileMode
 
   constructor (options: LinearGradientInitOptions) {
-    options.begin = options.begin ?? null
-    options.end = options.end ?? null
+    options.begin = options.begin ?? Alignment.centerLeft
+    options.end = options.end ?? Alignment.centerRight
 
     invariant(options.begin !== null)
     invariant(options.end !== null)
@@ -254,8 +254,8 @@ export class LinearGradient extends Gradient {
       options.transform
     )
 
-    this.begin = options.begin ?? Alignment.centerLeft
-    this.end = options.end ?? Alignment.centerRight
+    this.begin = options.begin
+    this.end = options.end
     this.tileMode = options.tileMode
   }
 
