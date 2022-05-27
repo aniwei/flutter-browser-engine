@@ -44,12 +44,12 @@ export class Color extends Float32Array {
     b: number,
     o: number
   ) {
-    const value = (
-      (((o * 0xff / 1) & 0xff) << 24) |
+    const value = ((
+      (((Math.floor(o & 0xff / 1)) & 0xff) << 24) |
       ((r & 0xff) << 16) |
       ((g & 0xff) << 8) |
       ((b & 0xff) << 0)
-    ) & 0xFFFFFFFF
+    ) & 0xFFFFFFFF) >>> 0
 
     return new Color(value)
   }
@@ -130,7 +130,7 @@ export class Color extends Float32Array {
   }
 
   constructor (value: number) {
-    value = value & 0xFFFFFFFF >>> 0
+    value = value & 0xFFFFFFFF
     super([
       (0x00ff0000 & value) >> 16,
       (0x0000ff00 & value) >> 8,

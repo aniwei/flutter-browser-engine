@@ -238,123 +238,11 @@ export class BoxDecoration extends Decoration {
   }
 }
 
-export type DecorationImagePainterInitOptions = {
-  details,
-  onChanged
-}
-
-export class DecorationImagePainter {
-  details
-  onChanged
-  imageStream
-  image
-
-  constructor (options: DecorationImagePainterInitOptions) {
-    invariant(options.details !== null)
-
-    this.details = options.details
-    this.onChanged = options.onChanged
-  }
-
-  paint (
-    canvas: Canvas , 
-    rect: Rect , 
-    clipPath: Path | null = null, 
-    configuration: ImageConfiguration 
-  ) {
-    invariant(canvas !== null)
-    invariant(rect !== null)
-    invariant(configuration !== null)
-
-    let flipHorizontally = false
-    if (this.details.matchTextDirection) {
-      if (configuration.textDirection === Skia.TextDirection.RTL) {
-        flipHorizontally = true
-      }
-    }
-
-    final ImageStream newImageStream = _details.image.resolve(configuration);
-    if (newImageStream.key != _imageStream?.key) {
-      final ImageStreamListener listener = ImageStreamListener(
-        _handleImage,
-        onError: _details.onError,
-      );
-      _imageStream?.removeListener(listener);
-      _imageStream = newImageStream;
-      _imageStream!.addListener(listener);
-    }
-    if (_image === null)
-      return;
-
-    if (clipPath !== null) {
-      canvas.save()
-      canvas.clipPath(clipPath)
-    }
-
-    paintImage(
-      canvas: canvas,
-      rect: rect,
-      image: _image!.image,
-      debugImageLabel: _image!.debugLabel,
-      scale: _details.scale * _image!.scale,
-      colorFilter: _details.colorFilter,
-      fit: _details.fit,
-      alignment: _details.alignment.resolve(configuration.textDirection),
-      centerSlice: _details.centerSlice,
-      repeat: _details.repeat,
-      flipHorizontally: flipHorizontally,
-      opacity: _details.opacity,
-      filterQuality: _details.filterQuality,
-      invertColors: _details.invertColors,
-      isAntiAlias: _details.isAntiAlias,
-    );
-
-    if (clipPath !== null) {
-      canvas.restore()
-    }
-  }
-
-  handleImage (ImageInfo value, bool synchronousCall) {
-    if (_image == value)
-      return;
-    if (_image != null && _image!.isCloneOf(value)) {
-      value.dispose();
-      return;
-    }
-    _image?.dispose();
-    _image = value;
-    assert(_onChanged != null);
-    if (!synchronousCall)
-      _onChanged();
-  }
-
-  /// Releases the resources used by this painter.
-  ///
-  /// This should be called whenever the painter is no longer needed.
-  ///
-  /// After this method has been called, the object is no longer usable.
-  @mustCallSuper
-  void dispose() {
-    _imageStream?.removeListener(ImageStreamListener(
-      _handleImage,
-      onError: _details.onError,
-    ));
-    _image?.dispose();
-    _image = null;
-  }
-
-  // @TODO
-  toString () {
-    return ``
-  }
-}
-
-
 export class BoxDecorationPainter extends BoxPainter {
   public decoration: BoxDecoration
   public cachedBackgroundPaint: Paint | null = null
   public rectForCachedBackgroundPaint: Rect | null = null
-  public imagePainter: DecorationImagePainter | null = null
+  // public imagePainter: DecorationImagePainter | null = null
 
   constructor (
     dectoration,
@@ -390,6 +278,7 @@ export class BoxDecorationPainter extends BoxPainter {
         paint.color = this.decoration!.color!
       }
       if (this.decoration.gradient !== null) {
+        debugger
         paint.shader = this.decoration!.gradient!.createShader(
           rect, 
           textDirection
@@ -457,43 +346,44 @@ export class BoxDecorationPainter extends BoxPainter {
     }
   }
 
-  paintBackgroundImage (
-    canvas: Canvas, 
-    rect: Rect, 
-    configuration: ImageConfiguration
-  ) {
-    if (this.decoration.image == null) {
-      return
-    }
-    this.imagePainter ??= this.decoration.image!.createPainter(this.onChanged!)
-    let clipPath: Path | null
-    switch (this.decoration.shape) {
-      case BoxShape.Circle: {
-        invariant(this.decoration.borderRadius === null)
-        const center = rect.center
-        const radius = rect.shortestSide / 2.0
-        const square = Rect.fromCircle(center, radius)
-        clipPath = Path.malloc()
-        clipPath.addOval(square)
-        break
-      }
+  // @TODO
+  // paintBackgroundImage (
+  //   canvas: Canvas, 
+  //   rect: Rect, 
+  //   configuration: ImageConfiguration
+  // ) {
+  //   if (this.decoration.image == null) {
+  //     return
+  //   }
+  //   this.imagePainter ??= this.decoration.image!.createPainter(this.onChanged!)
+  //   let clipPath: Path | null
+  //   switch (this.decoration.shape) {
+  //     case BoxShape.Circle: {
+  //       invariant(this.decoration.borderRadius === null)
+  //       const center = rect.center
+  //       const radius = rect.shortestSide / 2.0
+  //       const square = Rect.fromCircle(center, radius)
+  //       clipPath = Path.malloc()
+  //       clipPath.addOval(square)
+  //       break
+  //     }
 
-      case BoxShape.Rectangle: {
-        if (this.decoration.borderRadius !== null) {
-          clipPath = Path.malloc()
-          clipPath.addRRect(this.decoration.borderRadius!.resolve(configuration.textDirection).toRRect(rect))
-        }
-        break
-      }
-    }
+  //     case BoxShape.Rectangle: {
+  //       if (this.decoration.borderRadius !== null) {
+  //         clipPath = Path.malloc()
+  //         clipPath.addRRect(this.decoration.borderRadius!.resolve(configuration.textDirection).toRRect(rect))
+  //       }
+  //       break
+  //     }
+  //   }
     
-    this.imagePainter!.paint(canvas, rect, clipPath!, configuration)
-  }
+  //   this.imagePainter!.paint(canvas, rect, clipPath!, configuration)
+  // }
 
-  dispose () {
-    this.imagePainter?.dispose()
-    super.dispose()
-  }
+  // dispose () {
+  //   this.imagePainter?.dispose()
+  //   super.dispose()
+  // }
 
   paint (
     canvas: Canvas, 
@@ -508,7 +398,7 @@ export class BoxDecorationPainter extends BoxPainter {
     
     this.paintShadows(canvas, rect, textDirection)
     this.paintBackgroundColor(canvas, rect, textDirection)
-    this.paintBackgroundImage(canvas, rect, configuration)
+    // this.paintBackgroundImage(canvas, rect, configuration)
     
     this.decoration.border?.paint(
       canvas,

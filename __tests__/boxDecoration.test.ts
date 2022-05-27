@@ -14,21 +14,19 @@ test(`Skia`, async () => {
   const surface = Skia.MakeSurface(513, 1207)
   const canvas = Canvas.malloc(surface?.getCanvas() as SkiaCanvas)
 
-  const box = new BoxDecoration(
-    null,
-    null,
-    Border.all(
+  const box = new BoxDecoration({
+    border: Border.all(
       new Color(0xffffffff),
       2.0,
       BorderStyle.Solid
     ),
-    BorderRadius.only(
+    borderRadius: BorderRadius.only(
       Radius.circular(10.0),
       Radius.circular(10.0),
       Radius.circular(10.0),
       Radius.circular(10.0),
     ),
-    [
+    boxShadow: [
         new BoxShadow(
           new Color(0xffff00ff),
           new Offset(12, 12),
@@ -36,7 +34,7 @@ test(`Skia`, async () => {
           10
         ) 
     ],
-    new LinearGradient({
+    gradient: new LinearGradient({
       begin: Alignment.topRight,
       end: Alignment.bottomLeft,
       colors: [Color.fromRGBO(63, 68, 72, 1), Color.fromRGBO(36, 41, 46, 1)],
@@ -44,8 +42,8 @@ test(`Skia`, async () => {
       tileMode: Skia.TileMode.Clamp,
       transform: null
     }),
-    Skia.BlendMode.Color,
-  )
+    backgroundBlendMode: Skia.BlendMode.Color,
+  })
 
   const painter = box.createBoxPainter(() => {})
 
