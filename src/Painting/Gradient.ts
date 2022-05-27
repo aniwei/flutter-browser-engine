@@ -226,8 +226,8 @@ export abstract class Gradient {
 }
 
 export type LinearGradientInitOptions = {
-  begin: AlignmentGeometry,
-  end: AlignmentGeometry,
+  begin?: AlignmentGeometry | null,
+  end?: AlignmentGeometry | null,
   colors: Color[],
   stops: number[] | null,
   tileMode: SkiaTileMode,
@@ -241,6 +241,9 @@ export class LinearGradient extends Gradient {
   public tileMode: SkiaTileMode
 
   constructor (options: LinearGradientInitOptions) {
+    options.begin = options.begin ?? null
+    options.end = options.end ?? null
+
     invariant(options.begin !== null)
     invariant(options.end !== null)
     invariant(options.tileMode !== null)

@@ -278,7 +278,6 @@ export class BoxDecorationPainter extends BoxPainter {
         paint.color = this.decoration!.color!
       }
       if (this.decoration.gradient !== null) {
-        debugger
         paint.shader = this.decoration!.gradient!.createShader(
           rect, 
           textDirection
