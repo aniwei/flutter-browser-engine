@@ -79,7 +79,7 @@ export class BoxDecoration extends Decoration {
     super()
     options.color = options.color ?? null
     options.image = options.image ?? null
-    options.border = options.image ?? null
+    options.border = options.border ?? null
     options.borderRadius = options.borderRadius ?? null
     options.boxShadow = options.boxShadow ?? null
     options.gradient = options.gradient ?? null

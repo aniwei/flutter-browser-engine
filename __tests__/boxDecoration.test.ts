@@ -5,7 +5,7 @@ import { Border, BorderStyle, BoxShape, BorderRadius, BoxDecoration, BoxShadow, 
 import { Canvas, Color, Offset, Radius, Rect, Size } from '@UI'
 import { ImageConfiguration } from '@Painting'
 import { TargetPlatform } from '@Platform'
-import { Alignment } from '@Painting'
+import { Colors } from '@UI'
 
 
 test(`Skia`, async () => {
@@ -15,8 +15,9 @@ test(`Skia`, async () => {
   const canvas = Canvas.malloc(surface?.getCanvas() as SkiaCanvas)
 
   const box = new BoxDecoration({
+    color: new Color(0xffff00ff),
     border: Border.all(
-      new Color(0xffffffff),
+      Colors.white,
       2.0,
       BorderStyle.Solid
     ),
@@ -43,7 +44,7 @@ test(`Skia`, async () => {
       tileMode: Skia.TileMode.Mirror,
       transform: null
     }),
-    backgroundBlendMode: Skia.BlendMode.Color,
+    // backgroundBlendMode: Skia.BlendMode.Color,
   })
 
   const painter = box.createBoxPainter(() => {})
