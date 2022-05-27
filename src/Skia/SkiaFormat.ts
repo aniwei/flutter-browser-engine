@@ -73,7 +73,7 @@ export function toSkiaFilterQuality (filterQuality: SkiaFilterQuality): CubicRes
   } 
 }
 
-export function toSkFilterMode (
+export function toSkiaFilterMode (
   filterQuality: SkiaFilterQuality
 ) {
   return filterQuality === SkiaFilterQuality.None
@@ -108,7 +108,7 @@ export function toSkiaPoint(offset: Offset) {
 }
 
 export function toMatrix32 (matrix64: Float64Array) {
-  const matrix32: Float32Array  = new Float32Array (16)
+  const matrix32: Float32Array  = new Float32Array(16)
   matrix32[15] = matrix64[15]
   matrix32[14] = matrix64[14]
   matrix32[13] = matrix64[13]

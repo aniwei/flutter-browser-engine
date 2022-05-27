@@ -16,7 +16,6 @@ export abstract class Shader extends ManagedSkiaObject<SkiaShader> {
 }
 
 export type GradientSweepInitOptions = {
-  skia: SkiaShader,
   center: Offset, 
   colors: Color[], 
   colorStops: number[] | null, 
@@ -118,13 +117,23 @@ export type GradientLinearInitOptions = {
 
 export class GradientLinear extends Shader {
   static malloc(options: GradientLinearInitOptions) {
-    Skia.Shader.MakeLinearGradient(
+    const skia = Skia.Shader.MakeLinearGradient(
       toSkiaPoint(options.from),
       toSkiaPoint(options.to),
       toFlatColors(options.colors),
       toSkiaColorStops(options.colorStops),
       options.tileMode,
       options.matrix4 !== null ? toSkiaMatrixFromFloat32(options.matrix4!) : undefined,
+    )
+
+    return new GradientLinear(
+      skia,
+      options.from,
+      options.to,
+      options.colors,
+      options.colorStops,
+      options.tileMode,
+      options.matrix4
     )
   }
 

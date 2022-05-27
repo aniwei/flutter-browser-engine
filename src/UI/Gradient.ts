@@ -13,7 +13,7 @@ export abstract class Gradient {
     colors: Color[], 
     colorStops: number[] | null,
     tileMode: SkiaTileMode = Skia.TileMode.Clamp,
-    matrix4: Float64Array,
+    matrix4: Float64Array | null = null,
   ) {
     const matrix = matrix4 === null ? null : toMatrix32(matrix4)
 
@@ -33,7 +33,7 @@ export abstract class Gradient {
     colors: Color[], 
     colorStops: number[] | null,
     tileMode: SkiaTileMode = Skia.TileMode.Clamp,
-    matrix4: Float64Array,
+    matrix4: Float64Array | null,
     focal: Offset | null,
     focalRadius: number = 0.0,
   ) {
@@ -79,7 +79,7 @@ export abstract class Gradient {
     tileMode: SkiaTileMode = Skia.TileMode.Clamp,
     startAngle: number = 0.0,
     endAngle: number = Math.PI * 2,
-    matrix4: Float64Array,
+    matrix4: Float64Array | null,
   ) {
       return GradientSweep.malloc({
         center,
@@ -88,7 +88,7 @@ export abstract class Gradient {
         tileMode,
         startAngle,
         endAngle,
-        matrix4 != null ? toMatrix32(matrix4) : null
+        matrix4: matrix4 !== null ? toMatrix32(matrix4) : null
       })    
     }
 }

@@ -82,7 +82,11 @@ export abstract class BorderRadiusGeometry {
   abstract modulo (other: number): BorderRadiusGeometry
   abstract resolve (direction: TextDirection | null): BorderRadius
 
-  isEqual (other: BorderRadiusGeometry) {
+  isEqual (other: BorderRadiusGeometry | null) {
+    if (other === null) {
+      return false
+    }
+
     if (this === other) {
       return true
     }

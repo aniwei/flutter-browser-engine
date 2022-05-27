@@ -16,7 +16,7 @@ export const isWindow = (
 
 export type VoidCallback = { (): void }
 
-export * from './URI'
+// export * from './URI'
 export * from './Locale'
 export * from './Encoding'
 export * from './TypedData'

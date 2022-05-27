@@ -1,7 +1,8 @@
 import { invariant } from 'ts-invariant'
-import { Skia, SkiaTextDirection, SkiaTileMode } from '@Skia'
-import { Color, Offset, Rect, Shader, Gradient as UIGradient } from '@UI'
+import { SkiaTextDirection, SkiaTileMode } from '@Skia'
+import { Color, Offset, Rect, Shader } from '@UI'
 import { lerpDouble, listEquals, Matrix4 } from '@Math'
+import * as UI from '@UI'
 import { Alignment, AlignmentGeometry } from './Alignment'
 
 function sample (
@@ -34,10 +35,10 @@ function sample (
 }
 
 function interpolateColorsAndStops (
-  aColors: [],
-  aStops: [],
-  bColors: [],
-  bStops: [],
+  aColors: Color[],
+  aStops: number[],
+  bColors: Color[],
+  bStops: number[],
   t: number,
 ): ColorsAndStops {
   invariant(aColors.length >= 2)
@@ -45,11 +46,8 @@ function interpolateColorsAndStops (
   invariant(aStops.length === aColors.length)
   invariant(bStops.length === bColors.length)
 
-  const stops = new SplayTreeSet<number>()
-  stops.addAll(aStops)
-  stops.addAll(bStops)
-
-  const interpolatedStops: number[] = stops.toList(false)
+  const stops = new Set<number>([...aStops, ...bStops])
+  const interpolatedStops: number[] = Array.from(stops).sort()
   // @TODO
   const interpolatedColors: Color[] = interpolatedStops.map<Color>((stop: number) => {
     return Color.lerp(
@@ -228,8 +226,8 @@ export abstract class Gradient {
 }
 
 export type LinearGradientInitOptions = {
-  begin: Alignment = Alignment.centerLeft,
-  end: Alignment = Alignment.centerRight,
+  begin: AlignmentGeometry,
+  end: AlignmentGeometry,
   colors: Color[],
   stops: number[] | null,
   tileMode: SkiaTileMode,
@@ -253,8 +251,8 @@ export class LinearGradient extends Gradient {
       options.transform
     )
 
-    this.begin = options.begin
-    this.end = options.end
+    this.begin = options.begin ?? Alignment.centerLeft
+    this.end = options.end ?? Alignment.centerRight
     this.tileMode = options.tileMode
   }
 
@@ -262,7 +260,7 @@ export class LinearGradient extends Gradient {
     rect: Rect, 
     textDirection: SkiaTextDirection | null
   ): Shader {
-    return UIGradient.linear(
+    return UI.Gradient.linear(
       this.begin.resolve(textDirection).withinRect(rect),
       this.end.resolve(textDirection).withinRect(rect),
       this.colors, 
@@ -273,14 +271,14 @@ export class LinearGradient extends Gradient {
   }
 
   scale (factor: number): LinearGradient {
-    return new LinearGradient(
-      this.begin,
-      this.end,
-      this.colors.map<Color>((color) => Color.lerp(null, color, factor)!),
-      this.stops,
-      this.tileMode,
-      this.transform
-    );
+    return new LinearGradient({
+      begin: this.begin,
+      end: this.end,
+      colors: this.colors.map<Color>((color) => Color.lerp(null, color, factor)!),
+      stops: this.stops,
+      tileMode: this.tileMode,
+      transform: this.transform
+    })
   }
 
   lerpFrom (
@@ -321,20 +319,21 @@ export class LinearGradient extends Gradient {
       return a.scale(1.0 - t);
     }
     const interpolated: ColorsAndStops = interpolateColorsAndStops(
-        a.colors,
-        a._impliedStops(),
-        b.colors,
-        b._impliedStops(),
-        t,
+      a.colors,
+      a.impliedStops(),
+      b.colors,
+      b.impliedStops(),
+      t,
     )
     
-    return LinearGradient(
+    return new LinearGradient({
       begin: AlignmentGeometry.lerp(a.begin, b.begin, t)!,
       end: AlignmentGeometry.lerp(a.end, b.end, t)!,
       colors: interpolated.colors,
       stops: interpolated.stops,
       tileMode: t < 0.5 ? a.tileMode : b.tileMode, // TODO(ianh): interpolate tile mode
-    );
+      transform: null
+    })
   }
 
   isEqual (other: LinearGradient) {
@@ -359,18 +358,52 @@ export class LinearGradient extends Gradient {
 }
 
 export type RadialGradientInitOptions = {
-  center?: AlignmentGeometry | null,
-  radius?: number | null,
-  colors?: Color[] | null,
-  stops?: number[] | null,
-  tileMode?: SkiaTileMode | null,
-  focal?,
-  focalRadius?: number | null,
-  transform?: GradientTransform | null
+  center: AlignmentGeometry | null,
+  radius: number | null,
+  colors: Color[] | null,
+  stops: number[] | null,
+  tileMode: SkiaTileMode | null,
+  focal,
+  focalRadius: number | null,
+  transform: GradientTransform | null
 }
 
-
 export class RadialGradient extends Gradient {
+  static lerp (
+    a: RadialGradient | null, 
+    b: RadialGradient | null, 
+    t: number
+  ): RadialGradient | null {
+    invariant(t !== null);
+    if (a === null && b === null) {
+      return null
+    }
+    if (a === null) {
+      return b!.scale(t)
+    }
+    if (b === null) {
+      return a.scale(1.0 - t)
+    }
+    const interpolated = interpolateColorsAndStops(
+      a.colors,
+      a.impliedStops(),
+      b.colors,
+      b.impliedStops(),
+      t,
+    )
+
+    return new RadialGradient({
+      center: AlignmentGeometry.lerp(a.center, b.center, t)!,
+      radius: Math.max(0.0, lerpDouble(a.radius, b.radius, t)!),
+      colors: interpolated.colors,
+      stops: interpolated.stops,
+      tileMode: t < 0.5 ? a.tileMode : b.tileMode, // TODO(ianh): interpolate tile mode
+      focal: AlignmentGeometry.lerp(a.focal, b.focal, t),
+      focalRadius: Math.max(0.0, lerpDouble(a.focalRadius, b.focalRadius, t)!),
+      transform: null
+    })
+  }
+
   public center: AlignmentGeometry
   public radius: number
   public tileMode: SkiaTileMode
@@ -382,7 +415,7 @@ export class RadialGradient extends Gradient {
     invariant(options.radius !== null)
     invariant(options.tileMode !== null)
     invariant(options.focalRadius !== null)
-    super(colors, stops, transform);
+    super(options.colors, options.stops, options.transform);
 
     this.center = options.center
     this.radius = options.radius
@@ -396,88 +429,80 @@ export class RadialGradient extends Gradient {
     rect: Rect, 
     textDirection: SkiaTextDirection
   ) {
-    return UIGradient.radial({
+    return UI.Gradient.radial(
       this.center.resolve(textDirection).withinRect(rect),
       this.radius * rect.shortestSide,
-      colors, _impliedStops(), tileMode,
-      _resolveTransform(rect, textDirection),
-      focal == null  ? null : focal!.resolve(textDirection).withinRect(rect),
-      focalRadius * rect.shortestSide,
-    })
+      this.colors, 
+      this.impliedStops(), 
+      this.tileMode,
+      this.resolveTransform(rect, textDirection),
+      this.focal === null  ? null : this.focal!.resolve(textDirection).withinRect(rect),
+      this.focalRadius * rect.shortestSide,
+    )
   }
   
   scale (factor: number): RadialGradient {
-    return new RadialGradient(
-      center: center,
-      radius: radius,
-      colors: colors.map<Color>((Color color) => Color.lerp(null, color, factor)!).toList(),
-      stops: stops,
-      tileMode: tileMode,
-      focal: focal,
-      focalRadius: focalRadius,
-    );
+    return new RadialGradient({
+      center: this.center,
+      radius: this.radius,
+      colors: this.colors.map<Color>((color) => Color.lerp(null, color, factor)!),
+      stops: this.stops,
+      tileMode: this.tileMode,
+      focal: this.focal,
+      focalRadius: this.focalRadius,
+      transform: null
+    })
   }
 
-  @override
-  Gradient? lerpFrom(Gradient? a, double t) {
-    if (a == null || (a is RadialGradient))
-      return RadialGradient.lerp(a as RadialGradient?, this, t);
+  lerpFrom (a: Gradient | null, t: number): Gradient | null {
+    if (a === null || (a instanceof RadialGradient)) {
+      return RadialGradient.lerp(a as RadialGradient, this, t);
+    }
     return super.lerpFrom(a, t);
   }
 
-  @override
-  Gradient? lerpTo(Gradient? b, double t) {
-    if (b == null || (b is RadialGradient))
-      return RadialGradient.lerp(this, b as RadialGradient?, t);
+  lerpTo (
+    b: Gradient | null, 
+    t: number
+  ): Gradient | null {
+    if (b === null || (b instanceof RadialGradient)) {
+      return RadialGradient.lerp(this, b as RadialGradient, t);
+    }
+
     return super.lerpTo(b, t);
   }
-  
-  static RadialGradient? lerp(RadialGradient? a, RadialGradient? b, double t) {
-    assert(t != null);
-    if (a == null && b == null)
-      return null;
-    if (a == null)
-      return b!.scale(t);
-    if (b == null)
-      return a.scale(1.0 - t);
-    final ColorsAndStops interpolated = _interpolateColorsAndStops(
-        a.colors,
-        a._impliedStops(),
-        b.colors,
-        b._impliedStops(),
-        t,
-    );
-    return RadialGradient(
-      center: AlignmentGeometry.lerp(a.center, b.center, t)!,
-      radius: math.max(0.0, ui.lerpDouble(a.radius, b.radius, t)!),
-      colors: interpolated.colors,
-      stops: interpolated.stops,
-      tileMode: t < 0.5 ? a.tileMode : b.tileMode, // TODO(ianh): interpolate tile mode
-      focal: AlignmentGeometry.lerp(a.focal, b.focal, t),
-      focalRadius: math.max(0.0, ui.lerpDouble(a.focalRadius, b.focalRadius, t)!),
-    );
-  }
 
-  @override
-  bool operator ==(Object other) {
-    if (identical(this, other))
-      return true;
-    if (other.runtimeType != runtimeType)
-      return false;
-    return other is RadialGradient
-        && other.center == center
-        && other.radius == radius
-        && other.tileMode == tileMode
-        && other.transform == transform
-        && listEquals<Color>(other.colors, colors)
-        && listEquals<double>(other.stops, stops)
-        && other.focal == focal
-        && other.focalRadius == focalRadius;
+  isEqual (other: RadialGradient) {
+    if (other === this) {
+      return true
+    }
+
+    return (
+      other instanceof RadialGradient &&
+      other.radius === this.radius &&
+      other.tileMode === this.tileMode &&
+      other.transform === this.transform &&
+      other.focalRadius === this.focalRadius &&
+      other.center.isEqual(this.center) &&
+      other.focal.isEqual(this.focal) &&
+      listEquals<Color>(other.colors, this.colors) &&
+      listEquals<number>(other.stops, this.stops) 
+    )
   }
 
   toString () {
     return ``
   }
+}
+
+export type SweepGradientInitOptions = {
+  center: AlignmentGeometry,
+  startAngle: number,
+  endAngle: number,
+  colors: Color[],
+  stops: number[] | null,
+  tileMode: SkiaTileMode,
+  transform: GradientTransform | null
 }
 
 export class SweepGradient extends Gradient {
@@ -501,20 +526,21 @@ export class SweepGradient extends Gradient {
 
     const interpolated = interpolateColorsAndStops(
       a.colors,
-      a._impliedStops(),
+      a.impliedStops(),
       b.colors,
-      b._impliedStops(),
+      b.impliedStops(),
       t,
     )
 
-    return new SweepGradient(
-      AlignmentGeometry.lerp(a.center, b.center, t)!,
-      Math.max(0.0, lerpDouble(a.startAngle, b.startAngle, t)!),
-      Math.max(0.0, lerpDouble(a.endAngle, b.endAngle, t)!),
-      interpolated.colors,
-      interpolated.stops,
-      t < 0.5 ? a.tileMode : b.tileMode,
-    );
+    return new SweepGradient({
+      center: AlignmentGeometry.lerp(a.center, b.center, t)!,
+      startAngle: Math.max(0.0, lerpDouble(a.startAngle, b.startAngle, t)!),
+      endAngle: Math.max(0.0, lerpDouble(a.endAngle, b.endAngle, t)!),
+      colors: interpolated.colors,
+      stops: interpolated.stops,
+      tileMode: t < 0.5 ? a.tileMode : b.tileMode,
+      transform: null
+    })
   }
 
   public center: AlignmentGeometry
@@ -522,42 +548,44 @@ export class SweepGradient extends Gradient {
   public endAngle: number
   public tileMode: SkiaTileMode
 
-  constructor (
-    center: AlignmentGeometry,
-    startAngle: number,
-    endAngle: number,
-    tileMode: SkiaTileMode,
-  ) {
-    super()
-    this.center = center
-    this.startAngle = startAngle
-    this.endAngle = endAngle
-    this.tileMode = tileMode
+  constructor (options: SweepGradientInitOptions) {
+    options.center = options.center ?? Alignment.center
+    options.startAngle = options.startAngle ?? 0.0
+    options.endAngle =options.endAngle ?? Math.PI * 2
+    
+    super(options.colors, options.stops, options.transform)
+
+    this.center = options.center
+    this.startAngle = options.startAngle
+    this.endAngle = options.endAngle
+    this.tileMode = options.tileMode
   }
 
   createShader (
     rect: Rect, 
     textDirection: SkiaTextDirection
   ): Shader {
-    return ui.Gradient.sweep(
-      center.resolve(textDirection).withinRect(rect),
-      colors, this.impliedStops(), 
-      tileMode,
-      startAngle,
-      endAngle,
-      _resolveTransform(rect, textDirection),
-    );
+    return UI.Gradient.sweep(
+      this.center.resolve(textDirection).withinRect(rect),
+      this.colors, 
+      this.impliedStops(), 
+      this.tileMode,
+      this.startAngle,
+      this.endAngle,
+      this.resolveTransform(rect, textDirection),
+    )
   }
 
   scale (factor: number): SweepGradient {
-    return new SweepGradient(
-      this.center,
-      this.startAngle,
-      this.endAngle,
-      this.colors.map<Color>((color) => Color.lerp(null, color, factor)!),
-      this.stops,
-      this.tileMode,
-    )
+    return new SweepGradient({
+      center: this.center,
+      startAngle: this.startAngle,
+      endAngle: this.endAngle,
+      colors: this.colors.map<Color>((color) => Color.lerp(null, color, factor)!),
+      stops: this.stops,
+      tileMode: this.tileMode,
+      transform: null
+    })
   }
 
   lerpFrom (
@@ -565,7 +593,7 @@ export class SweepGradient extends Gradient {
     t: number
   ): Gradient | null {
     if (a === null || (a instanceof SweepGradient)) {
-      return SweepGradient.lerp(a as SweepGradient?, this, t)
+      return SweepGradient.lerp(a as SweepGradient, this, t)
     }
     
     return super.lerpFrom(a, t)
@@ -576,7 +604,7 @@ export class SweepGradient extends Gradient {
     t: number
   ): Gradient | null {
     if (b === null || (b instanceof SweepGradient)) {
-      return SweepGradient.lerp(this, b as SweepGradient?, t)
+      return SweepGradient.lerp(this, b as SweepGradient, t)
     }
 
     return super.lerpTo(b, t)

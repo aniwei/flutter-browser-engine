@@ -25,6 +25,8 @@ export type ImageConfigurationInitOptions = {
   platform?: TargetPlatform | null,
 }
 
+export type ImageConfigurationCopyOptions = ImageConfigurationInitOptions
+
 export class ImageConfiguration {
   static Empty = new ImageConfiguration()
   public bundle: AssetBundle | null = null
@@ -43,21 +45,14 @@ export class ImageConfiguration {
     this.platform = options?.platform ?? null
   }
 
-  copyWith(
-    bundle: AssetBundle | null,
-    devicePixelRatio: number | null,
-    locale: Locale | null,
-    textDirection: SkiaTextDirection | null,
-    size: Size | null,
-    platform: TargetPlatform | null,
-  ): ImageConfiguration  {
+  copyWith (options: ImageConfigurationInitOptions): ImageConfiguration  {
     return new ImageConfiguration({
-      bundle: bundle ?? this.bundle,
-      devicePixelRatio: devicePixelRatio ?? this.devicePixelRatio,
-      locale: locale ?? this.locale,
-      textDirection: textDirection ?? this.textDirection,
-      size: size ?? this.size,
-      platform: platform ?? this.platform,
+      bundle: options.bundle ?? this.bundle,
+      devicePixelRatio: options.devicePixelRatio ?? this.devicePixelRatio,
+      locale: options.locale ?? this.locale,
+      textDirection: options.textDirection ?? this.textDirection,
+      size: options.size ?? this.size,
+      platform: options.platform ?? this.platform,
     })
   }
 
@@ -100,7 +95,7 @@ export class ImageConfiguration {
       if (hasArguments) {
         result.write(', ')
       }
-      result.write(`locale: ${locale}`)
+      result.write(`locale: ${this.locale}`)
       hasArguments = true
     }
     if (this.textDirection !== null) {
@@ -121,7 +116,8 @@ export class ImageConfiguration {
       if (hasArguments) {
         result.write(', ')
       }
-      result.write(`platform: ${this.platform!.name}`)
+      // @TODO
+      result.write(`platform: ${this.platform!}`)
       hasArguments = true
     }
 
@@ -131,126 +127,126 @@ export class ImageConfiguration {
   }
 }
 
-export abstract class ImageProvider<T> {
-  resolve (configuration: ImageConfiguration) {
-    invariant(configuration !== null)
+// export abstract class ImageProvider<T> {
+//   resolve (configuration: ImageConfiguration) {
+//     invariant(configuration !== null)
 
-    const stream = createStream(configuration)
-    // Load the key (potentially asynchronously), set up an error handling zone,
-    // and call resolveStreamForKey.
-    createErrorHandlerAndKey(
-      configuration,
-      (T key, ImageErrorListener errorHandler) {
-        resolveStreamForKey(configuration, stream, key, errorHandler);
-      },
-      (T? key, Object exception, StackTrace? stack) async {
-        await null; // wait an event turn in case a listener has been added to the image stream.
-        InformationCollector? collector;
-        assert(() {
-          collector = () => <DiagnosticsNode>[
-            DiagnosticsProperty<ImageProvider>('Image provider', this),
-            DiagnosticsProperty<ImageConfiguration>('Image configuration', configuration),
-            DiagnosticsProperty<T>('Image key', key, defaultValue: null),
-          ];
-          return true;
-        }());
-        if (stream.completer == null) {
-          stream.setCompleter(_ErrorImageCompleter());
-        }
-        stream.completer!.reportError(
-          exception: exception,
-          stack: stack,
-          context: ErrorDescription('while resolving an image'),
-          silent: true, // could be a network error or whatnot
-          informationCollector: collector,
-        );
-      },
-    )
+//     const stream = createStream(configuration)
+//     // Load the key (potentially asynchronously), set up an error handling zone,
+//     // and call resolveStreamForKey.
+//     createErrorHandlerAndKey(
+//       configuration,
+//       (T key, ImageErrorListener errorHandler) {
+//         resolveStreamForKey(configuration, stream, key, errorHandler);
+//       },
+//       (T? key, Object exception, StackTrace? stack) async {
+//         await null; // wait an event turn in case a listener has been added to the image stream.
+//         InformationCollector? collector;
+//         assert(() {
+//           collector = () => <DiagnosticsNode>[
+//             DiagnosticsProperty<ImageProvider>('Image provider', this),
+//             DiagnosticsProperty<ImageConfiguration>('Image configuration', configuration),
+//             DiagnosticsProperty<T>('Image key', key, defaultValue: null),
+//           ];
+//           return true;
+//         }());
+//         if (stream.completer == null) {
+//           stream.setCompleter(_ErrorImageCompleter());
+//         }
+//         stream.completer!.reportError(
+//           exception: exception,
+//           stack: stack,
+//           context: ErrorDescription('while resolving an image'),
+//           silent: true, // could be a network error or whatnot
+//           informationCollector: collector,
+//         );
+//       },
+//     )
 
-    return stream
-  }
+//     return stream
+//   }
 
-  createStream (configuration: ImageConfiguration): ImageStream {
-    return new ImageStream()
-  }
+//   createStream (configuration: ImageConfiguration): ImageStream {
+//     return new ImageStream()
+//   }
 
-  createErrorHandlerAndKey (
-    configuration: ImageConfiguration ,
-    successCallback: KeyAndErrorHandlerCallback<T>,
-    errorCallback: AsyncKeyErrorHandler<T | null> ,
-  ) {
-    let obtainedKey: T | null
-    let didError = false
+//   createErrorHandlerAndKey (
+//     configuration: ImageConfiguration ,
+//     successCallback: KeyAndErrorHandlerCallback<T>,
+//     errorCallback: AsyncKeyErrorHandler<T | null> ,
+//   ) {
+//     let obtainedKey: T | null
+//     let didError = false
 
-    Future<void> handleError(Object exception, StackTrace? stack) async {
-      if (didError) {
-        return;
-      }
-      if (!didError) {
-        errorCallback(obtainedKey, exception, stack);
-      }
-      didError = true;
-    }
+//     Future<void> handleError(Object exception, StackTrace? stack) async {
+//       if (didError) {
+//         return;
+//       }
+//       if (!didError) {
+//         errorCallback(obtainedKey, exception, stack);
+//       }
+//       didError = true;
+//     }
 
-    // If an error is added to a synchronous completer before a listener has been
-    // added, it can throw an error both into the zone and up the stack. Thus, it
-    // looks like the error has been caught, but it is in fact also bubbling to the
-    // zone. Since we cannot prevent all usage of Completer.sync here, or rather
-    // that changing them would be too breaking, we instead hook into the same
-    // zone mechanism to intercept the uncaught error and deliver it to the
-    // image stream's error handler. Note that these errors may be duplicated,
-    // hence the need for the `didError` flag.
-    final Zone dangerZone = Zone.current.fork(
-      specification: ZoneSpecification(
-        handleUncaughtError: (Zone zone, ZoneDelegate delegate, Zone parent, Object error, StackTrace stackTrace) {
-          handleError(error, stackTrace);
-        },
-      ),
-    );
-    dangerZone.runGuarded(() {
-      Future<T> key;
-      try {
-        key = obtainKey(configuration);
-      } catch (error, stackTrace) {
-        handleError(error, stackTrace);
-        return;
-      }
-      key.then<void>((T key) {
-        obtainedKey = key;
-        try {
-          successCallback(key, handleError);
-        } catch (error, stackTrace) {
-          handleError(error, stackTrace);
-        }
-      }).catchError(handleError);
-    });
-  }
+//     // If an error is added to a synchronous completer before a listener has been
+//     // added, it can throw an error both into the zone and up the stack. Thus, it
+//     // looks like the error has been caught, but it is in fact also bubbling to the
+//     // zone. Since we cannot prevent all usage of Completer.sync here, or rather
+//     // that changing them would be too breaking, we instead hook into the same
+//     // zone mechanism to intercept the uncaught error and deliver it to the
+//     // image stream's error handler. Note that these errors may be duplicated,
+//     // hence the need for the `didError` flag.
+//     final Zone dangerZone = Zone.current.fork(
+//       specification: ZoneSpecification(
+//         handleUncaughtError: (Zone zone, ZoneDelegate delegate, Zone parent, Object error, StackTrace stackTrace) {
+//           handleError(error, stackTrace);
+//         },
+//       ),
+//     );
+//     dangerZone.runGuarded(() {
+//       Future<T> key;
+//       try {
+//         key = obtainKey(configuration);
+//       } catch (error, stackTrace) {
+//         handleError(error, stackTrace);
+//         return;
+//       }
+//       key.then<void>((T key) {
+//         obtainedKey = key;
+//         try {
+//           successCallback(key, handleError);
+//         } catch (error, stackTrace) {
+//           handleError(error, stackTrace);
+//         }
+//       }).catchError(handleError);
+//     });
+//   }
 
-  resolveStreamForKey (
-    configuration: ImageConfiguration, 
-    stream: ImageStream, 
-    key: T, 
-    handleError: ImageErrorListener
-  ): void  {
-    if (stream.completer !== null) {
-      final ImageStreamCompleter? completer = PaintingBinding.instance!.imageCache!.putIfAbsent(
-        key,
-        () => stream.completer!,
-        onError: handleError,
-      );
-      invariant(completer === stream.completer)
-      return
-    }
+//   resolveStreamForKey (
+//     configuration: ImageConfiguration, 
+//     stream: ImageStream, 
+//     key: T, 
+//     handleError: ImageErrorListener
+//   ): void  {
+//     if (stream.completer !== null) {
+//       final ImageStreamCompleter? completer = PaintingBinding.instance!.imageCache!.putIfAbsent(
+//         key,
+//         () => stream.completer!,
+//         onError: handleError,
+//       );
+//       invariant(completer === stream.completer)
+//       return
+//     }
 
-    const completer = PaintingBinding.instance!.imageCache!.putIfAbsent(
-      key,
-      () => load(key, PaintingBinding.instance!.instantiateImageCodec),
-      onError: handleError,
-    );
-    if (completer !== null) {
-      stream.setCompleter(completer)
-    }
-  }
-}
+//     const completer = PaintingBinding.instance!.imageCache!.putIfAbsent(
+//       key,
+//       () => load(key, PaintingBinding.instance!.instantiateImageCodec),
+//       onError: handleError,
+//     );
+//     if (completer !== null) {
+//       stream.setCompleter(completer)
+//     }
+//   }
+// }
 
 
