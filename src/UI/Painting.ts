@@ -225,14 +225,11 @@ export class Codec {
     return  0
   }
 
-  // @TODO
-  // Future<FrameInfo> getNextFrame() {
-  //   return engine.futurize<FrameInfo>(_getNextFrame);
-  // }
+  getNextFrame (): Promise<FrameInfo> {
+    return new Promise((resolve, reject) => {
 
-  // getNextFrame (callback): string | null {
-  //   return null
-  // }
+    })
+  }
   
   dispose () {}
 }

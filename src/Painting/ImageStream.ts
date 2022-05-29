@@ -1,6 +1,7 @@
 import invariant from 'ts-invariant'
 import { Image } from '@UI'
 import { VoidCallback } from '@Platform'
+import { EventEmitter } from 'events'
 
 export type ImageListener = { (image: ImageInfo, synchronousCall: boolean): void } 
 export type ImageChunkListener = { (event: ImageChunkEvent): void }
@@ -107,20 +108,15 @@ export class ImageChunkEvent {
     expectedTotalBytes: number | null
   ) {
     invariant(cumulativeBytesLoaded >= 0)
-    invariant(expectedTotalBytes == null || expectedTotalBytes >= 0)
+    invariant(expectedTotalBytes === null || expectedTotalBytes >= 0)
 
     this.cumulativeBytesLoaded = cumulativeBytesLoaded
     this.expectedTotalBytes = expectedTotalBytes
   }
 }
 
-export class ImageStream {  
-  public completer: ImageStreamCompleter | null = null
-  public listeners: ImageStreamListener[] | null = null
-
-  public get key () {
-    return this.completer ?? this
-  } 
+export class ImageStream extends EventEmitter {  
+   
 
   setCompleter (value: ImageStreamCompleter) {
     invariant(this.completer === null)
@@ -131,31 +127,7 @@ export class ImageStream {
       initialListeners.forEach(this.completer!.addListener)
     }
   }
-
-  addListener (listener: ImageStreamListener) {
-    if (this.completer !== null) {
-      return this.completer!.addListener(listener)
-    }
-    this.listeners ??= []
-    this.listeners!.push(listener)
-  }
-
-  removeListener (listener: ImageStreamListener) {
-    if (this.completer !== null) {
-      return this.completer!.removeListener(listener)
-    }
-    invariant(this.listeners !== null)
-
-    for (let i = 0; i < this.listeners!.length; i += 1) {
-      if (this.listeners![i] === listener) {
-        this.listeners!.splice(i, 1)
-        break
-      }
-    }
-  }
 }
-
-
 
 export class ImageStreamCompleterHandle {
   constructor (completer: ImageStreamCompleter) {
@@ -292,8 +264,7 @@ abstract class ImageStreamCompleter {
     this.checkDisposed()
     if (this.hasListeners) {
       
-      const localListeners = this.listeners
-          .map<ImageChunkListener | null>((listener: ImageStreamListener) => listener.onChunk)
+      const localListeners = this.listeners.map<ImageChunkListener | null>((listener: ImageStreamListener) => listener.onChunk)
          
       for (const listener of localListeners) {
         listener!(event)
@@ -326,7 +297,7 @@ export class OneFrameImageStreamCompleter extends ImageStreamCompleter {
 export class MultiFrameImageStreamCompleter extends ImageStreamCompleter {
   public chunkSubscription: StreamSubscription<ImageChunkEvent> | null
   public codec
-  public scale
+  public scale: number
   public informationCollector: InformationCollector | null
   public nextFrame: FrameInfo
   public shownTimestamp: Duration
@@ -487,7 +458,7 @@ export class MultiFrameImageStreamCompleter extends ImageStreamCompleter {
 
   maybeDispose () {
     super.maybeDispose()
-    if (this.a6ZAdisposed) {
+    if (this.disposed) {
       _chunkSubscription?.onData(null);
       _chunkSubscription?.cancel();
       _chunkSubscription = null;

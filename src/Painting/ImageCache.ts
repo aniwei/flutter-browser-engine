@@ -1,5 +1,7 @@
 import { VoidCallback } from '@Platform'
 import invariant from 'ts-invariant'
+import { ImageProvider } from './ImageProvider'
+import { ImageErrorListener } from './ImageStream'
 
 const kDefaultSize = 1000
 const kDefaultSizeBytes = 100 << 20 // 100 MiB
@@ -25,7 +27,7 @@ function property<T> (
   }
 }
 
-abstract class CachedImageBase {
+abstract class CachedImageBase { 
   public completer: ImageStreamCompleter
   public sizeBytes: numbber | null
   public handle: ImageStreamCompleterHandle | null
@@ -107,10 +109,10 @@ class LiveImage extends CachedImageBase {
 }
 
 
-export class ImageCache {
-  public pendingImages: Map<Object, PendingImage> = new Map()
-  public cache: Map<Object, CachedImage> = new Map()
-  public liveImages: Map<Object, LiveImage> = new Map()
+export class ImageCache<T> {
+  public pendingImages: Map<T, PendingImage> = new Map()
+  public cache: Map<T, CachedImage> = new Map()
+  public liveImages: Map<T, LiveImage> = new Map()
 
   public listenedOnce: boolean = false
 
@@ -246,10 +248,10 @@ export class ImageCache {
   }
 
   putIfAbsent (
-    key: string, 
-    loader: ImageStreamCompleter, 
+    key: ImageProvider<T>, 
+    loader: Promise<T>, 
     onError: ImageErrorListener | null 
-  ): ImageStreamCompleter | null {
+  ): Promise<T> | null {
     invariant(key !== null)
     invariant(loader !== null)
     let timelineTask

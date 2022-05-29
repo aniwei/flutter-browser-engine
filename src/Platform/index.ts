@@ -7,6 +7,8 @@ export enum TargetPlatform {
   Windows,
 }
 
+export type VoidCallback = { (): void }
+
 export const isWindow = (
   typeof process !== 'undefined' && 
   Object.prototype.toString.call(process) === '[object process]' &&
@@ -14,9 +16,8 @@ export const isWindow = (
 )
 
 
-export type VoidCallback = { (): void }
-
 // export * from './URI'
+export * from './Http'
 export * from './Locale'
 export * from './Encoding'
 export * from './TypedData'

@@ -1,9 +1,10 @@
 import invariant from 'ts-invariant'
 import { Codec, Size } from '@UI'
 import { SkiaTextDirection } from '@Skia'
-import { ImageErrorListener, Locale, StringBuffer, TargetPlatform } from '@Platform'
+import { Locale, StringBuffer, TargetPlatform } from '@Platform'
 import { AssetBundle } from '@Services'
-import { ImageStream } from './ImageStream'
+import { ImageErrorListener, ImageStream } from './ImageStream'
+import { PaintingBinding } from './Binding'
 
 type KeyAndErrorHandlerCallback<T> = { (key: T, handleError: ImageErrorListener): void }
 type AsyncKeyErrorHandler<T> = { (key: T, exception): Promise<void> }
@@ -36,13 +37,20 @@ export class ImageConfiguration {
   public size: Size | null = null
   public platform: TargetPlatform | null = null
   
-  constructor (options?: ImageConfigurationInitOptions) {
-    this.bundle = options?.bundle ?? null
-    this.devicePixelRatio = options?.devicePixelRatio ?? null
-    this.locale = options?.locale ?? null
-    this.textDirection = options?.textDirection ?? null
-    this.size = options?.size ?? null
-    this.platform = options?.platform ?? null
+  constructor (options: ImageConfigurationInitOptions = {}) {
+    options.bundle = options.bundle ?? null
+    options.devicePixelRatio = options.devicePixelRatio ?? null
+    options.locale = options.locale ?? null
+    options.textDirection = options.textDirection ?? null
+    options.size = options.size ?? null
+    options.platform = options.platform ?? null
+
+    this.bundle = options.bundle
+    this.devicePixelRatio = options.devicePixelRatio
+    this.locale = options.locale
+    this.textDirection = options.textDirection
+    this.size = options.size
+    this.platform = options.platform
   }
 
   copyWith (options: ImageConfigurationInitOptions): ImageConfiguration  {
@@ -127,126 +135,155 @@ export class ImageConfiguration {
   }
 }
 
-// export abstract class ImageProvider<T> {
-//   resolve (configuration: ImageConfiguration) {
-//     invariant(configuration !== null)
+export abstract class ImageProvider<T> {
+  resolve (configuration: ImageConfiguration) {
+    invariant(configuration !== null)
 
-//     const stream = createStream(configuration)
-//     // Load the key (potentially asynchronously), set up an error handling zone,
-//     // and call resolveStreamForKey.
-//     createErrorHandlerAndKey(
-//       configuration,
-//       (T key, ImageErrorListener errorHandler) {
-//         resolveStreamForKey(configuration, stream, key, errorHandler);
-//       },
-//       (T? key, Object exception, StackTrace? stack) async {
-//         await null; // wait an event turn in case a listener has been added to the image stream.
-//         InformationCollector? collector;
-//         assert(() {
-//           collector = () => <DiagnosticsNode>[
-//             DiagnosticsProperty<ImageProvider>('Image provider', this),
-//             DiagnosticsProperty<ImageConfiguration>('Image configuration', configuration),
-//             DiagnosticsProperty<T>('Image key', key, defaultValue: null),
-//           ];
-//           return true;
-//         }());
-//         if (stream.completer == null) {
-//           stream.setCompleter(_ErrorImageCompleter());
-//         }
-//         stream.completer!.reportError(
-//           exception: exception,
-//           stack: stack,
-//           context: ErrorDescription('while resolving an image'),
-//           silent: true, // could be a network error or whatnot
-//           informationCollector: collector,
-//         );
-//       },
-//     )
+    const stream = this.createStream(configuration)
 
-//     return stream
-//   }
+    this.createErrorHandlerAndKey(configuration, (key: T, onError: ImageErrorListener) => {
+      this.resolveStreamForKey(configuration, stream, key, onError)
+    }, async (key: T | null, exception) => {
+        if (stream.completer === null) {
+          stream.setCompleter(_ErrorImageCompleter());
+        }
+        stream.completer!.reportError(
+          exception: exception,
+          stack: stack,
+          context: ErrorDescription('while resolving an image'),
+          silent: true, // could be a network error or whatnot
+          informationCollector: collector,
+        );
+      }
+    )
 
-//   createStream (configuration: ImageConfiguration): ImageStream {
-//     return new ImageStream()
-//   }
+    return stream
+  }
 
-//   createErrorHandlerAndKey (
-//     configuration: ImageConfiguration ,
-//     successCallback: KeyAndErrorHandlerCallback<T>,
-//     errorCallback: AsyncKeyErrorHandler<T | null> ,
-//   ) {
-//     let obtainedKey: T | null
-//     let didError = false
+  createStream (configuration: ImageConfiguration): ImageStream {
+    return new ImageStream()
+  }
 
-//     Future<void> handleError(Object exception, StackTrace? stack) async {
-//       if (didError) {
-//         return;
-//       }
-//       if (!didError) {
-//         errorCallback(obtainedKey, exception, stack);
-//       }
-//       didError = true;
-//     }
+  obtainCacheStatus (
+    configuration: ImageConfiguration,
+    onError: ImageErrorListener,
+  ): Promise<ImageCacheStatus | null>  {
+    invariant(configuration !== null)
+    
+    return new Promise((resolve, reject) => {
+      this.createErrorHandlerAndKey(
+        configuration,
+        (key: T) => {
+          resolve(PaintingBinding.instance!.imageCache!.statusForKey(key))
+        },
+        async (key: T | null, exception) => {
+          if (onError !== null) {
+            onError(exception)
+          } else {
+            reject(exception)
+          }
+        },
+      )
+    })
+    
+  }
 
-//     // If an error is added to a synchronous completer before a listener has been
-//     // added, it can throw an error both into the zone and up the stack. Thus, it
-//     // looks like the error has been caught, but it is in fact also bubbling to the
-//     // zone. Since we cannot prevent all usage of Completer.sync here, or rather
-//     // that changing them would be too breaking, we instead hook into the same
-//     // zone mechanism to intercept the uncaught error and deliver it to the
-//     // image stream's error handler. Note that these errors may be duplicated,
-//     // hence the need for the `didError` flag.
-//     final Zone dangerZone = Zone.current.fork(
-//       specification: ZoneSpecification(
-//         handleUncaughtError: (Zone zone, ZoneDelegate delegate, Zone parent, Object error, StackTrace stackTrace) {
-//           handleError(error, stackTrace);
-//         },
-//       ),
-//     );
-//     dangerZone.runGuarded(() {
-//       Future<T> key;
-//       try {
-//         key = obtainKey(configuration);
-//       } catch (error, stackTrace) {
-//         handleError(error, stackTrace);
-//         return;
-//       }
-//       key.then<void>((T key) {
-//         obtainedKey = key;
-//         try {
-//           successCallback(key, handleError);
-//         } catch (error, stackTrace) {
-//           handleError(error, stackTrace);
-//         }
-//       }).catchError(handleError);
-//     });
-//   }
+  createErrorHandlerAndKey (
+    configuration: ImageConfiguration ,
+    success: KeyAndErrorHandlerCallback<T>,
+    error: AsyncKeyErrorHandler<T | null> ,
+  ) {
+    let obtainedKey: T | null
+    let didError = false
 
-//   resolveStreamForKey (
-//     configuration: ImageConfiguration, 
-//     stream: ImageStream, 
-//     key: T, 
-//     handleError: ImageErrorListener
-//   ): void  {
-//     if (stream.completer !== null) {
-//       final ImageStreamCompleter? completer = PaintingBinding.instance!.imageCache!.putIfAbsent(
-//         key,
-//         () => stream.completer!,
-//         onError: handleError,
-//       );
-//       invariant(completer === stream.completer)
-//       return
-//     }
+    const onError = async exception => {
+      if (didError) {
+        return
+      }
 
-//     const completer = PaintingBinding.instance!.imageCache!.putIfAbsent(
-//       key,
-//       () => load(key, PaintingBinding.instance!.instantiateImageCodec),
-//       onError: handleError,
-//     );
-//     if (completer !== null) {
-//       stream.setCompleter(completer)
-//     }
-//   }
-// }
+      if (!didError) {
+        error(obtainedKey, exception)
+      }
+      didError = true
+    }
+
+    try {
+      const key = this.obtainedKey(configuration)
+
+      key.then<void>((key: T) => {
+        obtainedKey = key
+        try {
+          success(key, onError)
+        } catch (error) {
+          onError(error)
+        }
+      }).catch(onError)
+    } catch (error) {
+      onError(error)
+    }
+  }
+
+  resolveStreamForKey (
+    configuration: ImageConfiguration, 
+    stream: ImageStream, 
+    key: T, 
+    onError: ImageErrorListener
+  ): void  {
+    if (stream.completer !== null) {
+      final ImageStreamCompleter? completer = PaintingBinding.instance!.imageCache!.putIfAbsent(
+        key,
+        () => stream.completer!,
+        onError: handleError,
+      )
+      invariant(completer === stream.completer)
+      return
+    }
+
+    
+
+    const completer = PaintingBinding.instance!.imageCache!.putIfAbsent(key, () => {
+      return this.load(key, PaintingBinding.instance!.instantiateImageCodec)
+    }, onError)
+    if (completer !== null) {
+      stream.setCompleter(completer)
+    }
+  }
+}
 
 
+
+export class AssetBundleImageKey {
+  public bundle: AssetBundle
+  public name: string
+  public scale: number
+
+  constructor(
+    bundle: AssetBundle,
+    name: string,
+    scale: number,
+  ) {
+    invariant(bundle !== null)
+    invariant(name !== null)
+    invariant(scale !== null)
+
+    this.bundle = bundle
+    this.name = name
+    this.scale = scale
+  }
+
+  isEqual (other: AssetBundleImageKey) {
+    if (other === this) {
+      return true
+    }
+    return (
+      other instanceof AssetBundleImageKey &&
+      other.bundle === this.bundle &&
+      other.name === this.name &&
+      other.scale === this.scale
+    )
+  }
+
+  toString () {
+    return ''
+  }
+}
