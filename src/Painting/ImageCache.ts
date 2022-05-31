@@ -248,7 +248,7 @@ export class ImageCache<T> {
   }
 
   putIfAbsent (
-    key: ImageProvider<T>, 
+    key: T, 
     loader: Promise<T>, 
     onError: ImageErrorListener | null 
   ): Promise<T> | null {
@@ -257,7 +257,7 @@ export class ImageCache<T> {
     let timelineTask
     let listenerTask
    
-    let result = this.pendingImages.get(key)?.completer
+    let result = this.pendingImages.get(key)
     
     if (result !== null) {
       return result
