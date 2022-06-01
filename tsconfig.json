@@ -21,7 +21,7 @@
     "noImplicitThis": true,
     "noEmit": false,
     "build": true,
-    "typeRoots": [".", "./node_modules/@types", "./@types"],
+    "typeRoots": ["./types", "./node_modules/@types"],
     "baseUrl": "./",
     "rootDir": "./",
     "outDir": "dist",

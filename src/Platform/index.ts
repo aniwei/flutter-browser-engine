@@ -23,6 +23,10 @@ export const kBrowserSupportsImageDecoder = (
   kImageDecoderExperimentEnabled 
 )
 
+export const kBrowserSupportsFinalizationRegistry = (
+  
+)
+
 export * from './URI'
 export * from './Http'
 export * from './Locale'
