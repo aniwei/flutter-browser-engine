@@ -30,6 +30,7 @@ export type {
   MipmapMode as SkiaMipmapMode,
   ColorFilter as SkiaColorFilter,
   Image as SkiaImage,
+  AnimatedImage as SkiaAnimatedImage,
   ImageFilter as SkiaImageFilter,
   MaskFilter as SkiaMaskFilter,
   Paint as SkiaPaint,
@@ -209,6 +210,10 @@ export class Skia {
 
   static get MakeLazyImageFromTextureSource () {
     return Skia.s.MakeLazyImageFromTextureSource
+  }
+
+  static get MakeAnimatedImageFromEncoded () {
+    return Skia.s.MakeAnimatedImageFromEncoded
   }
 
   public skia: CanvasKit

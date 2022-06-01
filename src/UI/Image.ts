@@ -11,9 +11,21 @@ export interface IImage {
   isCloneOf (other: Image ): boolean
 }
 
+export type VideoFrame = {
+  format: string | null
+  duration: number | null
+  codedWidth: number
+  codedHeight: number
+  displayWidth: number
+  displayHeight: number
+  allocationSize (): number
+  copyTo (destination: Uint8Array): Promise<VideoFrame>
+  close (): void
+}
+
 export class Image implements IImage {
-  static malloc (skia: SkiaImage) {
-    return new Image(skia)
+  static malloc (skia: SkiaImage, frame: VideoFrame) {
+    return new Image(skia, frame)
   }
   static cloneOf (box: SkiaObjectBox<SkiaImage>) {
     
@@ -34,7 +46,7 @@ export class Image implements IImage {
   public box: SkiaObjectBox<SkiaImage>
   public disposed: boolean
 
-  constructor (skia: SkiaImage) {
+  constructor (skia: SkiaImage, frame?) {
     this.box = new SkiaObjectBox(skia)
     this.disposed = false
   }
