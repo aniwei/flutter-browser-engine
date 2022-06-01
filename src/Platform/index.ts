@@ -15,6 +15,13 @@ export const isWindow = (
   process.platform === 'win32'
 )
 
+export const kImageDecoderExperimentEnabled = (
+  isWindow && typeof window.ImageDecoder === 'object'
+)
+
+export const kBrowserSupportsImageDecoder = (
+  kImageDecoderExperimentEnabled 
+)
 
 export * from './URI'
 export * from './Http'
