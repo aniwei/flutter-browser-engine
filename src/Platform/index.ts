@@ -16,7 +16,7 @@ export const isWindow = (
 )
 
 
-// export * from './URI'
+export * from './URI'
 export * from './Http'
 export * from './Locale'
 export * from './Encoding'

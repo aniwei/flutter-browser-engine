@@ -1,4 +1,5 @@
 import { HttpRequest } from '@Platform'
+import { URI } from '@Platform'
 type WebOnlyImageCodecChunkCallback = { (cumulativeBytesLoaded: number, expectedTotalBytes: number): void } 
 
 export function fetchImage (
@@ -12,7 +13,7 @@ export function fetchImage (
     
     if (chunkCallback !== null) {
       request.addEventListener('progress', function (event: ProgressEvent) {
-        Reflect.apply(chunkCallback, this, [event])
+        Reflect.apply(chunkCallback!, this, [event])
       })
     }
     
@@ -44,5 +45,13 @@ export async function skiaInstantiateWebImageCodec(
   url: string, 
   chunkCallback: WebOnlyImageCodecChunkCallback | null
 ) {
-  return await fetchImage(url, chunkCallback)
+  const data = await fetchImage(url, chunkCallback)
+  
+}
+
+export async function webOnlyInstantiateImageCodecFromURL (
+  uri: URI,
+  chunkCallback?: WebOnlyImageCodecChunkCallback
+) {
+  return skiaInstantiateWebImageCodec(uri.toString(), chunkCallback ?? null)
 }

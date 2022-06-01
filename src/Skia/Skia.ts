@@ -119,6 +119,18 @@ export class Skia {
     return Skia.s.Shader
   }
 
+  static get AlphaType () {
+    return Skia.s.AlphaType
+  }
+
+  static get ColorType () {
+    return Skia.s.ColorType
+  }
+
+  static get ColorSpace () {
+    return Skia.s.ColorSpace
+  }
+
   static get ColorFilter () {
     return Skia.s.ColorFilter
   }
@@ -193,6 +205,10 @@ export class Skia {
 
   static get Malloc () {
     return Skia.s.Malloc
+  }
+
+  static get MakeLazyImageFromTextureSource () {
+    return Skia.s.MakeLazyImageFromTextureSource
   }
 
   public skia: CanvasKit

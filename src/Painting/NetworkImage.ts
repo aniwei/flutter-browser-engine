@@ -1,7 +1,7 @@
 import invariant from 'ts-invariant'
 import { ImageConfiguration, ImageProvider } from './ImageProvider'
 import { URI } from '@Platform'
-import { ImageChunkEvent } from './ImageStream'
+import { ImageChunkEvent, MultiFrameImageStream } from './ImageStream'
 
 export abstract class NetworkImage extends ImageProvider<NetworkImage> {
   public url: string
@@ -33,11 +33,10 @@ export abstract class NetworkImage extends ImageProvider<NetworkImage> {
     key: NetworkImage, 
     decode
   ) {
-    return new MulitiFrameImagesStream(
-      chunkEvents,
-      codec: this.loadAsync,
-      scale: key.scale,
-      debugLabel: key.url
+    return new MultiFrameImageStream(
+      this.loadAsync,
+      key.scale,
+      key.url
     )
   }
 
