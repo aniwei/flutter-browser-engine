@@ -1,6 +1,5 @@
-import { kBrowserSupportsFinalizationRegistry } from '@Platform'
 import invariant from 'ts-invariant'
-import { ManagedSkiaObject } from './ManagedSkiaObject'
+import { kBrowserSupportsFinalizationRegistry } from '@Platform'
 import { SkiaFinalizationRegistry } from './SkiaFinalizationRegistry'
 import { RawSkia, SkiaObject } from './SkiaObject'
 
@@ -10,8 +9,8 @@ export class SkiaObjectBox<R, T extends RawSkia<T>> extends SkiaObject<T> {
   public isDeletedPermanently = false
   public rawSkia: T | null = null
 
-  public get skia () {
-    return this.rawSkia
+  public get skia (): T {
+    return this.rawSkia as T
   }
 
   public set skia (skia: T | null) {

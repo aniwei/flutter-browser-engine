@@ -65,6 +65,8 @@ export const kImageDecoderExperimentEnabled = (
   false
 )
 
+export const kBrowserSupportsXMLHttpRequest = isWindow && typeof window.XMLHttpRequest === 'object'
+export const kBrowserSupportsFetch = isWindow && typeof window.fetch
 export const kBrowserDevicePixelRatio = isWindow ? (window.devicePixelRatio || 2.0) : 2.0
 
 export const kBrowserSupportsImageDecoder = kImageDecoderExperimentEnabled 
@@ -73,7 +75,7 @@ export const kBrowserSupportsFinalizationRegistry = isWindow ?
   (typeof globalThis.FinalizationRegistry === 'object')
 
 export * from './URI'
-export * from './Http'
+export * from './HTT'
 export * from './Locale'
 export * from './Encoding'
 export * from './TypedData'

@@ -393,13 +393,13 @@ function createTables () {
   const subDelims = '!$&\'()*+,;='
   const pchar = `${unreserved}${subDelims}`
 
-  const tables: Uint8Array[] = new Array(stateCount).fill(new Uint8Array(96))
+  const tables: Uint8Array[] = Array.from({ length: stateCount }, () => new Uint8Array(96))
   
   const build = (
     state, 
     defaultTransition
   ) => {
-    tables[state].fill(defaultTransition, 0, 96)
+    return tables[state].fill(defaultTransition, 0, 96)
   }
 
   const setChars = (
