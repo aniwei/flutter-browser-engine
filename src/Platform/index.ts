@@ -7,6 +7,33 @@ export enum TargetPlatform {
   Windows,
 }
 
+export function detectBrowserEngineByVendorAgent (
+  vendor: string, 
+  agent: string
+) {
+  if (vendor == 'Google Inc.') {
+    return BrowserEngine.Blink
+  } else if (vendor == 'Apple Computer, Inc.') {
+    return BrowserEngine.Webkit
+  } else if (agent.includes('edge/')) {
+    return BrowserEngine.Edge;
+  } else if (agent.includes('Edg/')) {
+    return BrowserEngine.Blink
+  }  else if (vendor === '' && agent.includes('firefox')) {
+    return BrowserEngine.Firefox
+  }
+
+  console.warn('WARNING: failed to detect current browser engine.')
+  return BrowserEngine.Unknown
+}
+
+export function detectBrowserEngine () {
+  const vendor = window.navigator.vendor;
+  const agent = window.navigator.userAgent.toLowerCase()
+
+  return detectBrowserEngineByVendorAgent(vendor, agent)
+}
+
 export type VoidCallback = { (): void }
 
 export const isWindow = (
@@ -15,17 +42,35 @@ export const isWindow = (
   process.platform === 'win32'
 )
 
+export enum BrowserEngine {
+  Blink,
+  Webkit,
+  Firefox,
+  Edge,
+  Unknown
+}
+
+export enum OperatingSystem {
+  iOS,
+  Android,
+  Linux,
+  Window,
+  MacOS,
+  Unknown
+}
+
+export const kCurrentURI = isWindow ? window.location.href : null
+
 export const kImageDecoderExperimentEnabled = (
-  isWindow && typeof window.ImageDecoder === 'object'
+  false
 )
 
-export const kBrowserSupportsImageDecoder = (
-  kImageDecoderExperimentEnabled 
-)
+export const kBrowserDevicePixelRatio = isWindow ? (window.devicePixelRatio || 2.0) : 2.0
 
-export const kBrowserSupportsFinalizationRegistry = (
-  
-)
+export const kBrowserSupportsImageDecoder = kImageDecoderExperimentEnabled 
+export const kBrowserSupportsFinalizationRegistry = isWindow ? 
+  (typeof window.FinalizationRegistry === 'object') :
+  (typeof globalThis.FinalizationRegistry === 'object')
 
 export * from './URI'
 export * from './Http'

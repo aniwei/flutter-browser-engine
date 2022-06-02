@@ -1,4 +1,5 @@
 export * from './Skia'
+export * from './SkiaImage'
 export * from './SkiaFormat'
 export * from './SkiaObjectBox'
 export * from './ManagedSkiaObject'

@@ -135,21 +135,21 @@ export class ImageStreamHandle {
 }
 
 abstract class ImageStream {
-  public debugLabel: string | null = null
   public listeners: ImageStreamListener[] = []
+  public debugLabel: string | null = null
   public currentImage: ImageInfo | null = null
   
   public get hasListeners () {
     return this.listeners.length > 0
   }
 
-  public hadAtLeastOneListener: boolean = false
-  public keepAliveHandles: number = 0
   public disposed = false
+  public keepAliveHandles: number = 0
+  public hadAtLeastOneListener: boolean = false
   public onLastListenerRemovedCallbacks: VoidCallback[] = []
 
   on (listener: ImageStreamListener) {
-    this.checkDisposed()
+    this.checkIsDisposed()
     this.hadAtLeastOneListener = true
     this.listeners.push(listener)
 
@@ -187,11 +187,11 @@ abstract class ImageStream {
   }
   
   keepAlive (): ImageStreamHandle {
-    this.checkDisposed()
+    this.checkIsDisposed()
     return new ImageStreamHandle(this)
   }
 
-  maybeDispose () {
+  dispose () {
     if (
       !this.hadAtLeastOneListener || 
       this.disposed || 
@@ -206,29 +206,27 @@ abstract class ImageStream {
     this.disposed = true
   }
 
-  checkDisposed () {
+  checkIsDisposed () {
     if (this.disposed) {
-      throw new Error(
-        `Stream has been disposed.`
-      )
+      throw new Error(`Stream has been disposed.`)
     }
   }
 
   addOnLastListenerRemovedCallback (callback: VoidCallback) {
     invariant(callback !== null)
-    this.checkDisposed()
+    this.checkIsDisposed()
     this.onLastListenerRemovedCallbacks.push(callback)
   }
 
   removeOnLastListenerRemovedCallback (callback: VoidCallback) {
     invariant(callback !== null)
-    this.checkDisposed()
+    this.checkIsDisposed()
     const index = this.onLastListenerRemovedCallbacks.findIndex(callback)
     this.onLastListenerRemovedCallbacks.splice(index, 1)
   }
 
   setImage (image: ImageInfo) {
-    this.checkDisposed()
+    this.checkIsDisposed()
     this.currentImage?.dispose()
     this.currentImage = image
 
@@ -247,7 +245,7 @@ abstract class ImageStream {
   }
   
   reportImageChunkEvent (event: ImageChunkEvent) {
-    this.checkDisposed()
+    this.checkIsDisposed()
     if (this.hasListeners) {
       
       const localListeners = this.listeners.map<ImageChunkListener | null>((listener: ImageStreamListener) => listener.onChunk)
@@ -282,17 +280,17 @@ export class MultiFrameImageStream extends ImageStream {
   public chunkSubscription: StreamSubscription<ImageChunkEvent> | null
   public codec: Codec | null = null
   public nextFrame: FrameInfo | null = null
-  public shownTimestamp: Duration
-  public frameDuration: Duration
+  public shownTimestamp: number
+  public frameDuration: number
   public framesEmitted = 0
-  public timer
   public frameCallbackScheduled: boolean = false
+  public timer
 
   constructor (
     codec: Promise<Codec>,
     scale: number,
     debugLabel: string | null,
-    // chunkEvents: Stream<ImageChunkEvent> | null,
+    chunkEvents: Stream<ImageChunkEvent> | null,
   ) {
     super()
     invariant(codec !== null)
@@ -303,6 +301,10 @@ export class MultiFrameImageStream extends ImageStream {
     codec.then<void>(this.handleCodecReady).catch(error => {
 
     })
+
+    if (chunkEvents !== null) {
+
+    }
   }
 
   handleCodecReady = (codec) => {
@@ -415,13 +417,13 @@ export class MultiFrameImageStream extends ImageStream {
   off (listener: ImageStreamListener) {
     super.off(listener)
     if (!this.hasListeners) {
-      this._timer?.cancel()
-      this._timer = null
+      this.timer?.cancel()
+      this.timer = null
     }
   }
 
-  maybeDispose () {
-    super.maybeDispose()
+  dispose () {
+    super.dispose()
     if (this.disposed) {
       _chunkSubscription?.onData(null);
       _chunkSubscription?.cancel();

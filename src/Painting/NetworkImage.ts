@@ -2,6 +2,7 @@ import invariant from 'ts-invariant'
 import { ImageConfiguration, ImageProvider } from './ImageProvider'
 import { URI } from '@Platform'
 import { ImageChunkEvent, MultiFrameImageStream } from './ImageStream'
+import { webOnlyInstantiateImageCodecFromURL } from 'src/Skia/SkiaImage'
 
 export abstract class NetworkImage extends ImageProvider<NetworkImage> {
   public url: string
@@ -36,7 +37,8 @@ export abstract class NetworkImage extends ImageProvider<NetworkImage> {
     return new MultiFrameImageStream(
       this.loadAsync,
       key.scale,
-      key.url
+      key.url,
+      {}
     )
   }
 

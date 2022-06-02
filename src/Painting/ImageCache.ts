@@ -394,5 +394,48 @@ export class ImageCache {
   }
 }
 
+export class ImageCacheStatus {
+  public pending: boolean
+  public keepAlive: boolean
+  public live: boolean
+
+  public get tracked () {
+    return this.pending || this.keepAlive || this.live
+  }
+
+  public get untracked () {
+    return !this.pending && !this.keepAlive && !this.live
+  } 
+
+  constructor (
+    pending: boolean,
+    keepAlive: boolean,
+    live: boolean,
+  ) {
+    invariant(!pending || !keepAlive)
+
+    this.pending = pending
+    this.keepAlive = keepAlive
+    this.live = live
+  }
+
+  isEqual (other: ImageCacheStatus) {
+    if (other === this) {
+      return true
+    }
+
+    return (
+      other instanceof ImageCacheStatus &&
+      other.pending === this.pending &&
+      other.keepAlive === this.keepAlive &&
+      other.live === this.live
+    )
+  }
+
+  
+  toString () {
+    return ``
+  }
+}
 
 

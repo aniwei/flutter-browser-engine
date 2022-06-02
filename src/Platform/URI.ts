@@ -1,5 +1,5 @@
 import invariant from 'ts-invariant'
-import { isWindow } from '.'
+import { isWindow, kCurrentURI } from '.'
 import { ArgumentError } from './ArgumentError'
 import { StringBuffer } from './StringBuffer'
 import { Encoding, utf8 } from './Encoding'
@@ -23,6 +23,17 @@ const kLowerCaseF = 0x66
 const kLowerCaseZ = 0x7A
 
 const kHexDigits = '0123456789ABCDEF'
+
+const kSchemeEndIndex = 1
+const kHostStartIndex = 2
+const kPortStartIndex = 3
+const kPathStartIndex = 4
+const kQueryStartIndex = 5
+const kFragmentStartIndex = 6
+const kNotSimpleIndex = 7
+const kSchemeStart = 20
+const kURIStart = 0
+const kNonSimpleEndStates = 14
 
 const kUnreservedTable = [
   //                     LSB            MSB
@@ -234,6 +245,8 @@ const kZoneIDTable = [
   0x47ff, // 0x70 - 0x7f  1111111111100010
 ]
 
+const kScannerTables = createTables()
+
 function property<T> (
   getter: { (v: T, k?): T } = function (v, k) { return v as T },
   setter: { (v: T, k): void } = function (this, v: T, k) { this[k] = v }
@@ -307,6 +320,237 @@ function skipPackageNameChars (
   return -1
 }
 
+function startsWithData (
+  text: string, 
+  start: number
+) {
+  // Multiply by 3 to avoid a non-colon character making delta be 0x20.
+  let delta = (text.charCodeAt(start + 4) ^ kColon) * 3
+  delta |= text.charCodeAt(start) ^ 0x64 /*d*/
+  delta |= text.charCodeAt(start + 1) ^ 0x61 /*a*/
+  delta |= text.charCodeAt(start + 2) ^ 0x74 /*t*/
+  delta |= text.charCodeAt(start + 3) ^ 0x61 /*a*/
+  return delta
+}
+
+function scan (
+  uri: string, 
+  start: number, 
+  end: number, 
+  state: number, 
+  indices: number[]
+) {
+  const tables = kScannerTables
+  invariant(end <= uri.length)
+  for (let i = start; i < end; i++) {
+    const table = tables[state]
+    
+    let char = uri.charCodeAt(i) ^ 0x60
+    // Use 0x1f (nee 0x7f) to represent all unhandled characters.
+    if (char > 0x5f) {
+      char = 0x1f
+    }
+    const transition = table[char]
+    state = transition & 0x1f
+    indices[transition >> 5] = i
+  }
+
+  return state
+}
+
+function createTables () {
+  const stateCount = 22
+  const schemeOrPath = 1
+  const authOrPath = 2
+  const authOrPathSlash = 3
+  const uinfoOrHost0 = 4
+  const uinfoOrHost = 5
+  const uinfoOrPort0 = 6
+  const uinfoOrPort = 7
+  const ipv6Host = 8
+  const relPathSeg = 9
+  const pathSeg = 10
+  const path = 11
+  const query = 12
+  const fragment = 13
+  const schemeOrPathDot = 14
+  const schemeOrPathDot2 = 15
+  const relPathSegDot = 16
+  const relPathSegDot2 = 17
+  const pathSegDot = 18
+  const pathSegDot2 = 19
+  const scheme0 = kSchemeStart
+  const scheme = 21
+  const schemeEnd = kSchemeEndIndex << 5
+  const hostStart = kHostStartIndex << 5
+  const portStart = kPortStartIndex << 5
+  const pathStart = kPathStartIndex << 5
+  const queryStart = kQueryStartIndex << 5
+  const fragmentStart = kFragmentStartIndex << 5
+  const notSimple = kNotSimpleIndex << 5
+
+  const unreserved = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz-._~'
+  const subDelims = '!$&\'()*+,;='
+  const pchar = `${unreserved}${subDelims}`
+
+  const tables: Uint8Array[] = new Array(stateCount).fill(new Uint8Array(96))
+  
+  const build = (
+    state, 
+    defaultTransition
+  ) => {
+    tables[state].fill(defaultTransition, 0, 96)
+  }
+
+  const setChars = (
+    target: Uint8Array, 
+    chars: string, 
+    transition: number
+  ) => {
+    for (let i = 0; i < chars.length; i++) {
+      let char = chars.charCodeAt(i)
+      target.set([transition], char ^ 0x60)
+    }
+  }
+
+  const setRange = (
+    target: Uint8Array, 
+    range: string, 
+    transition: number
+  ) => {
+    for (let i = range.charCodeAt(0), n = range.charCodeAt(1); i <= n; i++) {
+      target.set([transition], i ^ 0x60)
+    }
+  }
+
+  let b
+
+  b = build(kURIStart, schemeOrPath | notSimple)
+  setChars(b, pchar, schemeOrPath)
+  setChars(b, '.', schemeOrPathDot)
+  setChars(b, ':', authOrPath | schemeEnd);
+  setChars(b, '/', authOrPathSlash)
+  setChars(b, '?', query | queryStart)
+  setChars(b, '#', fragment | fragmentStart)
+  b = build(schemeOrPathDot, schemeOrPath | notSimple)
+  setChars(b, pchar, schemeOrPath)
+  setChars(b, '.', schemeOrPathDot2)
+  setChars(b, ':', authOrPath | schemeEnd)
+  setChars(b, '/', pathSeg | notSimple)
+  setChars(b, '?', query | queryStart)
+  setChars(b, '#', fragment | fragmentStart)
+  b = build(schemeOrPathDot2, schemeOrPath | notSimple)
+  setChars(b, pchar, schemeOrPath)
+  setChars(b, '%', schemeOrPath | notSimple)
+  setChars(b, ':', authOrPath | schemeEnd)
+  setChars(b, '/', relPathSeg)
+  setChars(b, '?', query | queryStart)
+  setChars(b, '#', fragment | fragmentStart)
+  b = build(schemeOrPath, schemeOrPath | notSimple)
+  setChars(b, pchar, schemeOrPath)
+  setChars(b, ':', authOrPath | schemeEnd)
+  setChars(b, '/', pathSeg)
+  setChars(b, '?', query | queryStart)
+  setChars(b, '#', fragment | fragmentStart)
+  b = build(authOrPath, path | notSimple)
+  setChars(b, pchar, path | pathStart)
+  setChars(b, '/', authOrPathSlash | pathStart)
+  setChars(b, '.', pathSegDot | pathStart)
+  setChars(b, '?', query | queryStart)
+  setChars(b, '#', fragment | fragmentStart)
+  b = build(authOrPathSlash, path | notSimple)
+  setChars(b, pchar, path)
+  setChars(b, '/', uinfoOrHost0 | hostStart)
+  setChars(b, '.', pathSegDot)
+  setChars(b, '?', query | queryStart)
+  setChars(b, '#', fragment | fragmentStart)
+  b = build(uinfoOrHost0, uinfoOrHost | notSimple)
+  setChars(b, pchar, uinfoOrHost)
+  setRange(b, 'AZ', uinfoOrHost | notSimple)
+  setChars(b, ':', uinfoOrPort0 | portStart)
+  setChars(b, '@', uinfoOrHost0 | hostStart)
+  setChars(b, '[', ipv6Host | notSimple)
+  setChars(b, '/', pathSeg | pathStart)
+  setChars(b, '?', query | queryStart)
+  setChars(b, '#', fragment | fragmentStart)
+  b = build(uinfoOrHost, uinfoOrHost | notSimple)
+  setChars(b, pchar, uinfoOrHost)
+  setRange(b, 'AZ', uinfoOrHost | notSimple)
+  setChars(b, ':', uinfoOrPort0 | portStart)
+  setChars(b, '@', uinfoOrHost0 | hostStart)
+  setChars(b, '/', pathSeg | pathStart)
+  setChars(b, '?', query | queryStart)
+  setChars(b, '#', fragment | fragmentStart)
+  b = build(uinfoOrPort0, uinfoOrPort | notSimple)
+  setRange(b, '19', uinfoOrPort)
+  setChars(b, '@', uinfoOrHost0 | hostStart)
+  setChars(b, '/', pathSeg | pathStart)
+  setChars(b, '?', query | queryStart)
+  setChars(b, '#', fragment | fragmentStart)
+  b = build(uinfoOrPort, uinfoOrPort | notSimple)
+  setRange(b, '09', uinfoOrPort)
+  setChars(b, '@', uinfoOrHost0 | hostStart)
+  setChars(b, '/', pathSeg | pathStart)
+  setChars(b, '?', query | queryStart)
+  setChars(b, '#', fragment | fragmentStart)
+  b = build(ipv6Host, ipv6Host)
+  setChars(b, ']', uinfoOrHost)
+  b = build(relPathSeg, path | notSimple)
+  setChars(b, pchar, path)
+  setChars(b, '.', relPathSegDot)
+  setChars(b, '/', pathSeg | notSimple)
+  setChars(b, '?', query | queryStart)
+  setChars(b, '#', fragment | fragmentStart)
+  b = build(relPathSegDot, path | notSimple)
+  setChars(b, pchar, path)
+  setChars(b, '.', relPathSegDot2)
+  setChars(b, '/', pathSeg | notSimple)
+  setChars(b, '?', query | queryStart)
+  setChars(b, '#', fragment | fragmentStart)
+  b = build(relPathSegDot2, path | notSimple)
+  setChars(b, pchar, path)
+  setChars(b, '/', relPathSeg)
+  setChars(b, '?', query | queryStart);
+  setChars(b, '#', fragment | fragmentStart);
+  b = build(pathSeg, path | notSimple)
+  setChars(b, pchar, path)
+  setChars(b, ".", pathSegDot)
+  setChars(b, "/", pathSeg | notSimple)
+  setChars(b, "?", query | queryStart)
+  setChars(b, "#", fragment | fragmentStart)
+  b = build(pathSegDot, path | notSimple)
+  setChars(b, pchar, path)
+  setChars(b, '.', pathSegDot2)
+  setChars(b, '/', pathSeg | notSimple)
+  setChars(b, '?', query | queryStart)
+  setChars(b, '#', fragment | fragmentStart)
+  b = build(pathSegDot2, path | notSimple)
+  setChars(b, pchar, path)
+  setChars(b, '/', pathSeg | notSimple)
+  setChars(b, '?', query | queryStart)
+  setChars(b, '#', fragment | fragmentStart)
+  b = build(path, path | notSimple)
+  setChars(b, pchar, path)
+  setChars(b, '/', pathSeg)
+  setChars(b, '?', query | queryStart)
+  setChars(b, '#', fragment | fragmentStart)
+  b = build(query, query | notSimple)
+  setChars(b, pchar, query)
+  setChars(b, '?', query)
+  setChars(b, '#', fragment | fragmentStart)
+  b = build(fragment, fragment | notSimple)
+  setChars(b, pchar, fragment)
+  setChars(b, '?', fragment)
+  b = build(scheme0, scheme | notSimple)
+  setRange(b, 'az', scheme)
+  b = build(scheme, scheme | notSimple)
+  setRange(b, 'az', scheme)
+  setRange(b, '09', scheme)
+  setChars(b, '+-.', scheme)
+  return tables
+}
+
+
 class URIFormatError extends Error { 
   public uri: string
   public offset: number | null
@@ -338,6 +582,15 @@ export type URIInitOptions = {
 export class URI {
   static get isWindows (): boolean {
     return isWindow
+  }
+
+  static get base () {
+    const uri = kCurrentURI
+    if (uri === null) {
+      throw new UnsupportedError(`URI.base is not supported.`)
+    }
+
+    return URI.parse(uri)
   }
 
   static getDefaultPort (scheme: string) {
@@ -541,7 +794,7 @@ export class URI {
       URI.checkWindowsPathReservedCharacters(segments, false, 1)
       hasDriveLetter = true
     } else {
-      URI.checkWindowsPathReservedCharacters(segments, false, 0)
+      URI.checkWindowsPathReservedCharacters(segments as string[], false, 0)
     }
     const result = new StringBuffer()
     if (
@@ -558,8 +811,8 @@ export class URI {
         result.write('\\')
       }
     }
-    result.writeAll(segments, '\\')
-    if (hasDriveLetter && segments.length === 1) {
+    result.writeAll(segments as string[], '\\')
+    if (hasDriveLetter && (segments as string[]).length === 1) {
       result.write('\\')
     }
     return result.toString()
@@ -713,106 +966,229 @@ export class URI {
   }
 
   static parse (
-    text: string, 
-    start: number, 
-    sourceURI: URI
+    uri: string, 
+    start: number = 0, 
+    end: number = uri.length
   ) {
-    invariant(start === 0 || start === 5)
-    invariant((start === 5) === text.startsWith('data:'))
+    debugger
+    // if (end >= start + 5) {
+    //   const dataDelta = startsWithData(uri, start)
+    //   if (dataDelta === 0) {
+    //     // The case is right.
+    //     if (start > 0 || end < uri.length) {
+    //       uri = uri.substring(start, end)
+    //     }
+    //     return UriData._parse(uri, 5, null).uri;
+    //   } else if (dataDelta == 0x20) {
+    //     return UriData._parse(uri.substring(start + 5, end), 0, null).uri;
+    //   }
+    // }
 
-    const comma = 0x2c
-    const slash = 0x2f
-    const semicolon = 0x3b
-    const equals = 0x3d
-    const indices: number[] = [start - 1]
+    const indices = new Array(8).fill(0)
+    indices[0] = 0
+    indices[kSchemeEndIndex] = start - 1
+    indices[kHostStartIndex] = start - 1
+    indices[kNotSimpleIndex] = start - 1
+    indices[kPortStartIndex] = start
+    indices[kPathStartIndex] = start
+    indices[kQueryStartIndex] = end
+    indices[kFragmentStartIndex] = end
 
-    let slashIndex = -1
-    let char
-    let i = start
-    for (; i < text.length; i++) {
-      char = text.charCodeAt(i)
-      if (
-        char === comma || 
-        char === semicolon
+    let state = scan(uri, start, end, kURIStart, indices)
+    if (state >= kNonSimpleEndStates) {
+      indices[kNotSimpleIndex] = end
+    }
+    let schemeEnd = indices[kSchemeEndIndex]
+    if (schemeEnd >= start) {
+      // Rescan the scheme part now that we know it's not a path.
+      state = scan(uri, start, schemeEnd, kSchemeStart, indices)
+      if (state === kSchemeStart) {
+        indices[kNotSimpleIndex] = schemeEnd
+      }
+    }
+
+    let hostStart = indices[kHostStartIndex] + 1
+    let portStart = indices[kPortStartIndex]
+    let pathStart = indices[kPathStartIndex]
+    let queryStart = indices[kQueryStartIndex]
+    let fragmentStart = indices[kFragmentStartIndex]
+
+    let scheme: string | null = null
+
+    if (fragmentStart < queryStart) {
+      queryStart = fragmentStart
+    }
+    
+    if (pathStart < hostStart) {
+      pathStart = queryStart
+    } else if (pathStart <= schemeEnd) {
+      pathStart = schemeEnd + 1
+    }
+   
+    if (portStart < hostStart) {
+      portStart = pathStart
+    }
+
+    invariant(hostStart == start || schemeEnd <= hostStart)
+    invariant(hostStart <= portStart)
+    invariant(schemeEnd <= pathStart)
+    invariant(portStart <= pathStart)
+    invariant(pathStart <= queryStart)
+    invariant(queryStart <= fragmentStart)
+
+    let isSimple = indices[kNotSimpleIndex] < start
+
+    if (isSimple) {
+      if (hostStart > schemeEnd + 3) {
+        isSimple = false
+      } else if (
+        portStart > start && 
+        portStart + 1 == pathStart
       ) {
-        break
-      }
-      if (char === slash) {
-        if (slashIndex < 0) {
-          slashIndex = i
-          continue
-        }
-
-        throw new URIFormatError('Invalid MIME type', text, i)
-      }
-    }
-
-    if (
-      slashIndex < 0 && 
-      i > start
-    ) {
-      // An empty MIME type is allowed, but if non-empty it must contain
-      // exactly one slash.
-      throw new URIFormatError('Invalid MIME type', text, i)
-    }
-
-    while (char !== comma) {
-      // Parse parameters and/or "base64".
-      indices.push(i)
-      i++
-      let equalsIndex = -1
-      for (; i < text.length; i++) {
-        char = text.charCodeAt(i)
-        if (char === equals) {
-          if (equalsIndex < 0) {
-            equalsIndex = i
+        isSimple = false
+      } else if (
+        queryStart < end && (
+          queryStart === pathStart + 2 &&
+          uri.startsWith('..', pathStart)
+        ) || (
+          queryStart > pathStart + 2 &&
+          uri.startsWith('/..', queryStart - 3)
+        )
+      ) {
+        isSimple = false
+      } else {
+        if (schemeEnd === start + 4) {
+          if (uri.startsWith('file', start)) {
+            scheme = 'file'
+            if (hostStart <= start) {
+              let schemeAuth = 'file://'
+              let delta = 2
+              if (!uri.startsWith('/', pathStart)) {
+                schemeAuth = 'file:///'
+                delta = 3
+              }
+              uri = schemeAuth + uri.substring(pathStart, end)
+              schemeEnd -= start
+              hostStart = 7
+              portStart = 7
+              pathStart = 7
+              queryStart += delta - start
+              fragmentStart += delta - start
+              start = 0
+              end = uri.length
+            } else if (pathStart == queryStart) {
+              // Uri has authority and empty path. Add "/" as path.
+              if (start == 0 && end == uri.length) {
+                uri = uri.slice(0, pathStart) + '' + uri.slice(queryStart)
+                queryStart += 1
+                fragmentStart += 1
+                end += 1
+              } else {
+                uri = `${uri.substring(start, pathStart)}/${uri.substring(queryStart, end)}`
+                schemeEnd -= start
+                hostStart -= start
+                portStart -= start
+                pathStart -= start
+                queryStart += 1 - start
+                fragmentStart += 1 - start
+                start = 0
+                end = uri.length
+              }
+            }
+          } else if (uri.startsWith('http', start)) {
+            scheme = 'http'
+            // HTTP URIs should not have an explicit port of 80.
+            if (
+              portStart > start &&
+              portStart + 3 == pathStart &&
+              uri.startsWith('80', portStart + 1)
+            ) {
+              if (
+                start === 0 && 
+                end == uri.length
+              ) {
+                uri = uri.slice(0, portStart) + '' + uri.slice(pathStart)
+                pathStart -= 3
+                queryStart -= 3
+                fragmentStart -= 3
+                end -= 3
+              } else {
+                uri = uri.substring(start, portStart) + uri.substring(pathStart, end)
+                schemeEnd -= start
+                hostStart -= start
+                portStart -= start
+                pathStart -= 3 + start
+                queryStart -= 3 + start
+                fragmentStart -= 3 + start
+                start = 0
+                end = uri.length
+              }
+            }
           }
         } else if (
-          char === semicolon || 
-          char === comma
+          schemeEnd == start + 5 && 
+          uri.startsWith('https', start)
         ) {
-          break
+          scheme = 'https'
+          // HTTPS URIs should not have an explicit port of 443.
+          if (
+            portStart > start &&
+            portStart + 4 === pathStart &&
+            uri.startsWith('443', portStart + 1)
+          ) {
+            if (
+              start === 0 && 
+              end === uri.length
+            ) {
+              uri = uri.slice(0, portStart) + '' + uri.slice(pathStart)
+              
+              pathStart -= 4
+              queryStart -= 4
+              fragmentStart -= 4
+              end -= 3
+            } else {
+              uri = uri.substring(start, portStart) + uri.substring(pathStart, end)
+              schemeEnd -= start
+              hostStart -= start
+              portStart -= start
+              pathStart -= 4 + start
+              queryStart -= 4 + start
+              fragmentStart -= 4 + start
+              start = 0
+              end = uri.length
+            }
+          }
         }
-      }
-      if (equalsIndex >= 0) {
-        indices.push(equalsIndex)
-      } else {
-        // Have to be final "base64".
-        let lastSeparator = indices[indices.length - 1]
-        if (
-          char !== comma ||
-          i !== lastSeparator + 7 /* "base64,".length */ ||
-          !text.startsWith('base64', lastSeparator + 1)
-        ) {
-          throw new URIFormatError('Expecting \'=\'', text, i)
-        }
-
-        break
-      }
-    }
-    indices.push(i)
-    const isBase64 = indices.length % 2 > 0
-    if (isBase64) {
-      // @TODO
-      // text = base64.normalize(text, i + 1, text.length)
-    } else {
-      const data = URI.normalize(
-        text, 
-        i + 1, 
-        text.length, 
-        kQueryCharTable,
-        true
-      )
-      
-      if (data !== null) {
-        text = text.slice(0, i + 1) + data + text.slice(text.length) 
       }
     }
 
-    // @TODO
-    // return new UriData(text, indices, sourceURI)
+    // if (isSimple) {
+    //   if (start > 0 || end < uri.length) {
+    //     uri = uri.substring(start, end);
+    //     schemeEnd -= start;
+    //     hostStart -= start;
+    //     portStart -= start;
+    //     pathStart -= start;
+    //     queryStart -= start;
+    //     fragmentStart -= start;
+    //   }
+    //   return _SimpleUri(uri, schemeEnd, hostStart, portStart, pathStart,
+    //       queryStart, fragmentStart, scheme);
+    // }
+
+    return URI.notSimple(
+      uri, 
+      start, 
+      end, 
+      schemeEnd, 
+      hostStart, 
+      portStart,
+      pathStart, 
+      queryStart, 
+      fragmentStart, 
+      scheme
+    )
   }
-
 
   static parseIPv6Address (
     host: string, 
@@ -2009,11 +2385,11 @@ export class URI {
     scheme: string, 
     authority: string | null,
     unencodedPath: string, 
-    queryParameters?: Map<string, string[]> 
+    queryParameters?: Map<string, string[]> | null
   ) {
     let userInfo = ''
-    let host: string
-    let port: number
+    let host: string | null = null
+    let port: number | null = null
 
     if (
       authority !== null && 
@@ -2164,9 +2540,9 @@ export class URI {
     return `${this.scheme}://${this.host}:${this.port}`
   }) public origin!: string
 
-  @property() public scheme: string
+  @property() public scheme: string | null
 
-  @property() public userInfo: string
+  @property() public userInfo: string | null
 
   @property<string>(function (host: string | null) {
     if (host === null) {
@@ -2176,21 +2552,21 @@ export class URI {
     }
 
     return host
-  }) public host: string
+  }) public host: string | null
 
   @property<number>(function (this, port: number | null) {
     return port ?? URI.getDefaultPort(this.scheme)
-  }) public port: number
+  }) public port: number | null
 
-  @property() public path: string
+  @property() public path: string | null
 
   @property<string>(function (query: string | null) {
     return query ?? ''
-  }) public query: string
+  }) public query: string | null
 
   @property<string>(function (fragment: string | null) {
     return fragment ?? ''
-  }) public fragment: string
+  }) public fragment: string | null
 
   @property<string>(function (this, authority: string | null) {
     if (!this.hasAuthority) {
@@ -2200,23 +2576,23 @@ export class URI {
     const string = new StringBuffer()
     this.writeAuthority(string)
     return string.toString()
-  }) public authority!: string
+  }) public authority!: string | null
 
   @property<string[]>(function (this) {
     return URI.computePathSegments(this.path)
-  }) public pathSegments!: string[]
+  }) public pathSegments!: string[] | null
 
   @property<Map<string, string>>(function (this) {
     return URI.splitQueryString(this.query)
-  }) public queryParameters!: Map<string, string>
+  }) public queryParameters!: Map<string, string> | null
 
   @property<Map<string, string[]>>(function (this) {
     return URI.computeQueryParametersAll(this.query)
-  }) public queryParametersAll!: Map<string, string[]>
+  }) public queryParametersAll!: Map<string, string[]> | null
   
 
   constructor (options: URIInitOptions) {
-    this.scheme = options.scheme
+    this.scheme = options.scheme ?? null
     this.userInfo = options.userInfo ?? null
     this.host = options.host ?? null
     this.port = options.port ?? null
@@ -2253,14 +2629,14 @@ export class URI {
       }
       // Use path segments to have any escapes unescaped.
       const pathSegments = this.pathSegments
-      URI.checkNonWindowsPathReservedCharacters(pathSegments, false)
+      URI.checkNonWindowsPathReservedCharacters(pathSegments as string[], false)
       
       const result = new StringBuffer()
       if (this.hasAbsolutePath) {
         result.write('/')
       }
       
-      result.writeAll(pathSegments, '/')
+      result.writeAll(pathSegments as string[], '/')
       
       return result.toString()
     }
@@ -2304,33 +2680,33 @@ export class URI {
           reference.port : null
       }
 
-      targetPath = URI.removeDotSegments(reference.path)
+      targetPath = URI.removeDotSegments(reference.path as string)
       if (reference.hasQuery) {
         targetQuery = reference.query;
       }
     } else {
-      targetScheme = this.scheme
+      targetScheme = this.scheme as string
       if (reference.hasAuthority) {
-        targetUserInfo = reference.userInfo;
-        targetHost = reference.host;
+        targetUserInfo = reference.userInfo as string
+        targetHost = reference.host
         targetPort = URI.makePort(reference.hasPort ? reference.port : null, targetScheme)
-        targetPath = URI.removeDotSegments(reference.path)
+        targetPath = URI.removeDotSegments(reference.path as string)
         if (reference.hasQuery) {
           targetQuery = reference.query
         }
       } else {
-        targetUserInfo = this.userInfo
+        targetUserInfo = this.userInfo as string
         targetHost = this.host
         targetPort = this.port
         if (reference.path === '') {
-          targetPath = this.path
+          targetPath = this.path as string
           if (reference.hasQuery) {
             targetQuery = reference.query
           } else {
             targetQuery = this.query
           }
         } else {
-          const basePath = this.path
+          const basePath = this.path as string
           const packageNameEnd = URI.packageNameEnd(this, basePath)
           if (packageNameEnd > 0) {
             invariant(targetScheme === 'package')
@@ -2339,32 +2715,32 @@ export class URI {
             // Merging a path into a package URI.
             const packageName = basePath.substring(0, packageNameEnd)
             if (reference.hasAbsolutePath) {
-              targetPath = packageName + URI.removeDotSegments(reference.path)
+              targetPath = packageName + URI.removeDotSegments(reference.path as string)
             } else {
               targetPath = packageName + URI.removeDotSegments(
-                this.mergePaths(basePath.substring(packageName.length), reference.path)
+                this.mergePaths(basePath.substring(packageName.length), reference.path as string)
               )
             }
           } else if (reference.hasAbsolutePath) {
-            targetPath = URI.removeDotSegments(reference.path)
+            targetPath = URI.removeDotSegments(reference.path as string)
           } else {
             // This is the RFC 3986 behavior for merging.
             if (this.hasEmptyPath) {
               if (!this.hasAuthority) {
                 if (!this.hasScheme) {
                   // Keep the path relative if no scheme or authority.
-                  targetPath = reference.path;
+                  targetPath = reference.path as string
                 } else {
                   // Remove leading dot-segments if the path is put
                   // beneath a scheme.
-                  targetPath = URI.removeDotSegments(reference.path)
+                  targetPath = URI.removeDotSegments(reference.path as string)
                 }
               } else {
                 // RFC algorithm for base with authority and empty path.
                 targetPath = URI.removeDotSegments('/' + reference.path)
               }
             } else {
-              const mergedPath = this.mergePaths(this.path, reference.path)
+              const mergedPath = this.mergePaths(this.path as string, reference.path as string)
               if (
                 this.hasScheme || 
                 this.hasAuthority || 
@@ -2401,7 +2777,7 @@ export class URI {
   }
 
   isScheme (scheme: string): boolean {
-    const thisScheme = this.scheme
+    const thisScheme = this.scheme as string
     if (scheme === null) {
       return thisScheme.length === 0
     }

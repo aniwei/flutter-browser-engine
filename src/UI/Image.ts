@@ -1,4 +1,5 @@
-import { SkiaObjectBox, SkiaImage } from '@Skia'
+import { SkiaObjectBox, SkiaImage, Skia } from '@Skia'
+import invariant from 'ts-invariant'
 import { ImageByteFormat } from './Painting'
 
 export interface IImage {
@@ -27,8 +28,8 @@ export class Image implements IImage {
   static malloc (skia: SkiaImage, frame: VideoFrame) {
     return new Image(skia, frame)
   }
-  static cloneOf (box: SkiaObjectBox<SkiaImage>) {
-    
+  static cloneOf (box: SkiaObjectBox<Image, SkiaImage>) {
+
   }
 
   public get skia () {
@@ -36,39 +37,83 @@ export class Image implements IImage {
   }
 
   public get width (): number {
-    return this.skia.width()
+    invariant(!this.debugCheckIsDisposed())
+    return this.skia!.width()
   }
 
   public get height (): number {
-    return this.skia.height()
+    invariant(!this.debugCheckIsDisposed())
+    return this.skia!.height()
   }
 
-  public box: SkiaObjectBox<SkiaImage>
+  public box: SkiaObjectBox<Image, SkiaImage>
   public disposed: boolean
+  public videoFrame: VideoFrame | null = null
+  public get skiaImage () {
+    return this.box.skia
+  }
 
   constructor (skia: SkiaImage, frame?) {
-    this.box = new SkiaObjectBox(skia)
+    this.box = new SkiaObjectBox(this, skia)
     this.disposed = false
+    this.videoFrame = frame
   }
 
+  debugCheckIsDisposed () {
+    invariant(this.disposed, `This image has been disposed.`)
+    return true
+  }
   
-  toByteData(format: ImageByteFormat): Promise<any> {
-    throw new Error('Method not implemented.')
+  async toByteData (format: ImageByteFormat = ImageByteFormat.RawRGBA) {
+    invariant(!this.debugCheckIsDisposed())
+
+    if (this.videoFrame !== null) {
+      // return this.readPixelsFromVideoFrame()
+    } else {
+      return this.readPixelsFromSkiaImage(format)
+    }
+  }
+
+  readPixelsFromSkiaImage (format: ImageByteFormat) {
+    const alphaType = ImageByteFormat.RawStraightRGBA ? 
+      Skia.AlphaType.Unpremul : 
+      Skia.AlphaType.Premul
+
+    let bytes: Uint8Array
+
+    if (
+      format === ImageByteFormat.RawRGBA ||
+      format === ImageByteFormat.RawStraightRGBA
+    ) {
+      bytes = this.skiaImage?.readPixels(0, 0, {
+        width: this.width,
+        height: this.height,
+        alphaType,
+        colorType: Skia.ColorType.RGBA_8888,
+        colorSpace: Skia.ColorSpace.SRGB
+      }) as Uint8Array
+    } else {
+      bytes = this.skiaImage?.encodeToBytes() as Uint8Array
+    }
+
+    return bytes.buffer
   }
 
   dispose () {
     this.disposed = true
+    this.box.unref(this)
   }
 
   clone (): Image  {
-    // return Image.cloneOf(this.box)
+    invariant(!this.debugCheckIsDisposed())
     throw new Error()
   }
 
   isCloneOf (other: Image) {
+    invariant(!this.debugCheckIsDisposed())
     return (
       other instanceof Image && 
-      other.skia.isAliasOf(this.skia)
+      other.skia!.isAliasOf(this.skia)
     )
   }
 

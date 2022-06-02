@@ -4,6 +4,5 @@ import { URI } from '@Platform'
 
 test(`URI`, async () => {
   debugger
-  const uri = URI.parseIPv6Address('2010:836B:4179::836B:4179')
-  debugger
+  URI.parse('https://www.yiibai.com/dart/dart_programming_list_replacerange_function.html')
 })

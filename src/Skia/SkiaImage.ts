@@ -1,5 +1,6 @@
-import { HttpRequest } from '@Platform'
+import { HttpRequest, kBrowserSupportsImageDecoder } from '@Platform'
 import { URI } from '@Platform'
+import { SkiaAnimatedImageDecoder } from './SkiaAnimatedImageDecoder'
 type WebOnlyImageCodecChunkCallback = { (cumulativeBytesLoaded: number, expectedTotalBytes: number): void } 
 
 export function fetchImage (
@@ -18,6 +19,7 @@ export function fetchImage (
     }
     
     request.addEventListener('error', function (event: ProgressEvent) {
+      debugger
       reject(new Error(``))
     })
     
@@ -46,7 +48,11 @@ export async function skiaInstantiateWebImageCodec(
   chunkCallback: WebOnlyImageCodecChunkCallback | null
 ) {
   const data = await fetchImage(url, chunkCallback)
-  
+  if (kBrowserSupportsImageDecoder) {
+     // @TODO
+  } else {
+    return SkiaAnimatedImageDecoder.decodeFromBytes(data, url)
+  }
 }
 
 export async function webOnlyInstantiateImageCodecFromURL (
