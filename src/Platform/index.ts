@@ -75,7 +75,7 @@ export const kBrowserSupportsFinalizationRegistry = isWindow ?
   (typeof globalThis.FinalizationRegistry === 'object')
 
 export * from './URI'
-export * from './HTT'
+export * from './Axios'
 export * from './Locale'
 export * from './Encoding'
 export * from './TypedData'

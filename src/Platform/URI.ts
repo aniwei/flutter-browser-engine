@@ -248,7 +248,7 @@ const kZoneIDTable = [
 const kScannerTables = createTables()
 
 function property<T> (
-  getter: { (v: T, k?): T } = function (v, k) { return v as T },
+  getter: { (v: T, k?): T } = function (this, v, k) { return v as T },
   setter: { (v: T, k): void } = function (this, v: T, k) { this[k] = v }
 ) {
   return function (
@@ -259,10 +259,10 @@ function property<T> (
 
     Reflect.defineProperty(target, key, {
       get () {
-        return Reflect.apply(getter, this, [k, this[k]])
+        return Reflect.apply(getter, this, [this[k], k])
       },
       set (value: T) {
-        return Reflect.apply(getter, this, [value, k])
+        return Reflect.apply(setter, this, [value, k])
       }
     })
   }
@@ -1126,7 +1126,7 @@ export class URI {
             }
           }
         } else if (
-          schemeEnd == start + 5 && 
+          schemeEnd === start + 5 && 
           uri.startsWith('https', start)
         ) {
           scheme = 'https'
@@ -1195,14 +1195,6 @@ export class URI {
     start = 0, 
     end: number = host.length
   ): number[] {
-    // An IPv6 address consists of exactly 8 parts of 1-4 hex digits, separated
-    // by `:`'s, with the following exceptions:
-    //
-    //  - One (and only one) wildcard (`::`) may be present, representing a fill
-    //    of 0's. The IPv6 `::` is thus 16 bytes of `0`.
-    //  - The last two parts may be replaced by an IPv4 "dotted-quad" address.
-
-    // Helper function for reporting a badly formatted IPv6 address.
     const error = (msg: string, position: number | null) => {
       throw new URIFormatError(
         `Illegal IPv6 address, ${msg}`, 
@@ -1962,7 +1954,7 @@ export class URI {
     charTable: number[],
     escapeDelimiters: boolean = false
   ): string | null {
-    let buffer
+    let buffer: StringBuffer | null = null
     let sectionStart = start
     let index = start
     // Loop while characters are valid and escapes correct and upper-case.
