@@ -230,10 +230,10 @@ export abstract class ImageProvider<T> {
     onError: ImageErrorListener
   ): void  {
     if (stream.completer !== null) {
-      final ImageStreamCompleter? completer = PaintingBinding.instance!.imageCache!.putIfAbsent(
+      const completer = PaintingBinding.instance!.imageCache!.putIfAbsent(
         key,
         () => stream.completer!,
-        onError: handleError,
+        onError,
       )
       invariant(completer === stream.completer)
       return
@@ -244,6 +244,7 @@ export abstract class ImageProvider<T> {
     const completer = PaintingBinding.instance!.imageCache!.putIfAbsent(key, () => {
       return this.load(key, PaintingBinding.instance!.instantiateImageCodec)
     }, onError)
+    
     if (completer !== null) {
       stream.setCompleter(completer)
     }
