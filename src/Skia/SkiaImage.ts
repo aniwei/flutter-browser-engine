@@ -1,4 +1,6 @@
-import { HttpRequest } from '@Platform'
+import { Axios, kBrowserSupportsImageDecoder } from '@Platform'
+import { URI } from '@Platform'
+import { SkiaAnimatedImageDecoder } from './SkiaAnimatedImageDecoder'
 type WebOnlyImageCodecChunkCallback = { (cumulativeBytesLoaded: number, expectedTotalBytes: number): void } 
 
 export function fetchImage (
@@ -6,17 +8,19 @@ export function fetchImage (
   chunkCallback: WebOnlyImageCodecChunkCallback | null
 ): Promise<Uint8Array>  {
   return new Promise((resolve, reject) => {
-    const request = new HttpRequest()
-    request.open('GET', url, true)
-    request.responseType = 'arraybuffer'
-    
-    if (chunkCallback !== null) {
-      request.addEventListener('progress', function (event: ProgressEvent) {
-        Reflect.apply(chunkCallback, this, [event])
-      })
-    }
+    const request = new Axios({ 
+      url,
+      method: 'GET',
+      responseType: 'arraybuffer',
+      onDownloadProgress (this, event: ProgressEvent) {
+        if (chunkCallback) {
+          Reflect.apply(chunkCallback!, this, [event])
+        }
+      }
+    })
     
     request.addEventListener('error', function (event: ProgressEvent) {
+      debugger
       reject(new Error(``))
     })
     
@@ -44,5 +48,17 @@ export async function skiaInstantiateWebImageCodec(
   url: string, 
   chunkCallback: WebOnlyImageCodecChunkCallback | null
 ) {
-  return await fetchImage(url, chunkCallback)
+  const data = await fetchImage(url, chunkCallback)
+  if (kBrowserSupportsImageDecoder) {
+     // @TODO
+  } else {
+    return SkiaAnimatedImageDecoder.decodeFromBytes(data, url)
+  }
+}
+
+export async function webOnlyInstantiateImageCodecFromURL (
+  uri: URI,
+  chunkCallback?: WebOnlyImageCodecChunkCallback
+) {
+  return skiaInstantiateWebImageCodec(uri.toString(), chunkCallback ?? null)
 }

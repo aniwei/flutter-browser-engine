@@ -5,6 +5,7 @@ import { Locale, StringBuffer, TargetPlatform } from '@Platform'
 import { AssetBundle } from '@Services'
 import { ImageErrorListener, ImageStream } from './ImageStream'
 import { PaintingBinding } from './Binding'
+import { ImageCacheStatus } from './ImageCache'
 
 type KeyAndErrorHandlerCallback<T> = { (key: T, handleError: ImageErrorListener): void }
 type AsyncKeyErrorHandler<T> = { (key: T, exception): Promise<void> }
@@ -136,6 +137,8 @@ export class ImageConfiguration {
 }
 
 export abstract class ImageProvider<T> {
+  abstract obtainedKey (configuration: ImageConfiguration): Promise<T>
+
   resolve (configuration: ImageConfiguration) {
     invariant(configuration !== null)
 
@@ -144,18 +147,8 @@ export abstract class ImageProvider<T> {
     this.createErrorHandlerAndKey(configuration, (key: T, onError: ImageErrorListener) => {
       this.resolveStreamForKey(configuration, stream, key, onError)
     }, async (key: T | null, exception) => {
-        if (stream.completer === null) {
-          stream.setCompleter(_ErrorImageCompleter());
-        }
-        stream.completer!.reportError(
-          exception: exception,
-          stack: stack,
-          context: ErrorDescription('while resolving an image'),
-          silent: true, // could be a network error or whatnot
-          informationCollector: collector,
-        );
-      }
-    )
+         
+    })
 
     return stream
   }
@@ -229,6 +222,7 @@ export abstract class ImageProvider<T> {
     key: T, 
     onError: ImageErrorListener
   ): void  {
+
     if (stream.completer !== null) {
       const completer = PaintingBinding.instance!.imageCache!.putIfAbsent(
         key,
@@ -250,7 +244,6 @@ export abstract class ImageProvider<T> {
     }
   }
 }
-
 
 
 export class AssetBundleImageKey {

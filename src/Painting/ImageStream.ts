@@ -1,5 +1,5 @@
 import invariant from 'ts-invariant'
-import { Image } from '@UI'
+import { Codec, FrameInfo, Image } from '@UI'
 import { VoidCallback } from '@Platform'
 import { EventEmitter } from 'events'
 
@@ -115,27 +115,13 @@ export class ImageChunkEvent {
   }
 }
 
-export class ImageStream extends EventEmitter {  
-   
-
-  setCompleter (value: ImageStreamCompleter) {
-    invariant(this.completer === null)
-    this.completer = value
-    if (this.listeners !== null) {
-      const initialListeners: ImageStreamListener[] = this.listeners
-      this.listeners = null
-      initialListeners.forEach(this.completer!.addListener)
-    }
-  }
-}
-
-export class ImageStreamCompleterHandle {
-  constructor (completer: ImageStreamCompleter) {
+export class ImageStreamHandle {
+  constructor (completer: ImageStream) {
     this.completer = completer
     this.completer.keepAliveHandles += 1
   }
 
-  public completer: ImageStreamCompleter | null = null
+  public completer: ImageStream | null = null
   
   dispose () {
     invariant(this.completer !== null);
@@ -148,21 +134,22 @@ export class ImageStreamCompleterHandle {
   }
 }
 
-abstract class ImageStreamCompleter {
+abstract class ImageStream {
   public listeners: ImageStreamListener[] = []
+  public debugLabel: string | null = null
   public currentImage: ImageInfo | null = null
   
   public get hasListeners () {
     return this.listeners.length > 0
   }
 
-  public hadAtLeastOneListener: boolean = false
-  public keepAliveHandles: number = 0
   public disposed = false
+  public keepAliveHandles: number = 0
+  public hadAtLeastOneListener: boolean = false
   public onLastListenerRemovedCallbacks: VoidCallback[] = []
 
-  addListener (listener: ImageStreamListener) {
-    this.checkDisposed()
+  on (listener: ImageStreamListener) {
+    this.checkIsDisposed()
     this.hadAtLeastOneListener = true
     this.listeners.push(listener)
 
@@ -179,13 +166,7 @@ abstract class ImageStreamCompleter {
     }
   }
 
-  
-  keepAlive (): ImageStreamCompleterHandle {
-    this.checkDisposed()
-    return new ImageStreamCompleterHandle(this)
-  }
-
-  removeListener (listener: ImageStreamListener) {
+  off (listener: ImageStreamListener) {
     this.checkDisposed()
 
     for (let i = 0; i < this.listeners.length; i += 1) {
@@ -204,8 +185,13 @@ abstract class ImageStreamCompleter {
       this.maybeDispose()
     }
   }
+  
+  keepAlive (): ImageStreamHandle {
+    this.checkIsDisposed()
+    return new ImageStreamHandle(this)
+  }
 
-  maybeDispose () {
+  dispose () {
     if (
       !this.hadAtLeastOneListener || 
       this.disposed || 
@@ -220,29 +206,27 @@ abstract class ImageStreamCompleter {
     this.disposed = true
   }
 
-  checkDisposed () {
+  checkIsDisposed () {
     if (this.disposed) {
-      throw new Error(
-        `Stream has been disposed.`
-      )
+      throw new Error(`Stream has been disposed.`)
     }
   }
 
   addOnLastListenerRemovedCallback (callback: VoidCallback) {
     invariant(callback !== null)
-    this.checkDisposed()
+    this.checkIsDisposed()
     this.onLastListenerRemovedCallbacks.push(callback)
   }
 
   removeOnLastListenerRemovedCallback (callback: VoidCallback) {
     invariant(callback !== null)
-    this.checkDisposed()
+    this.checkIsDisposed()
     const index = this.onLastListenerRemovedCallbacks.findIndex(callback)
     this.onLastListenerRemovedCallbacks.splice(index, 1)
   }
 
   setImage (image: ImageInfo) {
-    this.checkDisposed()
+    this.checkIsDisposed()
     this.currentImage?.dispose()
     this.currentImage = image
 
@@ -261,7 +245,7 @@ abstract class ImageStreamCompleter {
   }
   
   reportImageChunkEvent (event: ImageChunkEvent) {
-    this.checkDisposed()
+    this.checkIsDisposed()
     if (this.hasListeners) {
       
       const localListeners = this.listeners.map<ImageChunkListener | null>((listener: ImageStreamListener) => listener.onChunk)
@@ -275,11 +259,8 @@ abstract class ImageStreamCompleter {
 
 
 
-export class OneFrameImageStreamCompleter extends ImageStreamCompleter {
-  constructor (
-    image: Promise<ImageInfo>,
-    informationCollector : InformationCollector | null
-  ) {
+export class OneFrameImageStream extends ImageStream {
+  constructor (image: Promise<ImageInfo>) {
     invariant(image !== null)
 
     super()
@@ -294,170 +275,155 @@ export class OneFrameImageStreamCompleter extends ImageStreamCompleter {
 
 
 
-export class MultiFrameImageStreamCompleter extends ImageStreamCompleter {
-  public chunkSubscription: StreamSubscription<ImageChunkEvent> | null
-  public codec
+export class MultiFrameImageStream extends ImageStream {
   public scale: number
-  public informationCollector: InformationCollector | null
-  public nextFrame: FrameInfo
-  public shownTimestamp: Duration
-  public frameDuration: Duration
+  public chunkSubscription: StreamSubscription<ImageChunkEvent> | null
+  public codec: Codec | null = null
+  public nextFrame: FrameInfo | null = null
+  public shownTimestamp: number
+  public frameDuration: number
   public framesEmitted = 0
-  public timer
   public frameCallbackScheduled: boolean = false
+  public timer
 
   constructor (
-    codec: Future<ui.Codec>,
+    codec: Promise<Codec>,
     scale: number,
     debugLabel: string | null,
     chunkEvents: Stream<ImageChunkEvent> | null,
-    informationCollector: InformationCollector | null,
   ) {
     super()
     invariant(codec !== null)
     
-    this.informationCollector = informationCollector
-       _scale = scale {
-    this.debugLabel = debugLabel;
-    codec.then<void>(_handleCodecReady, onError: (Object error, StackTrace stack) {
-      reportError(
-        context: ErrorDescription('resolving an image codec'),
-        exception: error,
-        stack: stack,
-        informationCollector: informationCollector,
-        silent: true,
-      );
-    });
-    if (chunkEvents != null) {
-      _chunkSubscription = chunkEvents.listen(reportImageChunkEvent,
-        onError: (Object error, StackTrace stack) {
-          reportError(
-            context: ErrorDescription('loading an image'),
-            exception: error,
-            stack: stack,
-            informationCollector: informationCollector,
-            silent: true,
-          );
-        },
-      );
+    this.scale = scale 
+    this.debugLabel = debugLabel
+    
+    codec.then<void>(this.handleCodecReady).catch(error => {
+
+    })
+
+    if (chunkEvents !== null) {
+
     }
   }
 
-  handleCodecReady (ui.Codec codec) {
-    _codec = codec;
-    
-    invariant(_codec !== null)
+  handleCodecReady = (codec) => {
+    this.codec = codec
+    invariant(this.codec !== null)
 
     if (this.hasListeners) {
       this.decodeNextFrameAndSchedule()
     }
   }
 
-  handleAppFrame (timestamp: number) {
+  handleAppFrame = (timestamp: number) => {
     this.frameCallbackScheduled = false
     if (!this.hasListeners) {
       return
     }
 
-    invariant(_nextFrame !== null)
+    invariant(this.nextFrame !== null)
 
-    if (_isFirstFrame() || _hasFrameDurationPassed(timestamp)) {
-      _emitFrame(ImageInfo(
-        image: _nextFrame!.image.clone(),
-        scale: _scale,
-        debugLabel: debugLabel,
-      ));
-      _shownTimestamp = timestamp;
-      _frameDuration = _nextFrame!.duration;
-      _nextFrame!.image.dispose();
-      _nextFrame = null;
-      final int completedCycles = _framesEmitted ~/ _codec!.frameCount;
-      if (_codec!.repetitionCount == -1 || completedCycles <= _codec!.repetitionCount) {
-        _decodeNextFrameAndSchedule();
+    if (
+      this.isFirstFrame() || 
+      this.hasFrameDurationPassed(timestamp)
+    ) {
+      this.emitFrame(new ImageInfo(
+        this.nextFrame!.image.clone(),
+        this.scale,
+        this.debugLabel,
+      ))
+      this.shownTimestamp = timestamp
+      this.frameDuration = this.nextFrame!.duration
+      this.nextFrame!.image.dispose()
+      this.nextFrame = null
+      
+      const completedCycles = Math.floor(this.framesEmitted / this.codec!.frameCount)
+      if (
+        this.codec!.repetitionCount == -1 || 
+        completedCycles <= this.codec!.repetitionCount
+      ) {
+        this.decodeNextFrameAndSchedule()
       }
-      return;
+      return
     }
-    final Duration delay = _frameDuration! - (timestamp - _shownTimestamp);
-    _timer = Timer(delay * timeDilation, () {
-      _scheduleAppFrame();
+    const delay = this.frameDuration! - (timestamp - this.shownTimestamp)
+    this.timer = Timer(delay * timeDilation, () {
+      this.scheduleAppFrame()
     });
   }
 
   isFirstFrame (): boolean {
-    return this.frameDuration == =null
+    return this.frameDuration === null
   }
 
   hasFrameDurationPassed (timestamp: number): boolean {
-    return timestamp - _shownTimestamp >= _frameDuration!
+    return timestamp - this.shownTimestamp >= this.frameDuration!
   }
 
-  Future<void> _decodeNextFrameAndSchedule() async {
-    // This will be null if we gave it away. If not, it's still ours and it
-    // must be disposed of.
-    _nextFrame?.image.dispose();
-    _nextFrame = null;
+  async decodeNextFrameAndSchedule () {
+    this.nextFrame?.image.dispose()
+    this.nextFrame = null
     try {
-      _nextFrame = await _codec!.getNextFrame();
-    } catch (exception, stack) {
-      reportError(
-        context: ErrorDescription('resolving an image frame'),
-        exception: exception,
-        stack: stack,
-        informationCollector: _informationCollector,
-        silent: true,
-      );
-      return;
+      this.nextFrame = await this.codec!.getNextFrame()
+    } catch (exception) {
+      // 
+      return
     }
-    if (_codec!.frameCount == 1) {
-      // ImageStreamCompleter listeners removed while waiting for next frame to
-      // be decoded.
-      // There's no reason to emit the frame without active listeners.
-      if (!hasListeners) {
-        return;
+    if (this.codec!.frameCount === 1) {
+      if (!this.hasListeners) {
+        return
       }
-      // This is not an animated image, just return it and don't schedule more
-      // frames.
-      _emitFrame(ImageInfo(
-        image: _nextFrame!.image.clone(),
-        scale: _scale,
-        debugLabel: debugLabel,
-      ));
-      _nextFrame!.image.dispose();
-      _nextFrame = null;
-      return;
+      
+      this.emitFrame(new ImageInfo(
+        this.nextFrame!.image.clone(),
+        this.scale,
+        this.debugLabel,
+      ))
+      this.nextFrame!.image.dispose()
+      this.nextFrame = null
+      return
     }
-    _scheduleAppFrame();
+
+    this.scheduleAppFrame()
   }
 
-  _scheduleAppFrame() {
-    if (_frameCallbackScheduled) {
-      return;
+  scheduleAppFrame () {
+    if (this.frameCallbackScheduled) {
+      return
     }
-    _frameCallbackScheduled = true;
-    SchedulerBinding.instance!.scheduleFrameCallback(_handleAppFrame);
+    this.frameCallbackScheduled = true
+    SchedulerBinding.instance!.scheduleFrameCallback(this.handleAppFrame)
   }
 
   emitFrame (imageInfo: ImageInfo) {
-    setImage(imageInfo)
-    _framesEmitted += 1
+    this.setImage(imageInfo)
+    this.framesEmitted += 1
   }
 
-  addListener (listener: ImageStreamListener) {
-    if (!hasListeners && _codec != null && (_currentImage == null || _codec!.frameCount > 1))
-      _decodeNextFrameAndSchedule();
-    super.addListener(listener);
+  on (listener: ImageStreamListener) {
+    if (
+      !this.hasListeners && 
+      this.codec !== null && 
+      (
+        this.currentImage === null || 
+        this.codec!.frameCount > 1
+      )
+    )
+    this.decodeNextFrameAndSchedule()
+    super.on(listener)
   }
 
-  removeListener (listener: ImageStreamListener) {
-    super.removeListener(listener)
+  off (listener: ImageStreamListener) {
+    super.off(listener)
     if (!this.hasListeners) {
-      this._timer?.cancel()
-      this._timer = null
+      this.timer?.cancel()
+      this.timer = null
     }
   }
 
-  maybeDispose () {
-    super.maybeDispose()
+  dispose () {
+    super.dispose()
     if (this.disposed) {
       _chunkSubscription?.onData(null);
       _chunkSubscription?.cancel();

@@ -420,7 +420,7 @@ class ImageCache {
       );
 
       _trackLiveImage(key, result, sizeBytes);
-
+e
       // Only touch if the cache was enabled when resolve was initially called.
       if (untrackedPendingImage == null) {
         _touch(key, image, listenerTask);

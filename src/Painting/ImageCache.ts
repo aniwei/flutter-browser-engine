@@ -109,10 +109,10 @@ class LiveImage extends CachedImageBase {
 }
 
 
-export class ImageCache<T> {
-  public pendingImages: Map<T, PendingImage> = new Map()
-  public cache: Map<T, CachedImage> = new Map()
-  public liveImages: Map<T, LiveImage> = new Map()
+export class ImageCache {
+  public pendingImages: Map<unknown, PendingImage> = new Map()
+  public cache: Map<unknown, CachedImage> = new Map()
+  public liveImages: Map<unknown, LiveImage> = new Map()
 
   public listenedOnce: boolean = false
 
@@ -227,17 +227,12 @@ export class ImageCache<T> {
     }
   }
 
-  trackLiveImage (
-    key: string, 
+  trackLiveImage <T> (
+    key: T, 
     completer: ImageStreamCompleter, 
     sizeBytes: number | null
     ) {
     this.liveImages.putIfAbsent(key, () {
-      // Even if no callers to ImageProvider.resolve have listened to the stream,
-      // the cache is listening to the stream and will remove itself once the
-      // image completes to move it from pending to keepAlive.
-      // Even if the cache size is 0, we still add this tracker, which will add
-      // a keep alive handle to the stream.
       return _LiveImage(
         completer,
         () {
@@ -247,8 +242,8 @@ export class ImageCache<T> {
     }).sizeBytes ??= sizeBytes
   }
 
-  putIfAbsent (
-    key: ImageProvider<T>, 
+  putIfAbsent <T> (
+    key: T, 
     loader: Promise<T>, 
     onError: ImageErrorListener | null 
   ): Promise<T> | null {
@@ -257,9 +252,9 @@ export class ImageCache<T> {
     let timelineTask
     let listenerTask
    
-    let result = this.pendingImages.get(key)?.completer
+    let result = this.pendingImages.get(key)
     
-    if (result !== null) {
+    if (result) {
       return result
     }
    
@@ -341,7 +336,7 @@ export class ImageCache<T> {
 
     final ImageStreamListener streamListener = new ImageStreamListener(listener)
     if (maximumSize > 0 && maximumSizeBytes > 0) {
-      pendingImages[key] = _PendingImage(result, streamListener);
+      this.pendingImages.set(key, new PendingImage(result, streamListener))
     } else {
       untrackedPendingImage = _PendingImage(result, streamListener);
     }
@@ -352,7 +347,7 @@ export class ImageCache<T> {
   }
 
   
-  statusForKey (key: string): ImageCacheStatus {
+  statusForKey (key: T): ImageCacheStatus {
     return ImageCacheStatus._(
       pending: pendingImages.containsKey(key),
       keepAlive: cache.containsKey(key),
@@ -361,7 +356,7 @@ export class ImageCache<T> {
   }
 
   
-  containsKey (key: string) {
+  containsKey (key: T) {
     return (
       this.pendingImages.get(key) !== null || 
       this.cache.get(key) !== null
@@ -372,9 +367,8 @@ export class ImageCache<T> {
   clearLiveImages () {
     for (const [key, image] of this.liveImages) {
       image.dispose()
+      this.liveImages.delete(key)
     }
-
-    this.liveImages.clear()
   }
 
   checkCacheSize (timelineTask: TimelineTask | null) {
@@ -400,5 +394,48 @@ export class ImageCache<T> {
   }
 }
 
+export class ImageCacheStatus {
+  public pending: boolean
+  public keepAlive: boolean
+  public live: boolean
+
+  public get tracked () {
+    return this.pending || this.keepAlive || this.live
+  }
+
+  public get untracked () {
+    return !this.pending && !this.keepAlive && !this.live
+  } 
+
+  constructor (
+    pending: boolean,
+    keepAlive: boolean,
+    live: boolean,
+  ) {
+    invariant(!pending || !keepAlive)
+
+    this.pending = pending
+    this.keepAlive = keepAlive
+    this.live = live
+  }
+
+  isEqual (other: ImageCacheStatus) {
+    if (other === this) {
+      return true
+    }
+
+    return (
+      other instanceof ImageCacheStatus &&
+      other.pending === this.pending &&
+      other.keepAlive === this.keepAlive &&
+      other.live === this.live
+    )
+  }
+
+  
+  toString () {
+    return ``
+  }
+}
 
 

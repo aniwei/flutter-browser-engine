@@ -11,6 +11,12 @@ export class SkiaFinalizationRegistry<T extends RawSkia<T>> {
     skiaFinalizationRegistry.register(wrapper, skia)
   }
 
+  static collect (skia) {
+    if (this.skiaFinalizationRegistry) {
+      this.skiaFinalizationRegistry.collect(skia)
+    }
+  }
+
   public finalizationRegistry: FinalizationRegistry<T>
   public skiaObjectCollectionQueue: T[] = []
   public skiaObjectCollectionTimer
