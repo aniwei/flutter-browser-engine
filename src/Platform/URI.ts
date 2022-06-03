@@ -970,7 +970,6 @@ export class URI {
     start: number = 0, 
     end: number = uri.length
   ) {
-    debugger
     // if (end >= start + 5) {
     //   const dataDelta = startsWithData(uri, start)
     //   if (dataDelta === 0) {
@@ -2821,4 +2820,35 @@ export class URI {
 
     return base.slice(0, baseEnd) + reference.substring(refStart - 3 * backCount)
   }
+
+  toString () {
+    const string = new StringBuffer()
+    if (this.scheme) {
+      string.write(this.scheme)
+      string.write(':')
+    }
+
+    if (
+      this.hasAuthority || 
+      this.scheme === 'file'
+    ) {
+      string.write('//')
+      this.writeAuthority(string)
+    }
+
+    string.write(this.path as string)
+
+    if (this.query) {
+      string.write('?')
+      string.write(this.query)
+    }
+
+    if (this.fragment) {
+      string.write('#')
+      string.write(this.fragment)
+    }
+
+    return string.toString()
+  }
 }
+

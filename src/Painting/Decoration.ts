@@ -1,5 +1,5 @@
 import invariant from 'ts-invariant'
-import { UnsupportedError } from '@Shared'
+import { UnsupportedError } from '@Platform'
 import { Canvas, Path, Offset, Rect, Size } from '@UI'
 import { TextDirection } from 'canvaskit-wasm'
 import { EdgeInsets, EdgeInsetsGeometry } from './EdgeInsets'

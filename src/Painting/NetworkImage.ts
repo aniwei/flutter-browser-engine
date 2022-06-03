@@ -1,8 +1,8 @@
-import invariant from 'ts-invariant'
-import { ImageConfiguration, ImageProvider } from './ImageProvider'
+import { invariant } from 'ts-invariant'
 import { URI } from '@Platform'
-import { ImageChunkEvent, MultiFrameImageStream } from './ImageStream'
-import { webOnlyInstantiateImageCodecFromURL } from 'src/Skia/SkiaImage'
+import { Codec, webOnlyInstantiateImageCodecFromURL } from '@UI'
+import { DecoderCallback, ImageConfiguration, ImageProvider } from './ImageProvider'
+import { MultiFrameImageStream } from './ImageStream'
 
 export abstract class NetworkImage extends ImageProvider<NetworkImage> {
   public url: string
@@ -32,28 +32,26 @@ export abstract class NetworkImage extends ImageProvider<NetworkImage> {
 
   async load (
     key: NetworkImage, 
-    decode
+    decode: DecoderCallback
   ) {
     return new MultiFrameImageStream(
-      this.loadAsync,
+      this.loadAsync(key, decode),
       key.scale,
-      key.url,
-      {}
+      key.url
     )
   }
 
   async loadAsync (
     key: NetworkImage,
     decode,
-    chunkEvents
   ) {
     invariant(key === this)
 
     const resolved = URI.base.resolve(key.url)
 
     return await webOnlyInstantiateImageCodecFromURL(resolved, (bytes, total) => {
-      chunkEvents.add(new ImageChunkEvent(bytes, total))
-    })
+      // chunkEvents.add(new ImageChunkEvent(bytes, total))
+    }) as Codec
   }
 
   isEqula (other: NetworkImage | null) {

@@ -209,7 +209,7 @@ export class ImageCache {
   }
 
   touch (
-    key: string, 
+    key: T, 
     image: CachedImage, 
     timelineTask: TimelineTask | null
   ) {
@@ -255,7 +255,7 @@ export class ImageCache {
     let result = this.pendingImages.get(key)
     
     if (result) {
-      return result
+      return Promise.resolve(result)
     }
    
     let image = this.cache.get(key)

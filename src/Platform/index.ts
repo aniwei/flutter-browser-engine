@@ -1,3 +1,5 @@
+
+export type VoidCallback = { (): void }
 export enum TargetPlatform {
   Android,
   Fuchsia,
@@ -5,6 +7,23 @@ export enum TargetPlatform {
   Linux,
   MacOS,
   Windows,
+}
+
+export enum BrowserEngine {
+  Blink,
+  Webkit,
+  Firefox,
+  Edge,
+  Unknown
+}
+
+export enum OperatingSystem {
+  iOS,
+  Android,
+  Linux,
+  Window,
+  MacOS,
+  Unknown
 }
 
 export function detectBrowserEngineByVendorAgent (
@@ -26,7 +45,7 @@ export function detectBrowserEngineByVendorAgent (
   console.warn('WARNING: failed to detect current browser engine.')
   return BrowserEngine.Unknown
 }
-
+  
 export function detectBrowserEngine () {
   const vendor = window.navigator.vendor;
   const agent = window.navigator.userAgent.toLowerCase()
@@ -34,7 +53,9 @@ export function detectBrowserEngine () {
   return detectBrowserEngineByVendorAgent(vendor, agent)
 }
 
-export type VoidCallback = { (): void }
+export class UnimplementedError extends Error { }
+export class UnsupportedError extends Error { }
+export class ArgumentError extends Error { }
 
 export const isWindow = (
   typeof process !== 'undefined' && 
@@ -42,40 +63,28 @@ export const isWindow = (
   process.platform === 'win32'
 )
 
-export enum BrowserEngine {
-  Blink,
-  Webkit,
-  Firefox,
-  Edge,
-  Unknown
-}
-
-export enum OperatingSystem {
-  iOS,
-  Android,
-  Linux,
-  Window,
-  MacOS,
-  Unknown
-}
-
 export const kCurrentURI = isWindow ? window.location.href : null
 
 export const kImageDecoderExperimentEnabled = (
   false
 )
 
-export const kBrowserSupportsXMLHttpRequest = isWindow && typeof window.XMLHttpRequest === 'object'
+export const kBrowserSupportsXMLHTTPRequest = isWindow && typeof window.XMLHttpRequest === 'object'
 export const kBrowserSupportsFetch = isWindow && typeof window.fetch
 export const kBrowserDevicePixelRatio = isWindow ? (window.devicePixelRatio || 2.0) : 2.0
 
 export const kBrowserSupportsImageDecoder = kImageDecoderExperimentEnabled 
 export const kBrowserSupportsFinalizationRegistry = isWindow ? 
-  (typeof window.FinalizationRegistry === 'object') :
-  (typeof globalThis.FinalizationRegistry === 'object')
+  (typeof window.FinalizationRegistry === 'function') :
+  (typeof globalThis.FinalizationRegistry === 'function')
+
+export const kSupportsFinalizationRegistry = (
+  kBrowserSupportsFinalizationRegistry ||
+  typeof globalThis.FinalizationRegistry === 'function'
+)
 
 export * from './URI'
-export * from './Axios'
+export * from './HTTP'
 export * from './Locale'
 export * from './Encoding'
 export * from './TypedData'

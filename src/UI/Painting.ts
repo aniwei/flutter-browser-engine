@@ -212,24 +212,14 @@ export class Color extends Float32Array {
 }
 
 export abstract class FrameInfo {
-  abstract get durationMillis (): number
+  abstract get duration (): number
   abstract get image (): Image
 }
 
-export class Codec {
-  
-  public get frameCount () {
-    return 0
-  }
-  public get repetitionCount () {
-    return  0
-  }
+export abstract class Codec {
+  abstract frameCount: number
+  abstract repetitionCount: number
 
-  getNextFrame (): Promise<FrameInfo> {
-    return new Promise((resolve, reject) => {
-
-    })
-  }
-  
-  dispose () {}
+  abstract getNextFrame (): Promise<FrameInfo>
+  abstract dispose (): void
 }

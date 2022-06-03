@@ -1,7 +1,6 @@
-import invariant from 'ts-invariant'
+import { invariant } from 'ts-invariant'
 import { Codec, FrameInfo, Image } from '@UI'
 import { VoidCallback } from '@Platform'
-import { EventEmitter } from 'events'
 
 export type ImageListener = { (image: ImageInfo, synchronousCall: boolean): void } 
 export type ImageChunkListener = { (event: ImageChunkEvent): void }
@@ -124,12 +123,12 @@ export class ImageStreamHandle {
   public completer: ImageStream | null = null
   
   dispose () {
-    invariant(this.completer !== null);
-    invariant(this.completer!.keepAliveHandles > 0);
-    invariant(!this.completer!.disposed);
+    invariant(this.completer !== null)
+    invariant(this.completer!.keepAliveHandles > 0)
+    invariant(!this.completer!.disposed)
 
     this.completer!.keepAliveHandles -= 1
-    this.completer!.maybeDispose();
+    this.completer!.dispose()
     this.completer = null
   }
 }
@@ -167,7 +166,7 @@ abstract class ImageStream {
   }
 
   off (listener: ImageStreamListener) {
-    this.checkDisposed()
+    this.checkIsDisposed()
 
     for (let i = 0; i < this.listeners.length; i += 1) {
       if (this.listeners[i] === listener) {
@@ -182,7 +181,7 @@ abstract class ImageStream {
         callback()
       }
       this.onLastListenerRemovedCallbacks = []
-      this.maybeDispose()
+      this.dispose()
     }
   }
   
@@ -244,7 +243,7 @@ abstract class ImageStream {
     }
   }
   
-  reportImageChunkEvent (event: ImageChunkEvent) {
+  onImageChunkEvent (event: ImageChunkEvent) {
     this.checkIsDisposed()
     if (this.hasListeners) {
       
@@ -277,7 +276,6 @@ export class OneFrameImageStream extends ImageStream {
 
 export class MultiFrameImageStream extends ImageStream {
   public scale: number
-  public chunkSubscription: StreamSubscription<ImageChunkEvent> | null
   public codec: Codec | null = null
   public nextFrame: FrameInfo | null = null
   public shownTimestamp: number
@@ -289,8 +287,7 @@ export class MultiFrameImageStream extends ImageStream {
   constructor (
     codec: Promise<Codec>,
     scale: number,
-    debugLabel: string | null,
-    chunkEvents: Stream<ImageChunkEvent> | null,
+    debugLabel: string | null
   ) {
     super()
     invariant(codec !== null)
@@ -301,10 +298,6 @@ export class MultiFrameImageStream extends ImageStream {
     codec.then<void>(this.handleCodecReady).catch(error => {
 
     })
-
-    if (chunkEvents !== null) {
-
-    }
   }
 
   handleCodecReady = (codec) => {
@@ -351,7 +344,7 @@ export class MultiFrameImageStream extends ImageStream {
     this.timer = Timer(delay * timeDilation, () {
       this.scheduleAppFrame()
     });
-  }
+  }i9
 
   isFirstFrame (): boolean {
     return this.frameDuration === null

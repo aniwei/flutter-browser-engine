@@ -7,14 +7,14 @@ import { ImageErrorListener, ImageStream } from './ImageStream'
 import { PaintingBinding } from './Binding'
 import { ImageCacheStatus } from './ImageCache'
 
-type KeyAndErrorHandlerCallback<T> = { (key: T, handleError: ImageErrorListener): void }
-type AsyncKeyErrorHandler<T> = { (key: T, exception): Promise<void> }
-type DecoderCallback = {
+export type KeyAndErrorHandlerCallback<T> = { (key: T, handleError: ImageErrorListener): void }
+export type AsyncKeyErrorHandler<T> = { (key: T, exception): Promise<void> }
+export type DecoderCallback = {
   (
     bytes: Uint8Array, 
-    cacheWidth: number | null,
-    cacheHeight: number | null,
-    allowUpscaling: boolean
+    cacheWidth?: number | null,
+    cacheHeight?: number | null,
+    allowUpscaling?: boolean
   ): Promise<Codec>
 }
 
@@ -138,6 +138,7 @@ export class ImageConfiguration {
 
 export abstract class ImageProvider<T> {
   abstract obtainedKey (configuration: ImageConfiguration): Promise<T>
+  abstract load (key: T, decode: DecoderCallback)
 
   resolve (configuration: ImageConfiguration) {
     invariant(configuration !== null)
@@ -224,18 +225,12 @@ export abstract class ImageProvider<T> {
   ): void  {
 
     if (stream.completer !== null) {
-      const completer = PaintingBinding.instance!.imageCache!.putIfAbsent(
-        key,
-        () => stream.completer!,
-        onError,
-      )
+      const completer = PaintingBinding.instance!.imageCache!.putIfAbsent(key, () => stream.completer!, onError,)
       invariant(completer === stream.completer)
       return
     }
 
-    
-
-    const completer = PaintingBinding.instance!.imageCache!.putIfAbsent(key, () => {
+    const completer = PaintingBinding.instance!.imageCache!.putIfAbsent<T>(key, () => {
       return this.load(key, PaintingBinding.instance!.instantiateImageCodec)
     }, onError)
     

@@ -1,5 +1,5 @@
 import invariant from 'ts-invariant'
-import { kBrowserSupportsFinalizationRegistry } from '@Platform'
+import { kSupportsFinalizationRegistry } from '@Platform'
 import { SkiaFinalizationRegistry } from './SkiaFinalizationRegistry'
 import { RawSkia, SkiaObject } from './SkiaObject'
 
@@ -19,7 +19,7 @@ export class SkiaObjectBox<R, T extends RawSkia<T>> extends SkiaObject<T> {
   
   constructor (referrer: R, value: T) {
     super()
-    invariant(kBrowserSupportsFinalizationRegistry)
+    invariant(kSupportsFinalizationRegistry)
     this.init(referrer, value)
 
     SkiaFinalizationRegistry.registry(referrer, value)
@@ -48,7 +48,7 @@ export class SkiaObjectBox<R, T extends RawSkia<T>> extends SkiaObject<T> {
 
     if (this.refCount === 0) {
       if (this.skia) {
-        if (kBrowserSupportsFinalizationRegistry) {
+        if (kSupportsFinalizationRegistry) {
           SkiaFinalizationRegistry.collect(this.skia)
         } else {
           this.delete
@@ -66,7 +66,7 @@ export class SkiaObjectBox<R, T extends RawSkia<T>> extends SkiaObject<T> {
   }
 
   didDelete() {
-    invariant(!kBrowserSupportsFinalizationRegistry)
+    invariant(!kSupportsFinalizationRegistry)
     this.skia = null
   }
 }

@@ -1,4 +1,4 @@
-import { UnimplementedError } from '@Shared'
+import { UnimplementedError } from '@Platform'
 import { SkiaFinalizationRegistry } from './SkiaFinalizationRegistry'
 import { RawSkia, SkiaObject } from './SkiaObject'
 
