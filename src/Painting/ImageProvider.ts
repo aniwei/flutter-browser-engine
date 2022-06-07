@@ -230,7 +230,7 @@ export abstract class ImageProvider<T> {
       return
     }
 
-    const completer = PaintingBinding.instance!.imageCache!.putIfAbsent<T>(key, () => {
+    const completer = PaintingBinding.instance!.imageCache!.putIfAbsent(key, () => {
       return this.load(key, PaintingBinding.instance!.instantiateImageCodec)
     }, onError)
     

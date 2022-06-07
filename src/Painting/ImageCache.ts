@@ -1,7 +1,7 @@
+import { invariant } from 'ts-invariant'
 import { VoidCallback } from '@Platform'
-import invariant from 'ts-invariant'
 import { ImageProvider } from './ImageProvider'
-import { ImageErrorListener } from './ImageStream'
+import { ImageErrorListener, ImageStream, ImageStreamHandle, ImageStreamListener } from './ImageStream'
 
 const kDefaultSize = 1000
 const kDefaultSizeBytes = 100 << 20 // 100 MiB
@@ -28,18 +28,18 @@ function property<T> (
 }
 
 abstract class CachedImageBase { 
-  public completer: ImageStreamCompleter
-  public sizeBytes: numbber | null
-  public handle: ImageStreamCompleterHandle | null
+  public stream: ImageStream
+  public sizeBytes: number | null
+  public handle: ImageStreamHandle | null
 
   constructor (
-    completer: ImageStreamCompleter, 
-    sizeBytes: number,
+    stream: ImageStream, 
+    sizeBytes?: number | null,
   ) {
-    invariant(completer !== null)
-    this.completer = completer
-    this.sizeBytes = sizeBytes
-    this.handle = completer.keepAlive()
+    invariant(stream !== null)
+    this.stream = stream
+    this.sizeBytes = sizeBytes ?? null
+    this.handle = stream.keepAlive()
   }
 
   dispose () {
@@ -57,27 +57,27 @@ abstract class CachedImageBase {
 
 class CachedImage extends CachedImageBase {
   constructor (
-    completer: ImageStreamCompleter, 
+    stream: ImageStream, 
     sizeBytes: number | null
   ) {
-    super(completer, sizeBytes)
+    super(stream, sizeBytes)
   }
 }
 
 class PendingImage {
-  completer: ImageStreamCompleter
-  listener: ImageStreamListener
+  public stream: ImageStream
+  public listener: ImageStreamListener
 
   constructor (
-    completer: ImageStreamCompleter,
+    stream: ImageStream,
     listener: ImageStreamListener
   ) {
-    this.completer = completer
+    this.stream = stream
     this.listener = listener
   }
 
   removeListener () {
-    this.completer.removeListener(this.listener)
+    this.stream.removeListener(this.listener)
   }
 }
 
@@ -85,21 +85,21 @@ class LiveImage extends CachedImageBase {
   public handleRemove: VoidCallback
 
   constructor (
-    completer: ImageStreamCompleter, 
+    stream: ImageStream, 
     handleRemove: VoidCallback, 
-    sizeBytes: number | null
+    sizeBytes?: number | null
   ) {
-    super(completer, sizeBytes)
+    super(stream, sizeBytes)
     this.handleRemove = () => {
       handleRemove()
       this.dispose()
     }
 
-    completer.addOnLastListenerRemovedCallback(this.handleRemove)
+    stream.addOnLastListenerRemovedCallback(this.handleRemove)
   }
 
   dispose () {
-    this.completer.removeOnLastListenerRemovedCallback(this.handleRemove)
+    this.stream.removeOnLastListenerRemovedCallback(this.handleRemove)
     super.dispose()
   }
 
@@ -124,7 +124,7 @@ export class ImageCache {
     return value
   }, function (this, v, k) {
     invariant(v !== null)
-    invariant(v >= 0)
+    invariant(v as number >= 0)
     
     if (v === this.maximumSizeBytes) {
       return
@@ -144,7 +144,7 @@ export class ImageCache {
     return value
   }, function (this, v, k) {
     invariant(v !== null)
-    invariant(v >= 0)
+    invariant(v as number >= 0)
     
     if (v === this.maximumSize) {
       return
@@ -227,26 +227,31 @@ export class ImageCache {
     }
   }
 
-  trackLiveImage <T> (
-    key: T, 
-    completer: ImageStreamCompleter, 
+  trackLiveImage (
+    key, 
+    stream: ImageStream, 
     sizeBytes: number | null
-    ) {
-    this.liveImages.putIfAbsent(key, () {
-      return _LiveImage(
-        completer,
-        () {
-          liveImages.remove(key);
-        },
-      );
-    }).sizeBytes ??= sizeBytes
+  ) {
+    let liveImage
+
+    if (this.liveImages.has(key)) {
+      liveImage = this.liveImages.get(key)
+    } else {
+      liveImage = new LiveImage(stream, () => {
+        this.liveImages.delete(key)
+      })
+    }
+
+    if (liveImage.sizeBytes === null) {
+      liveImage.sizeBytes = sizeBytes
+    }
   }
 
-  putIfAbsent <T> (
-    key: T, 
-    loader: Promise<T>, 
+  putIfAbsent (
+    key, 
+    loader: ImageStream, 
     onError: ImageErrorListener | null 
-  ): Promise<T> | null {
+  ): ImageStream | null {
     invariant(key !== null)
     invariant(loader !== null)
     let timelineTask
@@ -255,39 +260,39 @@ export class ImageCache {
     let result = this.pendingImages.get(key)
     
     if (result) {
-      return Promise.resolve(result)
+      return result.stream
     }
    
-    let image = this.cache.get(key)
+    let image = this.cache.get(key) as CachedImage
     this.cache.delete(key)
 
     if (image !== null) {
       
       this.trackLiveImage(
         key,
-        image?.completer,
-        image?.sizeBytes,
+        image.stream,
+        image.sizeBytes,
       )
       this.cache.set(key, image)
-      return image?.completer
+      return image.stream
     }
 
-    let liveImage = this.liveImages.get(key)
+    let liveImage = this.liveImages.get(key) as LiveImage
     if (liveImage !== null) {
       this.touch(
         key,
         new CachedImage(
-          liveImage?.completer,
-          liveImage?.sizeBytes,
+          liveImage.stream,
+          liveImage.sizeBytes,
         ),
         timelineTask,
       )
       
-      return liveImage?.completer
+      return liveImage.stream
     }
 
     try {
-      result = loader()
+      result = loader() as ImageStream
       this.trackLiveImage(key, result, null)
     } catch (error) {
       if (onError !== null) {

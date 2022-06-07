@@ -133,7 +133,7 @@ export class ImageStreamHandle {
   }
 }
 
-abstract class ImageStream {
+export abstract class ImageStream {
   public listeners: ImageStreamListener[] = []
   public debugLabel: string | null = null
   public currentImage: ImageInfo | null = null
@@ -147,7 +147,7 @@ abstract class ImageStream {
   public hadAtLeastOneListener: boolean = false
   public onLastListenerRemovedCallbacks: VoidCallback[] = []
 
-  on (listener: ImageStreamListener) {
+  addListener (listener: ImageStreamListener) {
     this.checkIsDisposed()
     this.hadAtLeastOneListener = true
     this.listeners.push(listener)
@@ -165,7 +165,7 @@ abstract class ImageStream {
     }
   }
 
-  off (listener: ImageStreamListener) {
+  removeListener (listener: ImageStreamListener) {
     this.checkIsDisposed()
 
     for (let i = 0; i < this.listeners.length; i += 1) {
@@ -256,8 +256,6 @@ abstract class ImageStream {
   }
 }
 
-
-
 export class OneFrameImageStream extends ImageStream {
   constructor (image: Promise<ImageInfo>) {
     invariant(image !== null)
@@ -271,8 +269,6 @@ export class OneFrameImageStream extends ImageStream {
     })
   }
 }
-
-
 
 export class MultiFrameImageStream extends ImageStream {
   public scale: number
@@ -404,11 +400,11 @@ export class MultiFrameImageStream extends ImageStream {
       )
     )
     this.decodeNextFrameAndSchedule()
-    super.on(listener)
+    super.addListener(listener)
   }
 
   off (listener: ImageStreamListener) {
-    super.off(listener)
+    super.removeListener(listener)
     if (!this.hasListeners) {
       this.timer?.cancel()
       this.timer = null
