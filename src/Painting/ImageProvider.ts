@@ -3,7 +3,7 @@ import { Codec, Size } from '@UI'
 import { SkiaTextDirection } from '@Skia'
 import { Locale, StringBuffer, TargetPlatform } from '@Platform'
 import { AssetBundle } from '@Services'
-import { ImageErrorListener, ImageStream } from './ImageStream'
+import { ImageErrorListener, ImageStream, ImageStreamCompleter } from './ImageStream'
 import { PaintingBinding } from './Binding'
 import { ImageCacheStatus } from './ImageCache'
 
@@ -137,8 +137,9 @@ export class ImageConfiguration {
 }
 
 export abstract class ImageProvider<T> {
-  abstract obtainedKey (configuration: ImageConfiguration): Promise<T>
+  abstract obtainKey (configuration: ImageConfiguration): Promise<T>
   abstract load (key: T, decode: DecoderCallback)
+
 
   resolve (configuration: ImageConfiguration) {
     invariant(configuration !== null)
@@ -202,7 +203,7 @@ export abstract class ImageProvider<T> {
     }
 
     try {
-      const key = this.obtainedKey(configuration)
+      const key = this.obtainKey(configuration)
 
       key.then<void>((key: T) => {
         obtainedKey = key
@@ -246,6 +247,58 @@ export abstract class ImageProvider<T> {
   }
 }
 
+export class ResizeImage {
+  static resizeIfNeeded (
+    cacheWidth: number,
+    cacheHeight: number,
+    provider: ImageProvider<ResizeImage>
+  ) {
+    if (
+      cacheWidth !== null || 
+      cacheHeight !== null
+    ) {
+      return new ResizeImage(provider, cacheWidth, cacheHeight)
+    }
+
+    return provider
+  }
+
+  public provider: ImageProvider<ResizeImage>
+  public width: number | null
+  public height: number | null
+  public allowUpscaling: boolean
+
+  constructor (
+    provider: ImageProvider<ResizeImage>,
+    width?: number | null,
+    height?: number | null,
+    allowUpscaling: boolean = false
+  ) {
+    width ??= null
+    height ??= null
+
+    invariant(width !== null || height !== null)
+    invariant(allowUpscaling !== null )
+
+    this.width = width
+    this.height = height
+    this.provider = provider
+    this.allowUpscaling = allowUpscaling
+  }
+
+  load (
+    // key: ResizeImageKey,
+    decode: DecoderCallback
+  ) {
+    const decodeResize = () => {
+
+    }
+
+    // const completer = this.provider.load(key.pro)
+
+    //return completer
+  }
+}
 
 export class AssetBundleImageKey {
   public bundle: AssetBundle
@@ -282,3 +335,5 @@ export class AssetBundleImageKey {
     return ''
   }
 }
+
+

@@ -14,9 +14,9 @@ test(`fetchImage`, async () => {
 
   try {
     const nextFrame = await codec!.getNextFrame()
-    debugger
+    // debugger
   } catch (error) {
-    debugger
+    // debugger
   }
 
 })

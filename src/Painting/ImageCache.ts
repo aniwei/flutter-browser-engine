@@ -1,7 +1,6 @@
 import { invariant } from 'ts-invariant'
 import { VoidCallback } from '@Platform'
-import { ImageProvider } from './ImageProvider'
-import { ImageErrorListener, ImageInfo, ImageStream, ImageStreamCompleter, ImageStreamHandle, ImageStreamListener } from './ImageStream'
+import { ImageErrorListener, ImageInfo, ImageStreamCompleter, ImageStreamHandle, ImageStreamListener } from './ImageStream'
 
 const kDefaultSize = 1000
 const kDefaultSizeBytes = 100 << 20 // 100 MiB
@@ -18,7 +17,7 @@ function property<T> (
 
     Reflect.defineProperty(target, key, {
       get () {
-        return Reflect.apply(getter, this, [k, this[k]])
+        return Reflect.apply(getter, this, [this[k], k])
       },
       set (value: T) {
         return Reflect.apply(setter, this, [value, k])

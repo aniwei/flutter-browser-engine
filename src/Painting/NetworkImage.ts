@@ -4,7 +4,7 @@ import { Codec, webOnlyInstantiateImageCodecFromURL } from '@UI'
 import { DecoderCallback, ImageConfiguration, ImageProvider } from './ImageProvider'
 import { MultiFrameImageCompleter } from './ImageStream'
 
-export abstract class NetworkImage extends ImageProvider<NetworkImage> {
+export class NetworkImage extends ImageProvider<NetworkImage> {
   public url: string
   public scale: number
   public headers: Map<string, string> | null

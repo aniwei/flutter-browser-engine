@@ -140,14 +140,16 @@ export class ImageStream {
     return this.completer ?? this
   }
 
-  @property<ImageStreamCompleter>(function (this, v) {
+  @property<ImageStreamCompleter | null>(function (this, v) {
     return v
-  }, function (this, v: ImageStreamCompleter, k) {
+  }, function (this, v, k) {
     invariant(v === null)
     this[k] = v
-    if (this.listeners !== null) {
+    if (this.listeners !== null && v !== null) {
+      
       const initialListeners = this.listeners
-      initialListeners.forEach(v.addListener)
+      initialListeners.forEach((v as ImageStreamCompleter).addListener)
+        
       this.listeners = null
     }
   }) public completer: ImageStreamCompleter | null = null

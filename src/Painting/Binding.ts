@@ -34,6 +34,6 @@ export class PaintingBinding {
       cacheWidth,
       cacheHeight,
       allowUpscaling,
-    ) as Codec)
+    ) as unknown as Codec)
   }
 }
