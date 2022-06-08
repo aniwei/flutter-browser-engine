@@ -6,6 +6,27 @@ export type ImageListener = { (image: ImageInfo, synchronousCall: boolean): void
 export type ImageChunkListener = { (event: ImageChunkEvent): void }
 export type ImageErrorListener = { (exception): void }
 
+function property<T> (
+  getter: { (v: T, k?: string): T } = function (v, k) { return v as T },
+  setter: { (v: T, k: string): void } = function (this, v: T, k) { this[k] = v }
+) {
+  return function (
+    target,
+    key: string
+  ) {
+    const k = `_${key}` 
+
+    Reflect.defineProperty(target, key, {
+      get () {
+        return Reflect.apply(getter, this, [this[k], k])
+      },
+      set (value: T) {
+        return Reflect.apply(setter, this, [value, k])
+      }
+    })
+  }
+}
+
 export class ImageInfo {
   public image: Image 
   public scale: number 
@@ -66,38 +87,6 @@ export class ImageInfo {
   }
 }
 
-export class ImageStreamListener {
-  public onImage: ImageListener
-  public onChunk: ImageChunkListener | null
-  public onError: ImageErrorListener | null
-  
-  constructor (
-    onImage: ImageListener,
-    onChunk: ImageChunkListener | null,
-    onError: ImageErrorListener | null,
-  ) {
-    invariant(onImage !== null)
-
-    this.onImage = onImage
-    this.onChunk = onChunk
-    this.onError = onError
-  }
-
-  isEqual (other: ImageStreamListener) {
-    if (other === this) {
-      return true
-    }
-
-    return (
-      other instanceof ImageStreamListener &&
-      other.onImage === this.onImage &&
-      other.onChunk === this.onChunk &&
-      other.onError === this.onError
-    )
-  }
-}
-
-
 export class ImageChunkEvent {
   public cumulativeBytesLoaded: number
   public expectedTotalBytes: number | null
@@ -114,13 +103,87 @@ export class ImageChunkEvent {
   }
 }
 
+export class ImageStreamListener {
+  public onImage: ImageListener
+  public onChunk: ImageChunkListener | null
+  public onError: ImageErrorListener | null
+  
+  constructor (
+    onImage: ImageListener,
+    onChunk?: ImageChunkListener | null,
+    onError?: ImageErrorListener | null,
+  ) {
+    invariant(onImage !== null)
+
+    this.onImage = onImage
+    this.onChunk = onChunk ?? null
+    this.onError = onError ?? null
+  }
+
+  isEqual (other: ImageStreamListener) {
+    if (other === this) {
+      return true
+    }
+
+    return (
+      other instanceof ImageStreamListener &&
+      other.onImage === this.onImage &&
+      other.onChunk === this.onChunk &&
+      other.onError === this.onError
+    )
+  }
+}
+
+export class ImageStream {
+  public listeners: ImageStreamListener[] | null = null
+  public get key () {
+    return this.completer ?? this
+  }
+
+  @property<ImageStreamCompleter>(function (this, v) {
+    return v
+  }, function (this, v: ImageStreamCompleter, k) {
+    invariant(v === null)
+    this[k] = v
+    if (this.listeners !== null) {
+      const initialListeners = this.listeners
+      initialListeners.forEach(v.addListener)
+      this.listeners = null
+    }
+  }) public completer: ImageStreamCompleter | null = null
+
+  addListener (listener: ImageStreamListener) {
+    if (this.completer !== null) {
+      return this.completer.addListener(listener)
+    }
+    
+    this.listeners ??= []
+    this.listeners.push(listener)
+  }
+
+  removeListener (listener: ImageStreamListener) {
+    if (this.completer !== null) {
+      return this.completer.removeListener(listener)
+    }
+    invariant(this.listeners !== null)
+
+    for (let i = 0; i < this.listeners.length; i += 1) {
+      if (this.listeners[i] === listener) {
+        this.listeners!.splice(i, 1)
+        break
+      }
+    }
+  }
+}
+
+
 export class ImageStreamHandle {
-  constructor (completer: ImageStream) {
+  public completer: ImageStreamCompleter | null = null
+
+  constructor (completer: ImageStreamCompleter) {
     this.completer = completer
     this.completer.keepAliveHandles += 1
   }
-
-  public completer: ImageStream | null = null
   
   dispose () {
     invariant(this.completer !== null)
@@ -133,7 +196,7 @@ export class ImageStreamHandle {
   }
 }
 
-export abstract class ImageStream {
+export abstract class ImageStreamCompleter {
   public listeners: ImageStreamListener[] = []
   public debugLabel: string | null = null
   public currentImage: ImageInfo | null = null
@@ -256,7 +319,7 @@ export abstract class ImageStream {
   }
 }
 
-export class OneFrameImageStream extends ImageStream {
+export class OneFrameImageCompleter extends ImageStreamCompleter {
   constructor (image: Promise<ImageInfo>) {
     invariant(image !== null)
 
@@ -270,12 +333,12 @@ export class OneFrameImageStream extends ImageStream {
   }
 }
 
-export class MultiFrameImageStream extends ImageStream {
+export class MultiFrameImageCompleter extends ImageStreamCompleter {
   public scale: number
   public codec: Codec | null = null
   public nextFrame: FrameInfo | null = null
-  public shownTimestamp: number
-  public frameDuration: number
+  public shownTimestamp!: number
+  public frameDuration!: number
   public framesEmitted = 0
   public frameCallbackScheduled: boolean = false
   public timer
@@ -337,10 +400,10 @@ export class MultiFrameImageStream extends ImageStream {
       return
     }
     const delay = this.frameDuration! - (timestamp - this.shownTimestamp)
-    this.timer = Timer(delay * timeDilation, () {
-      this.scheduleAppFrame()
-    });
-  }i9
+    // this.timer = Timer(delay * timeDilation, () {
+    //   this.scheduleAppFrame()
+    // });
+  }
 
   isFirstFrame (): boolean {
     return this.frameDuration === null
@@ -382,7 +445,7 @@ export class MultiFrameImageStream extends ImageStream {
       return
     }
     this.frameCallbackScheduled = true
-    SchedulerBinding.instance!.scheduleFrameCallback(this.handleAppFrame)
+    // SchedulerBinding.instance!.scheduleFrameCallback(this.handleAppFrame)
   }
 
   emitFrame (imageInfo: ImageInfo) {
@@ -414,9 +477,7 @@ export class MultiFrameImageStream extends ImageStream {
   dispose () {
     super.dispose()
     if (this.disposed) {
-      _chunkSubscription?.onData(null);
-      _chunkSubscription?.cancel();
-      _chunkSubscription = null;
+      // @TODO
     }
   }
 }

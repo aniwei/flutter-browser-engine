@@ -2,7 +2,7 @@ import { invariant } from 'ts-invariant'
 import { URI } from '@Platform'
 import { Codec, webOnlyInstantiateImageCodecFromURL } from '@UI'
 import { DecoderCallback, ImageConfiguration, ImageProvider } from './ImageProvider'
-import { MultiFrameImageStream } from './ImageStream'
+import { MultiFrameImageCompleter } from './ImageStream'
 
 export abstract class NetworkImage extends ImageProvider<NetworkImage> {
   public url: string
@@ -34,7 +34,7 @@ export abstract class NetworkImage extends ImageProvider<NetworkImage> {
     key: NetworkImage, 
     decode: DecoderCallback
   ) {
-    return new MultiFrameImageStream(
+    return new MultiFrameImageCompleter(
       this.loadAsync(key, decode),
       key.scale,
       key.url

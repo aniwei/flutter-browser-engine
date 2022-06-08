@@ -225,17 +225,23 @@ export abstract class ImageProvider<T> {
   ): void  {
 
     if (stream.completer !== null) {
-      const completer = PaintingBinding.instance!.imageCache!.putIfAbsent(key, () => stream.completer!, onError,)
+      const completer = PaintingBinding.instance!.imageCache!.putIfAbsent(
+        key, 
+        () => stream.completer!, 
+        onError
+      )
       invariant(completer === stream.completer)
       return
     }
 
-    const completer = PaintingBinding.instance!.imageCache!.putIfAbsent(key, () => {
-      return this.load(key, PaintingBinding.instance!.instantiateImageCodec)
-    }, onError)
+    const completer = PaintingBinding.instance!.imageCache!.putIfAbsent(
+      key, 
+      () => this.load(key, PaintingBinding.instance!.instantiateImageCodec), 
+      onError
+    )
     
     if (completer !== null) {
-      stream.setCompleter(completer)
+      stream.completer = completer
     }
   }
 }
