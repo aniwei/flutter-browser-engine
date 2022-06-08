@@ -356,8 +356,8 @@ export class MultiFrameImageCompleter extends ImageStreamCompleter {
     this.scale = scale 
     this.debugLabel = debugLabel
     
-    codec.then<void>(this.handleCodecReady).catch(error => {
-
+    codec.then(this.handleCodecReady).catch(error => {
+      debugger
     })
   }
 

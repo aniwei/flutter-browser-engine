@@ -5,6 +5,9 @@ import { ImageCache } from './ImageCache'
 
 export class PaintingBinding {
   static instance: PaintingBinding | null = null
+  static initInstances () {
+    new PaintingBinding()
+  }
 
   public imageCache: ImageCache
 
@@ -12,7 +15,6 @@ export class PaintingBinding {
     PaintingBinding.instance = this
 
     this.imageCache = this.createImageCache()
-
   }
 
   createImageCache (): ImageCache {

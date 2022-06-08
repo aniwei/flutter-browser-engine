@@ -41,17 +41,25 @@ export class NetworkImage extends ImageProvider<NetworkImage> {
     )
   }
 
-  async loadAsync (
+  loadAsync (
     key: NetworkImage,
     decode,
-  ) {
+  ): Promise<Codec> {
     invariant(key === this)
 
-    const resolved = URI.base.resolve(key.url)
+    let resolved 
 
-    return await webOnlyInstantiateImageCodecFromURL(resolved, (bytes, total) => {
+    try {
+      resolved = URI.base.resolve(key.url)
+    } catch (error) {
+      resolved = key.url
+    }
+
+
+    return webOnlyInstantiateImageCodecFromURL(resolved, (bytes, total) => {
+      debugger
       // chunkEvents.add(new ImageChunkEvent(bytes, total))
-    }) as Codec
+    }).then(codec => codec as Codec)
   }
 
   isEqula (other: NetworkImage | null) {

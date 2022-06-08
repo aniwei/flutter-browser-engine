@@ -4,7 +4,7 @@ import { SkiaTextDirection } from '@Skia'
 import { Locale, StringBuffer, TargetPlatform } from '@Platform'
 import { AssetBundle } from '@Services'
 import { ImageErrorListener, ImageStream, ImageStreamCompleter } from './ImageStream'
-import { PaintingBinding } from './Binding'
+import { PaintingBinding } from './PaintingBinding'
 import { ImageCacheStatus } from './ImageCache'
 
 export type KeyAndErrorHandlerCallback<T> = { (key: T, handleError: ImageErrorListener): void }

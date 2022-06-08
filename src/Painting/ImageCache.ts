@@ -250,13 +250,13 @@ export class ImageCache {
     invariant(loader !== null)
    
     let result
-    result = this.pendingImages.get(key)
+    result = this.pendingImages.get(key) ?? null
     
-    if (result) {
+    if (result !== null) {
       return result.completer
     }
    
-    let image = this.cache.get(key) as CachedImage
+    let image = this.cache.get(key) as CachedImage ?? null
     this.cache.delete(key)
 
     if (image !== null) {
@@ -270,7 +270,7 @@ export class ImageCache {
       return image.completer
     }
 
-    let liveImage = this.liveImages.get(key) as LiveImage
+    let liveImage = this.liveImages.get(key) as LiveImage ?? null
     if (liveImage !== null) {
       this.touch(
         key,
