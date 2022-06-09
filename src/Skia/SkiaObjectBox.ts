@@ -4,7 +4,7 @@ import { SkiaFinalizationRegistry } from './SkiaFinalizationRegistry'
 import { RawSkia, SkiaObject } from './SkiaObject'
 
 export class SkiaObjectBox<R, T extends RawSkia<T>> extends SkiaObject<T> {
-  public refCount = 1
+  public refCount = 0
   public referrers: Set<R> = new Set()
   public isDeletedPermanently = false
   public rawSkia: T | null = null
@@ -17,22 +17,15 @@ export class SkiaObjectBox<R, T extends RawSkia<T>> extends SkiaObject<T> {
     this.rawSkia = skia
   }
   
-  constructor (referrer: R, value: T) {
+  constructor (skia: T) {
     super()
+    this.skia = skia
     invariant(kSupportsFinalizationRegistry)
-    this.init(referrer, value)
-
-    SkiaFinalizationRegistry.registry(referrer, value)
+    SkiaFinalizationRegistry.registry(this, skia)
   }
-
-  init (referrer: R, value: T) {
-    this.skia = value
-  }
-
+  
   ref (referrer: R) {
-
-    invariant(this.refCount > 0)
-    invariant(!this.referrers.has(referrer), `Attempted to increment ref count by the same referrer more than once.`)
+    invariant(!this.referrers.has(referrer), `Attempted to increment ref count by the same referrer more than once.`)    
     
     this.referrers.add(referrer)
     this.refCount += 1
@@ -40,7 +33,7 @@ export class SkiaObjectBox<R, T extends RawSkia<T>> extends SkiaObject<T> {
   }
 
   unref (referrer: R) {
-    invariant(this.isDeletedPermanently, `Attempted to unref an already deleted Skia object.`)
+    invariant(!this.isDeletedPermanently, `Attempted to unref an already deleted Skia object.`)
     invariant(this.referrers.delete(referrer), `Attempted to decrement ref count by the same referrer more than once.`)
 
     this.refCount -= 1

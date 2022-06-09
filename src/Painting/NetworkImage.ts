@@ -30,7 +30,7 @@ export class NetworkImage extends ImageProvider<NetworkImage> {
     return this
   }
 
-  async load (
+  load (
     key: NetworkImage, 
     decode: DecoderCallback
   ) {
@@ -41,7 +41,7 @@ export class NetworkImage extends ImageProvider<NetworkImage> {
     )
   }
 
-  loadAsync (
+  async loadAsync (
     key: NetworkImage,
     decode,
   ): Promise<Codec> {
@@ -56,10 +56,9 @@ export class NetworkImage extends ImageProvider<NetworkImage> {
     }
 
 
-    return webOnlyInstantiateImageCodecFromURL(resolved, (bytes, total) => {
-      debugger
+    return await webOnlyInstantiateImageCodecFromURL(resolved, (bytes, total) => {
       // chunkEvents.add(new ImageChunkEvent(bytes, total))
-    }).then(codec => codec as Codec)
+    }) as Codec
   }
 
   isEqula (other: NetworkImage | null) {

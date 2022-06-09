@@ -1,10 +1,11 @@
 import invariant from 'ts-invariant'
-import { CkCanvas, CkPath } from '@CanvasKit'
 import { Skia, SkiaFilterQuality } from '@Skia'
-import { Canvas, Color, ColorFilter, Image, Offset, Paint, Rect, Size } from '@UI'
+import { Canvas, Color, ColorFilter, Image, Offset, Paint, Path, Rect, Size } from '@UI'
+import { VoidCallback } from '@Platform'
 import { Alignment, AlignmentGeometry } from './Alignment'
 import { applyBoxFit, BoxFit } from './BoxFit'
-import { VoidCallback } from 'src/Platform'
+import { ImageConfiguration, ImageProvider } from './ImageProvider'
+import { ImageErrorListener, ImageInfo, ImageStream, ImageStreamListener } from './ImageStream'
 
 export enum ImageRepeat {
   Repeat,
@@ -14,7 +15,7 @@ export enum ImageRepeat {
 }
 
 export class DecorationImage {
-  public image: ImageProvider
+  public image: ImageProvider<unknown>
   public onError: ImageErrorListener | null
   public colorFilter: ColorFilter | null
   public fit: BoxFit | null
@@ -29,24 +30,30 @@ export class DecorationImage {
   public isAntiAlias: boolean
   
   constructor(
-    image,
-    onError,
-    colorFilter,
-    fit,
-    alignment = Alignment.center,
-    centerSlice,
+    image: ImageProvider<unknown>,
+    onError?: ImageErrorListener | null,
+    colorFilter?: ColorFilter | null,
+    fit?: BoxFit | null,
+    alignment: AlignmentGeometry = Alignment.center,
+    centerSlice?: Rect | null,
     repeat = ImageRepeat.NoRepeat,
-    matchTextDirection = false,
-    scale = 1.0,
-    opacity = 1.0,
-    filterQuality = SkiaFilterQuality.Low,
-    invertColors = false,
-    isAntiAlias = false,
+    matchTextDirection: boolean = false,
+    scale: number = 1.0,
+    opacity: number = 1.0,
+    filterQuality: SkiaFilterQuality = SkiaFilterQuality.Low,
+    invertColors: boolean = false,
+    isAntiAlias: boolean = false,
   ) {
     invariant(alignment !== null)
     invariant(repeat !== null)
     invariant(matchTextDirection !== null)
     invariant(scale !== null)
+
+
+    onError = onError ?? null
+    colorFilter = colorFilter ?? null
+    fit = fit ?? null
+    centerSlice = centerSlice ?? null
 
     this.image = image
     this.onError = onError
@@ -65,7 +72,7 @@ export class DecorationImage {
        
   createPainter (onChanged: VoidCallback): DecorationImagePainter  {
     invariant(onChanged !== null)
-    return DecorationImagePainter._(this, onChanged);
+    return new DecorationImagePainter(this, onChanged)
   }
 
   isEqual (other: DecorationImage) {
@@ -75,18 +82,18 @@ export class DecorationImage {
 
     return (
       other instanceof DecorationImage &&
-      other.image == this.image &&
-      other.colorFilter == this.colorFilter &&
-      other.fit == this.fit &&
-      other.alignment == this.alignment &&
-      other.centerSlice == this.centerSlice &&
-      other.repeat == this.repeat &&
-      other.matchTextDirection == this.matchTextDirection &&
-      other.scale == this.scale &&
-      other.opacity == this.opacity &&
-      other.filterQuality == this.filterQuality &&
-      other.invertColors == this.invertColors &&
-      other.isAntiAlias == this.isAntiAlias
+      other.image === this.image &&
+      other.colorFilter === this.colorFilter &&
+      other.fit === this.fit &&
+      other.alignment === this.alignment &&
+      other.centerSlice === this.centerSlice &&
+      other.repeat === this.repeat &&
+      other.matchTextDirection === this.matchTextDirection &&
+      other.scale === this.scale &&
+      other.opacity === this.opacity &&
+      other.filterQuality === this.filterQuality &&
+      other.invertColors === this.invertColors &&
+      other.isAntiAlias === this.isAntiAlias
     )
   }
 }
@@ -95,22 +102,23 @@ export class DecorationImagePainter {
   public details: DecorationImage
   public onChanged: VoidCallback
 
-  public imageStream: ImageStream | null
-  public image: ImageInfo | null
+  public imageStream: ImageStream | null = null
+  public image: ImageInfo | null = null
 
   constructor (
     details: DecorationImage,
     onChanged: VoidCallback
   ) {
     invariant(details !== null)
+
     this.details = details
     this.onChanged = onChanged
   }
   
   paint (
-    canvas: CkCanvas, 
+    canvas: Canvas, 
     rect: Rect, 
-    clipPath: CkPath | null, 
+    clipPath: Path | null, 
     configuration: ImageConfiguration
   ) {
     invariant(canvas !== null)
@@ -151,15 +159,15 @@ export class DecorationImagePainter {
       this.image!.image,
       this.image!.debugLabel,
       this.details.scale * this.image!.scale,
+      this.details.opacity,
       this.details.colorFilter,
       this.details.fit,
       this.details.alignment.resolve(configuration.textDirection),
       this.details.centerSlice,
       this.details.repeat,
       flipHorizontally,
-      this.details.opacity,
-      this.details.filterQuality,
       this.details.invertColors,
+      this.details.filterQuality,
       this.details.isAntiAlias,
     )
 
@@ -213,19 +221,24 @@ export function paintImage(
   canvas: Canvas,
   rect: Rect,
   image: Image,
-  debugImageLabel: string | null,
+  debugImageLabel?: string | null,
   scale: number = 1.0,
   opacity: number = 1.0,
-  colorFilter: ColorFilter | null,
-  fit: BoxFit | null,
+  colorFilter?: ColorFilter | null,
+  fit?: BoxFit | null,
   alignment: Alignment = Alignment.center,
-  centerSlice: Rect | null,
+  centerSlice?: Rect | null,
   repeat: ImageRepeat = ImageRepeat.NoRepeat,
   flipHorizontally: boolean = false,
   invertColors: boolean = false,
   filterQuality: SkiaFilterQuality = SkiaFilterQuality.Low,
   isAntiAlias: boolean = false,
 ) {
+  debugImageLabel = debugImageLabel ?? null
+  colorFilter = colorFilter ?? null
+  centerSlice = centerSlice ?? null
+  fit = fit ?? null
+
   invariant(canvas !== null)
   invariant(image !== null)
   invariant(alignment !== null)
@@ -285,77 +298,8 @@ export function paintImage(
   const destinationRect: Rect = destinationPosition.and(destinationSize)
 
   const invertedCanvas = false
-  // Output size and destination rect are fully calculated.
-  if (!kReleaseMode) {
-    final ImageSizeInfo sizeInfo = ImageSizeInfo(
-      // Some ImageProvider implementations may not have given this.
-      source: debugImageLabel ?? '<Unknown Image(${image.width}×${image.height})>',
-      imageSize: Size(image.width.toDouble(), image.height.toDouble()),
-      // It's ok to use this instead of a MediaQuery because if this changes,
-      // whatever is aware of the MediaQuery will be repainting the image anyway.
-      displaySize: outputSize * PaintingBinding.instance!.window.devicePixelRatio,
-    );
-    assert(() {
-      if (debugInvertOversizedImages &&
-          sizeInfo.decodedSizeInBytes > sizeInfo.displaySizeInBytes + debugImageOverheadAllowance) {
-        final int overheadInKilobytes = (sizeInfo.decodedSizeInBytes - sizeInfo.displaySizeInBytes) ~/ 1024;
-        final int outputWidth = sizeInfo.displaySize.width.toInt();
-        final int outputHeight = sizeInfo.displaySize.height.toInt();
-        FlutterError.reportError(FlutterErrorDetails(
-          exception: 'Image $debugImageLabel has a display size of '
-            '$outputWidth×$outputHeight but a decode size of '
-            '${image.width}×${image.height}, which uses an additional '
-            '${overheadInKilobytes}KB.\n\n'
-            'Consider resizing the asset ahead of time, supplying a cacheWidth '
-            'parameter of $outputWidth, a cacheHeight parameter of '
-            '$outputHeight, or using a ResizeImage.',
-          library: 'painting library',
-          context: ErrorDescription('while painting an image'),
-        ));
-        // Invert the colors of the canvas.
-        canvas.saveLayer(
-          destinationRect,
-          Paint()..colorFilter = const ColorFilter.matrix(<double>[
-            -1,  0,  0, 0, 255,
-             0, -1,  0, 0, 255,
-             0,  0, -1, 0, 255,
-             0,  0,  0, 1,   0,
-          ]),
-        );
-        // Flip the canvas vertically.
-        final double dy = -(rect.top + rect.height / 2.0);
-        canvas.translate(0.0, -dy);
-        canvas.scale(1.0, -1.0);
-        canvas.translate(0.0, dy);
-        invertedCanvas = true;
-      }
-      return true;
-    }());
-    // Avoid emitting events that are the same as those emitted in the last frame.
-    if (!_lastFrameImageSizeInfo.contains(sizeInfo)) {
-      final ImageSizeInfo? existingSizeInfo = _pendingImageSizeInfo[sizeInfo.source];
-      if (existingSizeInfo == null || existingSizeInfo.displaySizeInBytes < sizeInfo.displaySizeInBytes) {
-        _pendingImageSizeInfo[sizeInfo.source!] = sizeInfo;
-      }
-      debugOnPaintImage?.call(sizeInfo);
-      SchedulerBinding.instance!.addPostFrameCallback((Duration timeStamp) {
-        _lastFrameImageSizeInfo = _pendingImageSizeInfo.values.toSet();
-        if (_pendingImageSizeInfo.isEmpty) {
-          return;
-        }
-        developer.postEvent(
-          'Flutter.ImageSizesForFrame',
-          <String, Object>{
-            for (ImageSizeInfo imageSizeInfo in _pendingImageSizeInfo.values)
-              imageSizeInfo.source!: imageSizeInfo.toJson(),
-          },
-        );
-        _pendingImageSizeInfo = <String, ImageSizeInfo>{};
-      });
-    }
-  }
-
-  final bool needSave = centerSlice != null || repeat != ImageRepeat.noRepeat || flipHorizontally;
+  
+  final bool needSave = centerSlice != null || repeat != ImageRepeat.NoRepeat || flipHorizontally;
   if (needSave)
     canvas.save();
   if (repeat != ImageRepeat.noRepeat)

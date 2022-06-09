@@ -285,8 +285,10 @@ export abstract class ImageStreamCompleter {
   removeOnLastListenerRemovedCallback (callback: VoidCallback) {
     invariant(callback !== null)
     this.checkIsDisposed()
-    const index = this.onLastListenerRemovedCallbacks.findIndex(callback)
-    this.onLastListenerRemovedCallbacks.splice(index, 1)
+    const index = this.onLastListenerRemovedCallbacks.indexOf(callback)
+    if (index > -1) {
+      this.onLastListenerRemovedCallbacks.splice(index, 1)
+    }
   }
 
   setImage (image: ImageInfo) {
@@ -455,7 +457,7 @@ export class MultiFrameImageCompleter extends ImageStreamCompleter {
     this.framesEmitted += 1
   }
 
-  on (listener: ImageStreamListener) {
+  addListener (listener: ImageStreamListener) {
     if (
       !this.hasListeners && 
       this.codec !== null && 
@@ -468,7 +470,7 @@ export class MultiFrameImageCompleter extends ImageStreamCompleter {
     super.addListener(listener)
   }
 
-  off (listener: ImageStreamListener) {
+  removeListener (listener: ImageStreamListener) {
     super.removeListener(listener)
     if (!this.hasListeners) {
       this.timer?.cancel()

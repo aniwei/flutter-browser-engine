@@ -132,7 +132,7 @@ export class ImageCache {
     if (this.maximumSizeBytes === 0) {
       this.clear()
     }
-  }) public maximumSizeBytes!: number
+  }) public maximumSizeBytes: number = kDefaultSizeBytes
   
   @property<number>(function (this, v) {
     return v
@@ -152,7 +152,7 @@ export class ImageCache {
     if (this.maximumSize === 0) {
       this.clear()
     }
-  }) public maximumSize!: number
+  }) public maximumSize: number = kDefaultSize
 
   get liveImageCount () {
     return this.liveImages.size
@@ -322,7 +322,7 @@ export class ImageCache {
         image.dispose()
       }
 
-      let pendingImage = untrackedPendingImage ?? this.pendingImages.get(key)
+      let pendingImage = untrackedPendingImage ?? this.pendingImages.get(key) ?? null
       this.pendingImages.delete(key)
       if (pendingImage !== null) {
         pendingImage?.removeListener()

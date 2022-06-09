@@ -25,11 +25,18 @@ export type VideoFrame = {
 }
 
 export class Image implements IImage {
-  static malloc (skia: SkiaImage, frame: VideoFrame) {
-    return new Image(skia, frame)
-  }
-  static cloneOf (box: SkiaObjectBox<Image, SkiaImage>) {
+  static malloc (skia: SkiaImage, frame?: VideoFrame) {
+    const box = new SkiaObjectBox<Image, SkiaImage>(skia)
+    const image = new Image(box, frame)
+    box.ref(image)
 
+    return image
+  }
+
+  static cloneOf (box: SkiaObjectBox<Image, SkiaImage>) {
+    const image = new Image(box)
+    box.ref(image)
+    return image
   }
 
   public get skia () {
@@ -53,15 +60,15 @@ export class Image implements IImage {
     return this.box.skia
   }
 
-  constructor (skia: SkiaImage, frame?) {
-    this.box = new SkiaObjectBox(this, skia)
+  constructor (box: SkiaObjectBox<Image, SkiaImage>, frame?) {
+    this.box = box
     this.disposed = false
     this.videoFrame = frame
   }
 
   debugCheckIsDisposed () {
-    invariant(this.disposed, `This image has been disposed.`)
-    return true
+    invariant(!this.disposed, `This image has been disposed.`)
+    return false
   }
   
   async toByteData (format: ImageByteFormat = ImageByteFormat.RawRGBA) {
@@ -106,7 +113,7 @@ export class Image implements IImage {
 
   clone (): Image  {
     invariant(!this.debugCheckIsDisposed())
-    throw new Error()
+    return Image.cloneOf(this.box)
   }
 
   isCloneOf (other: Image) {

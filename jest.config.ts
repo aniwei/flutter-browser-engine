@@ -11,4 +11,5 @@ export default {
   },
   moduleNameMapper,
   moduleFileExtensions: ['ts', 'tsx', 'js', 'jsx', 'json', 'node'],
+  testTimeout: 100000
 };

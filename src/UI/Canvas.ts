@@ -34,7 +34,7 @@ export class Canvas {
 
   clipPath (
     path: Path, 
-    doAntiAlias: boolean
+    doAntiAlias: boolean = true
   ) {
     this.skia.clipPath(
       path.skia, 

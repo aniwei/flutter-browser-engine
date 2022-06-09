@@ -63,7 +63,8 @@ export async function webOnlyInstantiateImageCodecFromURL (
   uri: URI,
   chunkCallback?: WebOnlyImageCodecChunkCallback
 ) {
-  return skiaInstantiateWebImageCodec(uri.toString(), chunkCallback ?? null)
+  const codec = await skiaInstantiateWebImageCodec(uri.toString(), chunkCallback ?? null)
+  return codec
 }
 
 export async function instantiateImageCodec(
@@ -150,7 +151,7 @@ export class AnimatedImage extends ManagedSkiaObject<SkiaAnimatedImage> implemen
 
     const currentFrame = new AnimatedImageFrameInfo(
       skia.currentFrameDuration(),
-      new Image(skia.makeImageAtCurrentFrame()!)
+      Image.malloc(skia.makeImageAtCurrentFrame()!)
     )
 
     skia.decodeNextFrame()
