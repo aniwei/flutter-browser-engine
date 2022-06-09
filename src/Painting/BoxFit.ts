@@ -34,7 +34,7 @@ export function applyBoxFit (
     outputSize.height <= 0.0 || 
     outputSize.width <= 0.0
   ) {
-    return new FittedSizes(Size.zero, Size.zero)
+    return new FittedSizes(Size.Zero, Size.Zero)
   }
 
   let sourceSize: Size

@@ -57,7 +57,6 @@ export class ImageInfo {
     )
   }
 
-  
   isCloneOf (other: ImageInfo): boolean {
     return (
       other.image.isCloneOf(this.image) &&
@@ -143,12 +142,11 @@ export class ImageStream {
   @property<ImageStreamCompleter | null>(function (this, v) {
     return v
   }, function (this, v, k) {
-    invariant(v === null)
     this[k] = v
     if (this.listeners !== null && v !== null) {
       
       const initialListeners = this.listeners
-      initialListeners.forEach((v as ImageStreamCompleter).addListener)
+      initialListeners.forEach((listener) => (v as ImageStreamCompleter).addListener(listener))
         
       this.listeners = null
     }

@@ -14,5 +14,6 @@ export * from './ImageCache'
 export * from './ImageStream'
 export * from './ImageProvider'
 export * from './NetworkImage'
+export * from './DecorationImage'
 
 export * from './PaintingBinding'

@@ -1,19 +1,20 @@
-import invariant from 'ts-invariant'
+import { invariant } from 'ts-invariant'
 import { listEquals } from '@Math'
 import { VoidCallback } from '@Platform'
-import { Skia, SkiaBlendMode, SkiaTextDirection } from '@Skia'
+import { SkiaBlendMode, SkiaTextDirection } from '@Skia'
 import { Canvas, Path, Color, Offset, Rect, Size, Paint } from '@UI'
 import { BorderRadiusGeometry } from './BorderRadius'
 import { BoxBorder, BoxShape } from './BoxBorder'
 import { BoxShadow } from './BoxShadow'
 import { EdgeInsetsGeometry } from './EdgeInsets'
-import { ImageConfiguration } from './ImageProvider'
+import { ImageConfiguration, ImageProvider } from './ImageProvider'
 import { BoxPainter, Decoration } from './Decoration'
 import { Gradient } from './Gradient'
+import { DecorationImage, DecorationImagePainter } from './DecorationImage'
 
 export type BoxDecorationInitOptions = {
   color?: Color | null,
-  image?: null,
+  image?: DecorationImage | null,
   border?: BoxBorder | null
   borderRadius?: BorderRadiusGeometry | null
   boxShadow?: BoxShadow[] | null
@@ -59,7 +60,7 @@ export class BoxDecoration extends Decoration {
 
 
   public color: Color | null
-  public image // @TODO
+  public image: DecorationImage | null
   public border: BoxBorder | null
   public borderRadius: BorderRadiusGeometry | null
   public boxShadow: BoxShadow[] | null
@@ -95,7 +96,6 @@ export class BoxDecoration extends Decoration {
     )
 
     this.color = options.color
-    // @TODO
     this.image = options.image
     this.border = options.border
     this.borderRadius = options.borderRadius
@@ -242,7 +242,7 @@ export class BoxDecorationPainter extends BoxPainter {
   public decoration: BoxDecoration
   public cachedBackgroundPaint: Paint | null = null
   public rectForCachedBackgroundPaint: Rect | null = null
-  // public imagePainter: DecorationImagePainter | null = null
+  public imagePainter: DecorationImagePainter | null = null
 
   constructor (
     dectoration,
@@ -378,10 +378,10 @@ export class BoxDecorationPainter extends BoxPainter {
     this.imagePainter!.paint(canvas, rect, clipPath!, configuration)
   }
 
-  // dispose () {
-  //   this.imagePainter?.dispose()
-  //   super.dispose()
-  // }
+  dispose () {
+    this.imagePainter?.dispose()
+    super.dispose()
+  }
 
   paint (
     canvas: Canvas, 

@@ -212,11 +212,6 @@ export class DecorationImagePainter {
   }
 }
 
-
-Map<String, ImageSizeInfo> _pendingImageSizeInfo = <String, ImageSizeInfo>{};
-Set<ImageSizeInfo> _lastFrameImageSizeInfo = <ImageSizeInfo>{};
-
-
 export function paintImage(
   canvas: Canvas,
   rect: Rect,
@@ -245,7 +240,6 @@ export function paintImage(
   invariant(repeat !== null)
   invariant(flipHorizontally !== null)
   invariant(isAntiAlias !== null)
-  // invariant(image.debugGetOpenHandleStackTraces()?.isNotEmpty ?? true)
 
   if (rect.isEmpty) {
     return
@@ -253,16 +247,23 @@ export function paintImage(
 
   let outputSize = rect.size
   let inputSize = new Size(image.width, image.height)
-  let sliceBorder: Offset | null  
+  let sliceBorder: Size | null  
+
   if (centerSlice !== null) {
-    sliceBorder = inputSize.divide(scale).subtract - centerSlice.size as Offset
-    outputSize = outputSize - sliceBorder as Size
-    inputSize = inputSize - sliceBorder * scale as Size
+    sliceBorder = inputSize.divide(scale).subtract(centerSlice.size)
+    outputSize = outputSize.subtract(sliceBorder)
+    inputSize = inputSize.subtract(sliceBorder.multiply(scale))
   }
 
   fit ??= centerSlice == null ? BoxFit.ScaleDown : BoxFit.Fill
   
-  invariant(centerSlice === null || (fit !== BoxFit.None && fit !== BoxFit.Cover))
+  invariant(
+    centerSlice === null || 
+    (
+      fit !== BoxFit.None && 
+      fit !== BoxFit.Cover
+    )
+  )
 
   const fittedSizes = applyBoxFit(fit, inputSize.divide(scale), outputSize)
   const sourceSize = fittedSizes.source.multiply(scale)
@@ -281,8 +282,10 @@ export function paintImage(
   ) {
     repeat = ImageRepeat.NoRepeat
   }
+  
   const paint = Paint.malloc()
   paint.isAntiAlias = isAntiAlias
+
   if (colorFilter !== null) {
     paint.colorFilter = colorFilter
   }
@@ -299,38 +302,63 @@ export function paintImage(
 
   const invertedCanvas = false
   
-  final bool needSave = centerSlice != null || repeat != ImageRepeat.NoRepeat || flipHorizontally;
-  if (needSave)
-    canvas.save();
-  if (repeat != ImageRepeat.noRepeat)
-    canvas.clipRect(rect);
-  if (flipHorizontally) {
-    final double dx = -(rect.left + rect.width / 2.0);
-    canvas.translate(-dx, 0.0);
-    canvas.scale(-1.0, 1.0);
-    canvas.translate(dx, 0.0);
+  const needSave = (
+    centerSlice !== null || 
+    repeat !== ImageRepeat.NoRepeat || 
+    flipHorizontally
+  )
+
+  if (needSave) {
+    canvas.save()
   }
-  if (centerSlice == null) {
-    final Rect sourceRect = alignment.inscribe(
-      sourceSize, Offset.zero & inputSize,
-    );
-    if (repeat == ImageRepeat.noRepeat) {
-      canvas.drawImageRect(image, sourceRect, destinationRect, paint);
+  
+  if (repeat !== ImageRepeat.NoRepeat) {
+    canvas.clipRect(rect)
+  }
+
+  if (flipHorizontally) {
+    const dx = -(rect.left + rect.width / 2.0)
+    canvas.translate(-dx, 0.0)
+    canvas.scale(-1.0, 1.0)
+    canvas.translate(dx, 0.0)
+  }
+
+  if (centerSlice === null) {
+    const sourceRect = alignment.inscribe(
+      sourceSize, Offset.Zero.and(inputSize),
+    )
+
+    if (repeat === ImageRepeat.NoRepeat) {
+      canvas.drawImageRect(image, sourceRect, destinationRect, paint)
     } else {
-      for (final Rect tileRect in _generateImageTileRects(rect, destinationRect, repeat))
-        canvas.drawImageRect(image, sourceRect, tileRect, paint);
+      for (const tileRect of generateImageTileRects(rect, destinationRect, repeat)) {
+        canvas.drawImageRect(image, sourceRect, tileRect, paint)
+      }
     }
   } else {
-    canvas.scale(1 / scale);
-    if (repeat == ImageRepeat.noRepeat) {
-      canvas.drawImageNine(image, _scaleRect(centerSlice, scale), _scaleRect(destinationRect, scale), paint);
+    canvas.scale(1 / scale, 1)
+    if (repeat === ImageRepeat.NoRepeat) {
+      canvas.drawImageNine(
+        image, 
+        scaleRect(centerSlice, scale), 
+        scaleRect(destinationRect, scale), 
+        paint
+      )
     } else {
-      for (final Rect tileRect in _generateImageTileRects(rect, destinationRect, repeat))
-        canvas.drawImageNine(image, _scaleRect(centerSlice, scale), _scaleRect(tileRect, scale), paint);
+      for (const tileRect of generateImageTileRects(rect, destinationRect, repeat)) {
+        canvas.drawImageNine(
+          image, 
+          scaleRect(centerSlice, scale), 
+          scaleRect(tileRect, scale), 
+          paint
+        )
+      }
     }
   }
-  if (needSave)
-    canvas.restore();
+
+  if (needSave) {
+    canvas.restore()
+  }
 
   if (invertedCanvas) {
     canvas.restore()

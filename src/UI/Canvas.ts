@@ -6,6 +6,7 @@ import type { Image } from './Image'
 import type { ImageFilter, ManagedSkImageFilterConvertible } from './ImageFilter'
 import type { Paint } from './Paint'
 import type { Path } from './Path'
+import { ClipOp } from 'canvaskit-wasm'
 
 export class Canvas {
   static kMitchellNetravali_B = 1.0 / 3.0
@@ -50,6 +51,18 @@ export class Canvas {
     this.skia.clipRRect(
       rrect,
       Canvas.clipOpIntersect,
+      doAntiAlias,
+    )
+  }
+
+  clipRect (
+    rect: Rect, 
+    clipOp: ClipOp = Skia.ClipOp.Intersect, 
+    doAntiAlias: boolean = true
+  ) {
+    this.skia.clipRect(
+      rect,
+      clipOp,
       doAntiAlias,
     )
   }
@@ -394,7 +407,7 @@ export class Canvas {
 
   scale (
     sx: number, 
-    sy: number
+    sy: number = sx
   ) {
     this.skia.scale(sx, sy)
   }

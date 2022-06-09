@@ -16,9 +16,5 @@ test(`fetchImage`, async () => {
   const image = new NetworkImage(uri.toString())
   const stream = image.resolve(new ImageConfiguration())
 
-  await new Promise(() => {
-
-  })
-  
 
 })

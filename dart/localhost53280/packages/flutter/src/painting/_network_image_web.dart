@@ -76,7 +76,7 @@ class NetworkImage
   // directly in place of the typical `instantiateImageCodec` method.
   Future<ui.Codec> _loadAsync(
     NetworkImage key,
-    image_provider.DecoderCallback decode,
+    image_provider.DecoderCallback decode,MultiFrameImageStreamCompleter
     StreamController<ImageChunkEvent> chunkEvents,
   ) {
     assert(key == this);

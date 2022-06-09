@@ -1,6 +1,6 @@
 import { Color } from '@UI'
 import { ManagedSkiaObject, Skia, SkiaFilterQuality } from '@Skia'
-import { ManagedSkiaColorFilter, ComposeColorFilter, MatrixColorFilter } from './ColorFilter'
+import { ManagedSkiaColorFilter, ComposeColorFilter, MatrixColorFilter, ColorFilter } from './ColorFilter'
 import { MaskFilter } from './MaskFilter'
 
 import type { SkiaPaint, SkiaImageFilter, SkiaBlendMode, SkiaColorFilter, SkiaPaintStyle, SkiaStrokeCap, SkiaStrokeJoin } from '@Skia'
@@ -168,16 +168,16 @@ export class Paint extends ManagedSkiaObject<SkiaPaint> {
     }
   }) public filterQuality: SkiaFilterQuality = SkiaFilterQuality.None
 
-  @property<SkiaColorFilter>(function (value) {
+  @property<ColorFilter>(function (value) {
     return value
-  }, function (this, colorFilter: SkiaColorFilter) {
+  }, function (this, colorFilter: ColorFilter) {
     if (this.colorFilter !== colorFilter) {
       this.originalColorFilter = null
 
       if (colorFilter === null) {
         this.effectiveColorFilter = null
       } else {
-        this.effectiveColorFilter // @TODO
+        this.effectiveColorFilter = ManagedSkiaColorFilter.malloc(colorFilter)
       }
 
       if (this.invertColors) {
@@ -186,7 +186,12 @@ export class Paint extends ManagedSkiaObject<SkiaPaint> {
         if (this.effectiveColorFilter === null) {
           this.effectiveColorFilter = Paint.kInvertColorFilter
         } else {
-          this.effectiveColorFilter // @TODO
+          this.effectiveColorFilter = ManagedSkiaColorFilter.malloc(
+            ComposeColorFilter.malloc({
+              inner: Paint.kInvertColorFilter,
+              outer: this.effectiveColorFilter
+            })
+          )
         }
       } 
       
@@ -194,7 +199,7 @@ export class Paint extends ManagedSkiaObject<SkiaPaint> {
         this.skia.setColorFilter(this.effectiveColorFilter.skia)
       }
     }
-  }) public colorFilter: SkiaColorFilter | null = null
+  }) public colorFilter: ColorFilter | null = null
 
   @property<number>(function (value) {
     return value
@@ -238,7 +243,7 @@ export class Paint extends ManagedSkiaObject<SkiaPaint> {
     paint.setColorInt(this.color.value)
     paint.setShader(this.shader!.withQuality(this.filterQuality)) 
     paint.setMaskFilter(this.maskFilter!.skia)
-    paint.setColorFilter(this.colorFilter!)
+    paint.setColorFilter(this.effectiveColorFilter?.skia!)
     paint.setImageFilter((this.managedImageFilter as ManagedSkiaObject<SkiaImageFilter>).skia)
     paint.setStrokeCap(this.strokeCap)
     paint.setStrokeJoin(this.strokeJoin)
