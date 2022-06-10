@@ -325,7 +325,7 @@ export function paintImage(
 
   if (centerSlice === null) {
     const sourceRect = alignment.inscribe(
-      sourceSize, Offset.Zero.and(inputSize),
+      sourceSize, Offset.zero.and(inputSize),
     )
 
     if (repeat === ImageRepeat.NoRepeat) {

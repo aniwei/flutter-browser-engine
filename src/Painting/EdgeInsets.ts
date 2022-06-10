@@ -188,7 +188,7 @@ export abstract class EdgeInsetsGeometry {
 }
 
 export class EdgeInsets extends EdgeInsetsGeometry {
-  static Zero = EdgeInsets.only()
+  static zero = EdgeInsets.only()
 
   static lerp (
     a: EdgeInsets | null, 

@@ -30,7 +30,7 @@ export abstract class OffsetBase extends Float32Array {
 }
 
 export class Offset extends OffsetBase {
-  static Zero = new Offset(0, 0)
+  static zero = new Offset(0, 0)
   static Infinite = new Offset(
     Infinity, 
     Infinity
@@ -454,7 +454,7 @@ export class Size extends OffsetBase {
 }
 
 export class Radius {
-  static Zero = Radius.circular(0)
+  static zero = Radius.circular(0)
 
   static lerp(
     a: Radius | null, 
@@ -985,10 +985,10 @@ export class RRect extends Float32Array implements IRRect {
 
   static fromRectAndCorners (
     rect: Rect,
-    topLeft: Radius = Radius.Zero,
-    topRight: Radius = Radius.Zero,
-    bottomRight: Radius = Radius.Zero,
-    bottomLeft: Radius = Radius.Zero,
+    topLeft: Radius = Radius.zero,
+    topRight: Radius = Radius.zero,
+    bottomRight: Radius = Radius.zero,
+    bottomLeft: Radius = Radius.zero,
   ) {
     return RRect.raw(
       rect.left,
@@ -1020,10 +1020,10 @@ export class RRect extends Float32Array implements IRRect {
     top: number,
     right: number,
     bottom: number,
-    topLeft: Radius = Radius.Zero,
-    topRight: Radius = Radius.Zero,
-    bottomRight: Radius = Radius.Zero,
-    bottomLeft: Radius = Radius.Zero,
+    topLeft: Radius = Radius.zero,
+    topRight: Radius = Radius.zero,
+    bottomRight: Radius = Radius.zero,
+    bottomLeft: Radius = Radius.zero,
   ) {
     return RRect.raw(
       top,

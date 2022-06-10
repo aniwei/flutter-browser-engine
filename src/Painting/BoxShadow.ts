@@ -87,7 +87,7 @@ export class Shadow implements IShadow {
 
   constructor (
     color: Color = new Color(Shadow.kColorDefault),
-    offset: Offset = Offset.Zero,
+    offset: Offset = Offset.zero,
     blurRadius: number = 0.0,
   ) {
     invariant(color !== null, `Text shadow color was null.`)
@@ -185,7 +185,7 @@ export class BoxShadow extends Shadow {
 
   constructor (
     color: Color = new Color(0xFF000000),
-    offset: Offset = Offset.Zero,
+    offset: Offset = Offset.zero,
     blurRadius: number = 0.0,
     spreadRadius: number = 0.0,
     blurStyle: SkiaBlurStyle = Skia.BlurStyle.Normal,

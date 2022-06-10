@@ -1,4 +1,4 @@
-import invariant from 'ts-invariant'
+import { invariant } from 'ts-invariant'
 import { lerpDouble } from '@Math'
 import { Offset, Rect, Size } from '@UI'
 import { Skia } from '@Skia'

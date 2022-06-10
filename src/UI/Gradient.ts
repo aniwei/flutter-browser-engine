@@ -55,8 +55,8 @@ export abstract class Gradient {
       })
     } else {
       invariant(
-        center !== Offset.Zero ||
-        focal !== Offset.Zero
+        center !== Offset.zero ||
+        focal !== Offset.zero
       )
       
       return GradientConical.malloc({

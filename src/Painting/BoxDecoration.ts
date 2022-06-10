@@ -214,18 +214,18 @@ export class BoxDecoration extends Decoration {
     textDirection: SkiaTextDirection
   ): boolean {
     invariant(this.shape !== null)
-    invariant((Offset.Zero.and(size)).contains(position))
+    invariant((Offset.zero.and(size)).contains(position))
 
     switch (this.shape) {
       case BoxShape.Rectangle: {
         if (this.borderRadius !== null) {
-          const bounds = this.borderRadius!.resolve(textDirection).toRRect(Offset.Zero.and(size))
+          const bounds = this.borderRadius!.resolve(textDirection).toRRect(Offset.zero.and(size))
           return bounds.contains(position)
         }
         return true
       }
       case BoxShape.Circle: {
-        const center = size.center(Offset.Zero)
+        const center = size.center(Offset.zero)
         const distance = position.subtract(center).distance
         return distance <= Math.min(size.width, size.height) / 2.0
       }

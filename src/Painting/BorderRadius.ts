@@ -1,7 +1,7 @@
+import { invariant } from 'ts-invariant'
 import { Skia } from '@Skia'
 import { Radius, Rect, RRect } from '@UI'
 import { TextDirection } from 'canvaskit-wasm'
-import invariant from 'ts-invariant'
 
 export abstract class BorderRadiusGeometry {
   static lerp (
@@ -15,8 +15,8 @@ export abstract class BorderRadiusGeometry {
       return null
     }
 
-    a ??= BorderRadius.Zero
-    b ??= BorderRadius.Zero
+    a ??= BorderRadius.zero
+    b ??= BorderRadius.zero
 
     return a.add(b.subtract(a).multiply(t))
   }
@@ -110,7 +110,7 @@ export abstract class BorderRadiusGeometry {
 }
 
 export class BorderRadius extends BorderRadiusGeometry {
-  static Zero = BorderRadius.all(Radius.Zero)
+  static zero = BorderRadius.all(Radius.zero)
   static all (radius: Radius) {
     return this.only(
       radius,
@@ -154,8 +154,8 @@ export class BorderRadius extends BorderRadiusGeometry {
   }
 
   static vertical (
-    top: Radius = Radius.Zero,
-    bottom: Radius = Radius.Zero,
+    top: Radius = Radius.zero,
+    bottom: Radius = Radius.zero,
   ) {
     return BorderRadius.only(
       top,
@@ -166,8 +166,8 @@ export class BorderRadius extends BorderRadiusGeometry {
   }
 
   static horizontal(
-    left: Radius = Radius.Zero,
-    right: Radius = Radius.Zero,
+    left: Radius = Radius.zero,
+    right: Radius = Radius.zero,
   ) {
     BorderRadius.only(
       left,
@@ -178,10 +178,10 @@ export class BorderRadius extends BorderRadiusGeometry {
   } 
 
   static only(
-    topLeft: Radius = Radius.Zero,
-    topRight: Radius = Radius.Zero,
-    bottomRight: Radius = Radius.Zero,
-    bottomLeft: Radius = Radius.Zero,
+    topLeft: Radius = Radius.zero,
+    topRight: Radius = Radius.zero,
+    bottomRight: Radius = Radius.zero,
+    bottomLeft: Radius = Radius.zero,
   ) {
     return new BorderRadius(
       topLeft,
@@ -202,10 +202,10 @@ export class BorderRadius extends BorderRadiusGeometry {
       topRight,
       bottomRight,
       bottomLeft,
-      Radius.Zero,
-      Radius.Zero,
-      Radius.Zero,
-      Radius.Zero,
+      Radius.zero,
+      Radius.zero,
+      Radius.zero,
+      Radius.zero,
     )
   }
 
@@ -294,7 +294,7 @@ export class BorderRadius extends BorderRadiusGeometry {
 }
 
 export class BorderRadiusDirectional extends BorderRadiusGeometry {
-  static Zero = BorderRadiusDirectional.all(Radius.Zero)
+  static Zero = BorderRadiusDirectional.all(Radius.zero)
 
   static lerp (
     a: BorderRadiusDirectional | null, 
@@ -336,8 +336,8 @@ export class BorderRadiusDirectional extends BorderRadiusGeometry {
   }
 
   static vertical(
-    top: Radius = Radius.Zero,
-    bottom: Radius = Radius.Zero,
+    top: Radius = Radius.zero,
+    bottom: Radius = Radius.zero,
   ) {
     return BorderRadiusDirectional.only(
       top,
@@ -348,8 +348,8 @@ export class BorderRadiusDirectional extends BorderRadiusGeometry {
   }
 
   static horizontal(
-    start: Radius = Radius.Zero,
-    end: Radius = Radius.Zero,
+    start: Radius = Radius.zero,
+    end: Radius = Radius.zero,
   ) {
     return BorderRadiusDirectional.only(
       start,
@@ -360,10 +360,10 @@ export class BorderRadiusDirectional extends BorderRadiusGeometry {
   }
 
   static only(
-    topStart: Radius = Radius.Zero,
-    topEnd: Radius = Radius.Zero,
-    bottomStart: Radius = Radius.Zero,
-    bottomEnd: Radius = Radius.Zero,
+    topStart: Radius = Radius.zero,
+    topEnd: Radius = Radius.zero,
+    bottomStart: Radius = Radius.zero,
+    bottomEnd: Radius = Radius.zero,
   ) {
     return new BorderRadiusDirectional(
       topStart,
@@ -380,10 +380,10 @@ export class BorderRadiusDirectional extends BorderRadiusGeometry {
     bottomEnd: Radius,
   ) { 
     super(
-      Radius.Zero,
-      Radius.Zero,
-      Radius.Zero,
-      Radius.Zero,
+      Radius.zero,
+      Radius.zero,
+      Radius.zero,
+      Radius.zero,
       topStart,
       topEnd,
       bottomStart,

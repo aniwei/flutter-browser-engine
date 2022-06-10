@@ -24,8 +24,8 @@ test(`Skia`, async () => {
     BoxShape.Rectangle,
     BorderRadius.only(
       Radius.circular(10.0),
-      Radius.Zero,
-      Radius.Zero,
+      Radius.zero,
+      Radius.zero,
       Radius.circular(10.0),
     )
   )

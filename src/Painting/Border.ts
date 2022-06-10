@@ -340,7 +340,7 @@ export class CompoundBorder extends ShapeBorder {
       border: ShapeBorder
     ) => {
       return previousValue.add(border.dimensions);
-    }, EdgeInsets.Zero)
+    }, EdgeInsets.zero)
   }
 
 

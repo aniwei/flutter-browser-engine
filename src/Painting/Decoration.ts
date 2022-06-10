@@ -37,7 +37,7 @@ export abstract class Decoration {
     )
   }
   public get padding (): EdgeInsetsGeometry | null {
-    return EdgeInsets.Zero
+    return EdgeInsets.zero
   }
 
   public get isComplex () {

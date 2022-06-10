@@ -4,7 +4,7 @@ import { Paint } from './Paint'
 
 export abstract class Layer {
   public parent: ContainerLayer | null = null
-  public bounds: Rect = Rect.Zero
+  public bounds: Rect = Rect.zero
 
   public get needsPainting () {
     return !this.needsPainting.isEmpty

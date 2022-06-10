@@ -1,4 +1,4 @@
-import invariant from 'ts-invariant'
+import { invariant } from 'ts-invariant'
 import { Skia, SkiaTextDirection } from '@Skia'
 import { Canvas, Paint, Path } from '@UI'
 import { Color, Rect } from '@UI'
