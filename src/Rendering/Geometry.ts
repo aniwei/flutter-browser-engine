@@ -1,5 +1,5 @@
 import { invariant } from 'ts-invariant'
-import { lerpDouble } from '@Math'
+import { lerpDouble } from '@math'
 
 const GIANT_SCALAR = 1.0E+9
 
@@ -183,7 +183,7 @@ export class Offset extends OffsetBase {
 }
 
 export class Size extends OffsetBase {
-  static Zero = new Size(0.0, 0.0)
+  static zero = new Size(0.0, 0.0)
   static Infinite = new Size(
     Infinity, 
     Infinity
@@ -552,8 +552,8 @@ export class Radius {
 }
 
 export class Rect extends Float32Array {
-  static Zero = new Rect(0, 0, 0, 0)
-  static Largest = new Rect(
+  static zero = new Rect(0, 0, 0, 0)
+  static largest = new Rect(
     -GIANT_SCALAR, 
     -GIANT_SCALAR, 
     GIANT_SCALAR, 

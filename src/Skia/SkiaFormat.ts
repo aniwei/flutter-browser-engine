@@ -1,5 +1,5 @@
-import { Color, Offset, Rect, RRect } from '@UI'
-import { Skia } from '@Skia'
+import { Color, Offset, Rect, RRect } from '@rendering'
+import { Skia } from '@skia'
 import { CubicResampler, FilterOptions, MallocObj } from 'canvaskit-wasm'
 import { SkiaFilterQuality } from './Skia'
 import invariant from 'ts-invariant'

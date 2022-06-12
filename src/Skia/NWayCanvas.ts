@@ -1,0 +1,99 @@
+import { Canvas, Color, ImageFilter, Paint, Path, Rect, RRect } from '@rendering'
+import { SkiaClipOp } from './Skia'
+
+export class CkNWayCanvas extends Array<Canvas> {
+
+  addCanvas (canvas: Canvas) {
+    this.push(canvas)
+  }
+
+  save (): number {
+    let saveCount = 0
+    for (let i = 0; i < this.length; i++) {
+      saveCount = this[i].save()
+    }
+
+    return saveCount
+  }
+
+  saveLayer (
+    bounds: Rect, 
+    paint?: Paint | null
+  ) {
+    for (let i = 0; i < this.length; i++) {
+      this[i].saveLayer(bounds, paint as Paint)
+    }
+  }
+
+  saveLayerWithFilter (
+    bounds: Rect, 
+    filter: ImageFilter,
+    paint?: Paint | null
+  ) {
+    for (let i = 0; i < this.length; i++) {
+      this[i].saveLayerWithFilter(bounds, filter, paint as Paint)
+    }
+  }
+
+  restore () {
+    for (let i = 0; i < this.length; i++) {
+      this[i].restore()
+    }
+  }
+
+  restoreToCount (count: number) {
+    for (let i = 0; i < this.length; i++) {
+      this[i].restoreToCount(count)
+    }
+  }
+
+  translate (
+    dx: number, 
+    dy: number
+  ) {
+    for (let i = 0; i < this.length; i++) {
+      this[i].translate(dx, dy)
+    }
+  }
+
+  transform (matrix: Float32Array) {
+    for (let i = 0; i < this.length; i++) {
+      this[i].transform(matrix)
+    }
+  }
+
+  /// Calls [clear] on all canvases.
+  clear (color: Color) {
+    for (let i = 0; i < this.length; i++) {
+      this[i].clear(color)
+    }
+  }
+
+  clipPath (
+    path: Path, 
+    doAntiAlias: boolean
+  ) {
+    for (let i = 0; i < this.length; i++) {
+      this[i].clipPath(path, doAntiAlias)
+    }
+  }
+
+  clipRect (
+    rect: Rect, 
+    clipOp: SkiaClipOp,
+    doAntiAlias: boolean
+  ) {
+    for (let i = 0; i < this.length; i++) {
+      this[i].clipRect(rect, clipOp, doAntiAlias)
+    }
+  }
+
+  clipRRect (
+    rrect: RRect, 
+    doAntiAlias: boolean
+  ) {
+    for (let i = 0; i < this.length; i++) {
+      this[i].clipRRect(rrect, doAntiAlias)
+    }
+  }
+}

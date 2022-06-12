@@ -1,6 +1,6 @@
-import { HTTP, kBrowserSupportsImageDecoder } from '@Platform'
-import { URI } from '@Platform'
-import { AnimatedImage } from '@UI'
+import { HTTP, kBrowserSupportsImageDecoder } from '@platform'
+import { URI } from '@platform'
+import { AnimatedImage } from '@rendering'
 
 type WebOnlyImageCodecChunkCallback = { (cumulativeBytesLoaded: number, expectedTotalBytes: number): void } 
 

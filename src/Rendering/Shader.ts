@@ -1,5 +1,5 @@
 import invariant from 'ts-invariant'
-import { Skia, ManagedSkiaObject, SkiaFilterQuality, SkiaShader, SkiaTileMode, toFlatColors, toSkiaColorStops, toSkiaMatrixFromFloat32, matrix4IsValid, toSkiaPoint, offsetIsValid, toSkiaMatrixFromFloat64, toSkiaFilterQuality, toSkiaMipmapMode, toSkiaFilterMode } from '@Skia'
+import { Skia, ManagedSkiaObject, SkiaFilterQuality, SkiaShader, SkiaTileMode, toFlatColors, toSkiaColorStops, toSkiaMatrixFromFloat32, matrix4IsValid, toSkiaPoint, offsetIsValid, toSkiaMatrixFromFloat64, toSkiaFilterQuality, toSkiaMipmapMode, toSkiaFilterMode } from '@skia'
 import { Offset } from './Geometry'
 import { Color } from './Painting'
 import { Image } from './Image'

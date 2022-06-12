@@ -1,7 +1,7 @@
 import { invariant } from 'ts-invariant'
-import { lerpDouble } from '@Math'
-import { Offset, Rect, Size } from '@UI'
-import { Skia } from '@Skia'
+import { lerpDouble } from '@math'
+import { Offset, Rect, Size } from '@rendering'
+import { Skia } from '@skia'
 import { TextDirection } from 'canvaskit-wasm'
 
 export abstract class AlignmentGeometry {

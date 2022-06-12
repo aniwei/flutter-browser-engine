@@ -1,5 +1,5 @@
 import invariant from 'ts-invariant'
-import { Skia, SkiaTileMode, toMatrix32 } from '@Skia'
+import { Skia, SkiaTileMode, toMatrix32 } from '@skia'
 import { Offset } from './Geometry'
 import { Color } from './Painting'
 import { validateColorStops } from '.'

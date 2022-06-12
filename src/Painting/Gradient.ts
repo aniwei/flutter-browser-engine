@@ -1,8 +1,8 @@
 import { invariant } from 'ts-invariant'
-import { SkiaTextDirection, SkiaTileMode } from '@Skia'
-import { Color, Offset, Rect, Shader } from '@UI'
-import { lerpDouble, listEquals, Matrix4 } from '@Math'
-import * as UI from '@UI'
+import { SkiaTextDirection, SkiaTileMode } from '@skia'
+import { Color, Offset, Rect, Shader } from '@rendering'
+import { lerpDouble, listEquals, Matrix4 } from '@math'
+import * as UI from '@rendering'
 import { Alignment, AlignmentGeometry } from './Alignment'
 
 function sample (

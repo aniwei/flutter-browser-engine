@@ -1,10 +1,10 @@
 import { resolve } from 'path'
-import { Skia, SkiaCanvas, SkiaFilterQuality, toSkiaFilterQuality } from '@Skia'
-import { URI } from '@Platform'
-import { Alignment, ImageConfiguration, ImageStreamListener, NetworkImage } from '@Painting'
+import { Skia, SkiaCanvas, SkiaFilterQuality, toSkiaFilterQuality } from '@skia'
+import { URI } from '@platform'
+import { Alignment, ImageConfiguration, ImageStreamListener, NetworkImage } from '@painting'
 import { runApp } from '../src'
-import { ImageRepeat, paintImage } from '@Painting'
-import { Canvas, Rect } from '@UI'
+import { ImageRepeat, paintImage } from '@painting'
+import { Canvas, Rect } from '@rendering'
 import Jimp from 'jimp'
 
 test(`paintImage`, async () => {

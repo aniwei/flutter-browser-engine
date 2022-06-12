@@ -1,5 +1,5 @@
 import invariant from 'ts-invariant'
-import { ArgumentError } from '@Platform'
+import { ArgumentError } from '@platform'
 import { clamp } from './clamp'
 
 export class Matrix4 extends Float32Array {
@@ -68,6 +68,7 @@ export class Matrix4 extends Float32Array {
     m[10] = z
     m[5] = y
     m[0] = x
+    return m
   } 
 
   static fromFloat32Array (m4storage: Float32Array) {

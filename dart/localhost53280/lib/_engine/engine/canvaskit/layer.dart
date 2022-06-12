@@ -3,8 +3,6 @@ part of dart._engine;
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-
-
 /// A layer to be composed into a scene.
 ///
 /// A layer is the lowest-level rendering primitive. It represents an atomic

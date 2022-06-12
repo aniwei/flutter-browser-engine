@@ -1,7 +1,7 @@
 import { resolve } from 'path'
-import { Skia } from '@Skia'
-import { URI } from '@Platform'
-import { ImageConfiguration, NetworkImage } from '@Painting'
+import { Skia } from '@skia'
+import { URI } from '@platform'
+import { ImageConfiguration, NetworkImage } from '@painting'
 import { runApp } from '../src'
 
 

@@ -1,11 +1,11 @@
 import jimp from 'jimp'
 import { resolve } from 'path'
-import { Skia, SkiaCanvas } from '@Skia'
-import { Border, BorderStyle, BoxShape, BorderRadius, BoxDecoration, BoxShadow, LinearGradient } from '@Painting'
-import { Canvas, Color, Offset, Radius, Rect, Size } from '@UI'
-import { ImageConfiguration } from '@Painting'
-import { TargetPlatform } from '@Platform'
-import { Colors } from '@UI'
+import { Skia, SkiaCanvas } from '@skia'
+import { Border, BorderStyle, BoxShape, BorderRadius, BoxDecoration, BoxShadow, LinearGradient } from '@painting'
+import { Canvas, Color, Offset, Radius, Rect, Size } from '@rendering'
+import { ImageConfiguration } from '@painting'
+import { TargetPlatform } from '@platform'
+import { Colors } from '@rendering'
 
 
 test(`Skia`, async () => {

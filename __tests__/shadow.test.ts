@@ -1,8 +1,8 @@
 import jimp from 'jimp'
 import { resolve } from 'path'
-import { Skia, SkiaCanvas, SkiaTextDirection } from '@Skia'
-import { Border, BorderStyle, BoxShape, BorderRadius } from '@Painting'
-import { Canvas, Color, Radius, Rect } from '@UI'
+import { Skia, SkiaCanvas, SkiaTextDirection } from '@skia'
+import { Border, BorderStyle, BoxShape, BorderRadius } from '@painting'
+import { Canvas, Color, Radius, Rect } from '@rendering'
 
 
 test(`Skia`, async () => {

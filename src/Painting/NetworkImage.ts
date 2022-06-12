@@ -1,6 +1,6 @@
 import { invariant } from 'ts-invariant'
-import { URI } from '@Platform'
-import { Codec, webOnlyInstantiateImageCodecFromURL } from '@UI'
+import { URI } from '@platform'
+import { Codec, webOnlyInstantiateImageCodecFromURL } from '@rendering'
 import { DecoderCallback, ImageConfiguration, ImageProvider } from './ImageProvider'
 import { MultiFrameImageCompleter } from './ImageStream'
 

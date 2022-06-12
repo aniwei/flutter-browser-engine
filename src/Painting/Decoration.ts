@@ -1,6 +1,6 @@
 import invariant from 'ts-invariant'
-import { UnsupportedError } from '@Platform'
-import { Canvas, Path, Offset, Rect, Size } from '@UI'
+import { UnsupportedError } from '@internal'
+import { Canvas, Path, Offset, Rect, Size } from '@rendering'
 import { TextDirection } from 'canvaskit-wasm'
 import { EdgeInsets, EdgeInsetsGeometry } from './EdgeInsets'
 import { ImageConfiguration } from './ImageProvider'

@@ -1,5 +1,5 @@
-import { UnimplementedError } from '@Platform'
-import { ManagedSkiaObject, Skia, SkiaFilterQuality, SkiaImageFilter, SkiaTileMode, toSkiaFilterQuality, toSkiaMatrixFromFloat64 } from '@Skia'
+import { UnimplementedError } from '@internal'
+import { ManagedSkiaObject, Skia, SkiaFilterQuality, SkiaImageFilter, SkiaTileMode, toSkiaFilterQuality, toSkiaMatrixFromFloat64 } from '@skia'
 import type { ColorFilter } from './ColorFilter'
 
 export abstract class ManagedSkImageFilterConvertible {

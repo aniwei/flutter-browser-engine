@@ -1,4 +1,4 @@
-import { ManagedSkiaObject, Skia, SkiaPath, SkiaFillType, SkiaPathOp } from '@Skia'
+import { ManagedSkiaObject, Skia, SkiaPath, SkiaFillType, SkiaPathOp } from '@skia'
 import { Offset, Radius, Rect, RRect } from './Geometry'
 
 function property<T> (

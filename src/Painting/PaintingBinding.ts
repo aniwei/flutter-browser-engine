@@ -1,5 +1,5 @@
 import { invariant } from 'ts-invariant'
-import { Codec, instantiateImageCodec } from '@UI'
+import { Codec, instantiateImageCodec } from '@rendering'
 import { ImageCache } from './ImageCache'
 
 

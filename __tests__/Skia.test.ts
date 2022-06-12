@@ -1,7 +1,7 @@
 import jimp from 'jimp'
 import { resolve } from 'path'
-import { Skia, SkiaCanvas } from '@Skia'
-import { Path, Canvas, Paint, BlurImageFilter, MatrixImageFilter } from '@UI'
+import { Skia, SkiaCanvas } from '@skia'
+import { Path, Canvas, Paint, BlurImageFilter, MatrixImageFilter } from '@rendering'
 
 test(`Skia`, async () => {
   await Skia.malloc(resolve(__dirname, 'canvaskit.wasm'))

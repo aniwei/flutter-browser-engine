@@ -1,4 +1,4 @@
-import { Skia, ManagedSkiaObject, SkiaBlurStyle, SkiaMaskFilter } from '@Skia'
+import { Skia, ManagedSkiaObject, SkiaBlurStyle, SkiaMaskFilter } from '@skia'
 
 
 export type MaskFilterOptions = {

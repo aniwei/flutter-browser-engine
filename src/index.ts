@@ -1,4 +1,4 @@
-import { PaintingBinding } from '@Painting'
+import { PaintingBinding } from '@painting'
 
 class ApplicationBinding {
   static ensureInitialized () {

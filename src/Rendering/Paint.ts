@@ -1,9 +1,9 @@
-import { Color } from '@UI'
-import { ManagedSkiaObject, Skia, SkiaFilterQuality } from '@Skia'
+import { Color } from '@rendering'
+import { ManagedSkiaObject, Skia, SkiaFilterQuality } from '@skia'
 import { ManagedSkiaColorFilter, ComposeColorFilter, MatrixColorFilter, ColorFilter } from './ColorFilter'
 import { MaskFilter } from './MaskFilter'
 
-import type { SkiaPaint, SkiaImageFilter, SkiaBlendMode, SkiaColorFilter, SkiaPaintStyle, SkiaStrokeCap, SkiaStrokeJoin } from '@Skia'
+import type { SkiaPaint, SkiaImageFilter, SkiaBlendMode, SkiaColorFilter, SkiaPaintStyle, SkiaStrokeCap, SkiaStrokeJoin } from '@skia'
 import type { ManagedSkImageFilterConvertible } from './ImageFilter'
 import type { Shader } from './Shader'
 

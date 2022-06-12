@@ -1,4 +1,4 @@
-import { ByteData, URI, utf8 } from '@Platform'
+import { ByteData, URI, utf8 } from '@platform'
 
 export abstract class AssetBundle {
   static  UTF8Decode (data: ByteData) {

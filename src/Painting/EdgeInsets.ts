@@ -1,9 +1,9 @@
 import invariant from 'ts-invariant'
-import { Offset, Rect, Size } from '@UI'
-import { clamp, lerpDouble } from '@Math'
+import { Offset, Rect, Size } from '@rendering'
+import { clamp, lerpDouble } from '@math'
 import { TextDirection } from 'canvaskit-wasm'
 import { Axis } from '.'
-import { Skia } from '@Skia'
+import { Skia } from '@skia'
 
 
 const POSITIVE_INFINITY = Number.POSITIVE_INFINITY

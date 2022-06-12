@@ -1,8 +1,8 @@
 import jimp from 'jimp'
 import { resolve } from 'path'
-import { Skia, SkiaCanvas } from '@Skia'
-import { URI } from '@Platform'
-import { webOnlyInstantiateImageCodecFromURL } from '@UI'
+import { Skia, SkiaCanvas } from '@skia'
+import { URI } from '@platform'
+import { webOnlyInstantiateImageCodecFromURL } from '@rendering'
 
 
 test(`fetchImage`, async () => {

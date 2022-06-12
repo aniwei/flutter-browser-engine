@@ -1,5 +1,5 @@
-import { Skia, SkiaClipOp, SkiaFilterQuality } from '@Skia'
-import type { SkiaBlendMode, SkiaCanvas } from '@Skia'
+import { Skia, SkiaClipOp, SkiaFilterQuality } from '@skia'
+import type { SkiaBlendMode, SkiaCanvas } from '@skia'
 import type { RRect, Rect, Offset } from './Geometry'
 import type { Color } from './Painting'
 import type { Image } from './Image'

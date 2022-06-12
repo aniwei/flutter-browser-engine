@@ -1,5 +1,5 @@
 import { invariant } from 'ts-invariant'
-import { ManagedSkiaObject, Skia, SkiaColorFilter, SkiaImageFilter, SkiaBlendMode } from '@Skia'
+import { ManagedSkiaObject, Skia, SkiaColorFilter, SkiaImageFilter, SkiaBlendMode } from '@skia'
 import { ColorFilterImageFilter } from './ImageFilter'
 import { Color } from './Painting'
 

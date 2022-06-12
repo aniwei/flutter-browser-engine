@@ -53,10 +53,6 @@ export function detectBrowserEngine () {
   return detectBrowserEngineByVendorAgent(vendor, agent)
 }
 
-export class UnimplementedError extends Error { }
-export class UnsupportedError extends Error { }
-export class ArgumentError extends Error { }
-
 export const isWindow = (
   typeof process !== 'undefined' && 
   Object.prototype.toString.call(process) === '[object process]' &&
@@ -88,6 +84,3 @@ export * from './HTTP'
 export * from './Locale'
 export * from './Encoding'
 export * from './TypedData'
-export * from './StringBuffer'
-export * from './ArgumentError'
-export * from './UnsupportedError'
