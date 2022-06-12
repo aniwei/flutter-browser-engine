@@ -3,6 +3,7 @@ import { property } from '@helper'
 import { Matrix4 } from '@math'
 import { Rect } from '@rendering'
 import { SkiaBlendMode, SkiaFilterQuality, SkiaImageFilter } from '@skia'
+import { CkNWayCanvas, RasterCache } from '@skia'
 import { Canvas } from './Canvas'
 import { Paint } from './Paint'
 import { Color } from './Painting'
@@ -11,7 +12,6 @@ import { Offset, RRect } from './Geometry'
 import { ImageFilter } from './ImageFilter'
 import { Shader } from './Shader'
 import { ColorFilter } from './ColorFilter'
-import { CkNWayCanvas } from 'src/Skia/NWayCanvas'
 
 export enum Clip {
   None,
@@ -272,7 +272,7 @@ export class ClipRRectEngineLayer extends ContainerLayer {
       paintContext.internalNodesCanvas.saveLayer(this.paintBounds, null)
     }
     this.paintChildren(paintContext)
-    if (this.clipBehavior === Clip.antiAliasWithSaveLayer) {
+    if (this.clipBehavior === Clip.AntiAliasWithSaveLayer) {
       paintContext.internalNodesCanvas.restore()
     }
     paintContext.internalNodesCanvas.restore()
@@ -546,7 +546,7 @@ export class PhysicalShapeEngineLayer extends ContainerLayer {
         break
     }
 
-    if (this.clipBehavior === Clip.antiAliasWithSaveLayer) {
+    if (this.clipBehavior === Clip.AntiAliasWithSaveLayer) {
       paintContext.leafNodesCanvas!.drawPaint(paint)
     }
 
