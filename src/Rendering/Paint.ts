@@ -3,7 +3,7 @@ import { ManagedSkiaObject, Skia, SkiaFilterQuality } from '@skia'
 import { ManagedSkiaColorFilter, ComposeColorFilter, MatrixColorFilter, ColorFilter } from './ColorFilter'
 import { MaskFilter } from './MaskFilter'
 
-import type { SkiaPaint, SkiaImageFilter, SkiaBlendMode, SkiaColorFilter, SkiaPaintStyle, SkiaStrokeCap, SkiaStrokeJoin } from '@skia'
+import type { SkiaPaint, SkiaImageFilter, SkiaBlendMode, SkiaPaintStyle, SkiaStrokeCap, SkiaStrokeJoin } from '@skia'
 import type { ManagedSkImageFilterConvertible } from './ImageFilter'
 import type { Shader } from './Shader'
 
@@ -221,7 +221,7 @@ export class Paint extends ManagedSkiaObject<SkiaPaint> {
         this.skia.setImageFilter(this.managedImageFilter.skia)
       }
     }
-  }) public imageFilter: SkiaImageFilter | null = null
+  }) public imageFilter: ManagedSkImageFilterConvertible | null = null
 
   public originalColorFilter: ManagedSkiaColorFilter | null = null
   public effectiveColorFilter: ManagedSkiaColorFilter | null = null

@@ -2,7 +2,7 @@ import { invariant } from 'ts-invariant'
 import { property, transformRect, computeSkiaShadowBounds } from '@helper'
 import { Matrix4 } from '@math'
 import { Rect, NWayCanvas } from '@rendering'
-import { SkiaBlendMode, SkiaFilterQuality, SkiaImageFilter } from '@skia'
+import { Skia, SkiaBlendMode, SkiaFilterQuality, SkiaImageFilter } from '@skia'
 import { MutatorsStack, MutatorType } from './EmbeddedViews'
 import { RasterCache } from './RasterCache'
 import { Canvas } from './Canvas'
@@ -73,7 +73,7 @@ export class PrerollContext {
   public mutatorsStack: MutatorsStack = new MutatorsStack()
 
   constructor (
-    rasterCache: RasterCache, 
+    rasterCache: RasterCache | null, 
   ) {
     this.rasterCache = rasterCache 
   }
@@ -87,7 +87,7 @@ export class PaintContext {
   constructor (
     internalNodesCanvas: NWayCanvas,
     leafNodesCanvas: Canvas,
-    rasterCache: RasterCache
+    rasterCache: RasterCache | null
   ) {
     this.internalNodesCanvas = internalNodesCanvas
     this.leafNodesCanvas = leafNodesCanvas
@@ -234,6 +234,54 @@ export class ClipPathEngineLayer extends ContainerLayer {
   }
 }
 
+export class ClipRectEngineLayer extends ContainerLayer {
+  public clipRect: Rect
+  public clipBehavior: Clip
+
+  constructor (
+    clipRect: Rect, 
+    clipBehavior: Clip
+  ) {
+    invariant(clipBehavior !== Clip.None)
+
+    super()
+
+    this.clipRect = clipRect
+    this.clipBehavior = clipBehavior
+  }
+
+  preroll (
+    prerollContext: PrerollContext, 
+    matrix: Matrix4
+  ) {
+    prerollContext.mutatorsStack.pushClipRect(this.clipRect)
+    const childPaintBounds: Rect = this.prerollChildren(prerollContext, matrix)
+    if (childPaintBounds.overlaps(this.clipRect)) {
+      this.paintBounds = childPaintBounds.intersect(this.clipRect)
+    }
+    prerollContext.mutatorsStack.pop()
+  }
+
+  paint (paintContext: PaintContext) {
+    invariant(this.needsPainting)
+
+    paintContext.internalNodesCanvas.save()
+    paintContext.internalNodesCanvas.clipRect(
+      this.clipRect,
+      Skia.ClipOp.Intersect,
+      this.clipBehavior !== Clip.HardEdge,
+    );
+    if (this.clipBehavior === Clip.AntiAliasWithSaveLayer) {
+      paintContext.internalNodesCanvas.saveLayer(this.clipRect, null)
+    }
+    this.paintChildren(paintContext)
+    if (this.clipBehavior === Clip.AntiAliasWithSaveLayer) {
+      paintContext.internalNodesCanvas.restore()
+    }
+    paintContext.internalNodesCanvas.restore()
+  }
+}
+
 
 export class ClipRRectEngineLayer extends ContainerLayer {
   public clipRRect: RRect
@@ -364,8 +412,8 @@ export class OffsetEngineLayer extends TransformEngineLayer {
 }
 
 export class ImageFilterEngineLayer extends ContainerLayer {
-  public filter: SkiaImageFilter
-  constructor (filter: SkiaImageFilter) {
+  public filter: ImageFilter
+  constructor (filter: ImageFilter) {
     super()
 
     this.filter = filter

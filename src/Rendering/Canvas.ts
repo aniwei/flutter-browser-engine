@@ -11,11 +11,9 @@ type Functions<T> = {
   [K in keyof T as (T[K] extends Function ? K : never)]: T[K] 
 }
 
-type Commands<T> = { 
-  [K in keyof Functions<T> as Capitalize<string & K>]: () => T[K]
-}
-
-function command (PaintCommand: { new (...rest: unknown[]): PaintCommand }) {
+function command (
+  Command: { new (type, ...rest: unknown[]): PaintCommand } = PaintCommand
+) {
   return function (
     target: RecordingCanvas,
     key: keyof Functions<Canvas>,
@@ -23,167 +21,40 @@ function command (PaintCommand: { new (...rest: unknown[]): PaintCommand }) {
     const func = target[key]
     function command (this, ...rest: any[]) {
       Reflect.apply(func, this, rest)
-      this.addCommand(new PaintCommand(...rest))
+
+      switch (key) {
+        case 'drawArc': {
+          break
+        }
+
+        default: {
+          this.addCommand(new Command(key, ...rest))
+          break
+        }
+      }
+
     }
 
     Reflect.defineProperty(target, key, {
-      get () {
-        return command
-      }
+      get () { return command }
     })
   }
 }
 
-function type (command: Commands<Canvas>) {
-  return function (
-    target: RecordingCanvas,
-    key: keyof Functions<Canvas>,
-  ) {
-    const func = target[key]
-    function command (this, ...rest: any[]) {
-      Reflect.apply(func, this, rest)
-      this.addCommand(new PaintCommand(...rest))
-    }
-
-    Reflect.defineProperty(target, key, {
-      get () {
-        return command
-      }
-    })
-  }
-}
-
-export abstract class PaintCommand {
-  abstract public type: string
+export class PaintCommand {
+  public command: Commands
   public arguments: unknown[]
 
-  constructor (...rest: unknown[]) {
+  constructor (command: Commands, ...rest: unknown[]) {
+    this.command = command
     this.arguments = rest
   }
 
   apply (canvas: Canvas): void {
-    Reflect.apply(canvas[this.type], canvas, this.arguments)
+    Reflect.apply(canvas[this.command], canvas, this.arguments)
   }
 
   dispose () {}
-}
-
-@type(clear)
-export class ClearCommand extends PaintCommand { }
-@type()
-export class SaveCommand extends PaintCommand { }
-@type()
-export class RestoreCommand extends PaintCommand { }
-export class RestoreToCountCommand extends PaintCommand { }
-export class TranslateCommand extends PaintCommand { }
-export class ScaleCommand extends PaintCommand { }
-
-export class RotateCommand extends PaintCommand {
-  public radians: number
-
-  constructor (radians: number) {
-    super()
-
-    this.radians = radians
-  }
-
-  apply (canvas: Canvas) {
-    canvas.rotate(this.radians * 180.0 / Math.PI, 0.0, 0.0)
-  }
-}
-
-export class TransformCommand extends PaintCommand {
-  public matrix4: Float32Array
-
-  constructor (matrix4: Float32Array) {
-    super()
-
-    this.matrix4 = matrix4
-  }
-
-  apply (canvas: Canvas) {
-    canvas.concat(toSkiaM44FromFloat32(this.matrix4))
-  }
-}
-
-export class SkewCommand extends PaintCommand {
-  public sx: number
-  public sy: number
-
-  constructor (
-    sx: number, 
-    sy: number
-  ) {
-    super()
-    this.sx = sx
-    this.sy = sy
-  }
-  
-  apply (canvas: Canvas) {
-    canvas.skew(this.sx, this.sy)
-  }
-}
-
-export class ClipRectCommand extends PaintCommand {
-  public rect: Rect
-  public clipOp: SkiaClipOp
-  public doAntiAlias: boolean
-
-  constructor (
-    rect: Rect, 
-    clipOp: SkiaClipOp, 
-    doAntiAlias: boolean
-  ) {
-    super()
-
-    this.rect = rect
-    this.clipOp = clipOp
-    this.doAntiAlias = doAntiAlias
-  }
-
-  
-  apply (canvas: Canvas) {
-    canvas.clipRect(
-      this.rect,
-      this.clipOp,
-      this.doAntiAlias,
-    )
-  }
-}
-
-export class DrawArcCommand extends PaintCommand {
-  public oval: Rect
-  public startAngle: number
-  public sweepAngle: number
-  public useCenter: boolean
-  public paint: Paint
-
-  constructor (
-    oval: Rect, 
-    startAngle: number, 
-    sweepAngle: number, 
-    useCenter: boolean, 
-    paint:Paint ,
-  ) {
-    super()
-
-    this.oval = oval
-    this.startAngle = startAngle
-    this.sweepAngle = sweepAngle
-    this.useCenter = useCenter
-    this.paint = paint
-  }
-  
-  apply (canvas: Canvas) {
-    const toDegrees = 180 / Math.PI
-    canvas.drawArc(
-      this.oval,
-      this.startAngle * toDegrees,
-      this.sweepAngle * toDegrees,
-      this.useCenter,
-      this.paint.skia,
-    );
-  }
 }
 
 export class Canvas {
@@ -625,10 +496,40 @@ export class RecordingCanvas extends Canvas {
     this.snapshot.add(command)
   }
 
-  @command(ClearCommand) clear
-  @command(ClipPathCommand) clipPath
-  @command(ClipRRectCommand) clipRRect
-  @command()
+  @command(PaintCommand) clear
+  @command(PaintCommand) clipPath
+  @command(PaintCommand) clipRRect
+  @command(PaintCommand) clipRect
+  @command(PaintCommand) drawArc
+  @command(PaintCommand) drawAtlasRaw
+  @command(PaintCommand) drawCircle
+  @command(PaintCommand) drawColor
+  @command(PaintCommand) drawDRRect
+  @command(PaintCommand) drawImage
+  @command(PaintCommand) drawImageRect
+  @command(PaintCommand) drawImageNine
+  @command(PaintCommand) drawLine
+  @command(PaintCommand) drawOval
+  @command(PaintCommand) drawPaint
+  @command(PaintCommand) drawParagraph
+  @command(PaintCommand) drawPath
+  @command(PaintCommand) drawPicture
+  @command(PaintCommand) drawPoints
+  @command(PaintCommand) drawRRect
+  @command(PaintCommand) drawRect
+  @command(PaintCommand) drawShadow
+  @command(PaintCommand) drawVertices
+  @command(PaintCommand) restore
+  @command(PaintCommand) restoreToCount
+  @command(PaintCommand) rotate
+  @command(PaintCommand) save
+  @command(PaintCommand) saveLayer
+  @command(PaintCommand) saveLayerWithoutBounds
+  @command(PaintCommand) saveLayerWithFilter
+  @command(PaintCommand) scale
+  @command(PaintCommand) skew
+  @command(PaintCommand) transform
+  @command(PaintCommand) translate
 }
 
 export class PictureSnapshot {
@@ -645,11 +546,12 @@ export class PictureSnapshot {
 
   toPicture () {
     const recorder: SkiaPictureRecorder = new Skia.PictureRecorder()
-    const canvas: Canvas = recorder.beginRecording(this.bounds)
+    const canvas: Canvas = Canvas.malloc(recorder.beginRecording(this.bounds))
     
     for (const command of this.commands) {
       command.apply(canvas)
     }
+    
     const picture: SkiaPicture = recorder.finishRecordingAsPicture()
     recorder.delete()
 
