@@ -1,7 +1,12 @@
-import { Canvas, Color, ImageFilter, Paint, Path, Rect, RRect } from '@rendering'
-import { SkiaClipOp } from './Skia'
+import { SkiaClipOp } from '@skia'
+import { Path } from './Path'
+import { Paint } from './Paint'
+import { Canvas } from './Canvas'
+import { Color } from './Painting'
+import { Rect, RRect } from './Geometry'
+import { ImageFilter } from './ImageFilter'
 
-export class CkNWayCanvas extends Array<Canvas> {
+export class NWayCanvas extends Array<Canvas> {
 
   addCanvas (canvas: Canvas) {
     this.push(canvas)

@@ -1,9 +1,10 @@
 import { invariant } from 'ts-invariant'
-import { property } from '@helper'
+import { property, transformRect, computeSkiaShadowBounds } from '@helper'
 import { Matrix4 } from '@math'
-import { Rect } from '@rendering'
+import { Rect, NWayCanvas } from '@rendering'
 import { SkiaBlendMode, SkiaFilterQuality, SkiaImageFilter } from '@skia'
-import { CkNWayCanvas, RasterCache } from '@skia'
+import { MutatorsStack, MutatorType } from './EmbeddedViews'
+import { RasterCache } from './RasterCache'
 import { Canvas } from './Canvas'
 import { Paint } from './Paint'
 import { Color } from './Painting'
@@ -12,6 +13,7 @@ import { Offset, RRect } from './Geometry'
 import { ImageFilter } from './ImageFilter'
 import { Shader } from './Shader'
 import { ColorFilter } from './ColorFilter'
+import { Picture } from './Picture'
 
 export enum Clip {
   None,
@@ -46,16 +48,16 @@ export abstract class Layer implements EngineLayer {
 export class PrerollContext {
   @property<Rect>(function (this) {
     let cullRect = Rect.largest
-    for (const m in this.mutatorsStack) {
+    for (const m of this.mutatorsStack) {
       let clipRect: Rect
       switch (m.type) {
-        case MutatorType.clipRect:
+        case MutatorType.ClipRect:
           clipRect = m.rect
           break
-        case MutatorType.clipRRect:
+        case MutatorType.ClipRRect:
           clipRect = m.rrect.outerRect
           break
-        case MutatorType.clipPath:
+        case MutatorType.ClipPath:
           clipRect = m.path.getBounds();
           break
         default:
@@ -78,12 +80,12 @@ export class PrerollContext {
 }
 
 export class PaintContext {
-  public internalNodesCanvas: CkNWayCanvas
+  public internalNodesCanvas: NWayCanvas
   public leafNodesCanvas: Canvas
   public rasterCache: RasterCache | null
 
   constructor (
-    internalNodesCanvas: CkNWayCanvas,
+    internalNodesCanvas: NWayCanvas,
     leafNodesCanvas: Canvas,
     rasterCache: RasterCache
   ) {
@@ -502,7 +504,7 @@ export class PhysicalShapeEngineLayer extends ContainerLayer {
     matrix: Matrix4
   ) {
     this.prerollChildren(prerollContext, matrix)
-    this.paintBounds = computeSkShadowBounds(
+    this.paintBounds = computeSkiaShadowBounds(
       this.path, 
       this.elevation, 
       2, //window.devicePixelRatio, 

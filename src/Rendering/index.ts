@@ -29,4 +29,8 @@ export * from './Painting'
 export * from './Geometry'
 export * from './Gradient'
 
+export * from './NWayCanvas'
+export * from './RasterCache'
+export * from './EmbeddedViews'
+
 

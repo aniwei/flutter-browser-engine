@@ -48,6 +48,8 @@ export type {
   StrokeJoin as SkiaStrokeJoin,
   ClipOp as SkiaClipOp,
   TextDirection as SkiaTextDirection,
+  SkPicture as SkiaPicture,
+  Surface as SkiaSurface
 } from 'canvaskit-wasm'
 
 export class SkiaFilterOptions extends Map<SkiaFilterQuality, SkiaCubicFilterOption | SkiaTransformFilterOption> {

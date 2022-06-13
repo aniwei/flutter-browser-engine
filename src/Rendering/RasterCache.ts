@@ -1,5 +1,6 @@
 import { Matrix4 } from '@math'
 import { Canvas } from '@rendering'
+import { Picture } from './Picture'
 
 export class RasterCacheResult {
   public isValid = false
