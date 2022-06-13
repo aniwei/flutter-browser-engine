@@ -11,6 +11,16 @@ const kMatrixIndexToMatrix4Index = [
 ]
 
 const kDefaultSkColorStops = [0, 1]
+
+export function toSkiaM44FromFloat32 (matrix4: Float32Array) {
+  const skM44 = new Float32Array(16)
+  for (let r = 0; r < 4; r++) {
+    for (let c = 0; c < 4; c++) {
+      skM44[c * 4 + r] = matrix4[r * 4 + c]
+    }
+  }
+  return skM44
+}
   
 export function toSkiaMatrixFromFloat32 (matrix4: Float32Array) {
   const skMatrix = new Float32Array(9)

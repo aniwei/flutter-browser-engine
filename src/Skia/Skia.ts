@@ -49,7 +49,9 @@ export type {
   ClipOp as SkiaClipOp,
   TextDirection as SkiaTextDirection,
   SkPicture as SkiaPicture,
-  Surface as SkiaSurface
+  Surface as SkiaSurface,
+  PictureRecorder as SkiaPictureRecorder,
+  
 } from 'canvaskit-wasm'
 
 export class SkiaFilterOptions extends Map<SkiaFilterQuality, SkiaCubicFilterOption | SkiaTransformFilterOption> {
@@ -108,6 +110,10 @@ export class Skia {
   // config
   static get DevicePixelRatio () {
     return Skia.o.devicePixelRatio
+  }
+
+  static get PictureRecorder () {
+    return Skia.s.PictureRecorder
   }
 
   static get Path () {
