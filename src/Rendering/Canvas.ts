@@ -1,11 +1,11 @@
 import { Skia, SkiaClipOp, SkiaFilterQuality, SkiaPicture, SkiaPictureRecorder, toSkiaM44FromFloat32 } from '@skia'
-import type { SkiaBlendMode, SkiaCanvas } from '@skia'
-import type { RRect, Rect, Offset } from './Geometry'
 import type { Color } from './Painting'
 import type { Image } from './Image'
-import type { ImageFilter, ManagedSkImageFilterConvertible } from './ImageFilter'
 import type { Paint } from './Paint'
 import type { Path } from './Path'
+import type { RRect, Rect, Offset } from './Geometry'
+import type { SkiaBlendMode, SkiaCanvas } from '@skia'
+import type { ImageFilter, ManagedSkImageFilterConvertible } from './ImageFilter'
 
 type Functions<T> = { 
   [K in keyof T as (T[K] extends Function ? K : never)]: T[K] 
