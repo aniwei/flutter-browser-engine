@@ -29,6 +29,7 @@ export * from './Painting'
 export * from './Geometry'
 export * from './Gradient'
 
+export * from './Layer'
 export * from './Picture'
 export * from './NWayCanvas'
 export * from './RasterCache'

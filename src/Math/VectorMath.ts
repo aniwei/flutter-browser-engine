@@ -766,6 +766,8 @@ export class Matrix4 extends Float32Array {
     this[7] = (m30 * n01) + (m31 * n11) + (m32 * n21) + (m33 * n31)
     this[11] = (m30 * n02) + (m31 * n12) + (m32 * n22) + (m33 * n32)
     this[15] = (m30 * n03) + (m31 * n13) + (m32 * n23) + (m33 * n33)
+
+    return this
   }
 
   multiplied (m: Matrix4) {

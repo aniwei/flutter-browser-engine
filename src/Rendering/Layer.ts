@@ -14,6 +14,7 @@ import { ImageFilter } from './ImageFilter'
 import { Shader } from './Shader'
 import { ColorFilter } from './ColorFilter'
 import { Picture } from './Picture'
+import { Image } from './Image'
 
 export enum Clip {
   None,
@@ -22,7 +23,17 @@ export enum Clip {
   AntiAliasWithSaveLayer,
 }
 
-export class EngineLayer {
+export abstract class Scene {
+  abstract toImage (
+    width: number, 
+    height: number
+  ): Promise<Image>
+  abstract dispose (): void
+}
+
+
+
+export abstract class EngineLayer {
   dispose () {}
 }
 

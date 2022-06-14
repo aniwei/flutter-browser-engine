@@ -124,7 +124,7 @@ export class LayerSceneBuilder {
   pushClipRRect (
     rrect: RRect,
     clipBehavior: Clip,
-    oldLayer: EngineLayer,
+    oldLayer?: EngineLayer | null,
   ): ClipRRectEngineLayer  {
     return this.pushLayer<ClipRRectEngineLayer>(
       new ClipRRectEngineLayer(rrect, clipBehavior)
@@ -178,8 +178,8 @@ export class LayerSceneBuilder {
   
   pushOpacity (
     alpha: number,
-    oldLayer?: EngineLayer | null,
     offset: Offset = Offset.zero,
+    oldLayer?: EngineLayer | null,
   ): OpacityEngineLayer  {
     return this.pushLayer<OpacityEngineLayer>(new OpacityEngineLayer(alpha, offset))
   }
