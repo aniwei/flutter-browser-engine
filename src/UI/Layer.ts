@@ -21,7 +21,7 @@ export abstract class EngineLayer {
   dispose () {}
 }
 
-export abstract class Layer implements EngineLayer {
+export abstract class Layer {
   @property<boolean>(function (this, debugDisposed: boolean) {
     return debugDisposed
   }) public debugDisposed = false
@@ -58,7 +58,7 @@ export abstract class Layer implements EngineLayer {
   public owner // @TODO
   public depth: number = 0
   public refCount: number = 0
-  public parent: Layer | null = null
+  public parent: ContainerLayer | null = null
   public needsAddToScene: boolean = true
   public alwaysNeedsAddToScene: boolean = false
   public parentHandle: LayerHandle<Layer> = new LayerHandle<Layer>()
@@ -119,6 +119,7 @@ export abstract class Layer implements EngineLayer {
     invariant(child.parent === this)
     invariant(child.attached === this.attached)
     child.parent = null
+    
     if (this.attached) {
       child.detach()
     }
@@ -148,7 +149,6 @@ export abstract class Layer implements EngineLayer {
   remove () {
     this.parent?.removeChild(this)
   }
-
   
   findAnnotations<S extends Object>(
     result: AnnotationResult<S> ,
@@ -1356,7 +1356,7 @@ export class LeaderLayer extends ContainerLayer {
   ) {
     return super.findAnnotations<S>(
       result, 
-      localPosition.subarray(this.offset),
+      localPosition.subtract(this.offset),
       onlyFirst
     )
   }
