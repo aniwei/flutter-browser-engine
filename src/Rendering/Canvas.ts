@@ -1,4 +1,4 @@
-import { Skia, SkiaClipOp, SkiaFilterQuality, SkiaPicture, SkiaPictureRecorder, toSkiaM44FromFloat32 } from '@skia'
+import { Skia, SkiaClipOp, SkiaFilterQuality, SkiaPicture, SkiaPictureRecorder } from '@skia'
 import type { Color } from './Painting'
 import type { Image } from './Image'
 import type { Paint } from './Paint'
@@ -42,10 +42,10 @@ function command (
 }
 
 export class PaintCommand {
-  public command: Commands
+  public command: keyof Functions<Canvas>
   public arguments: unknown[]
 
-  constructor (command: Commands, ...rest: unknown[]) {
+  constructor (command: keyof Functions<Canvas>, ...rest: unknown[]) {
     this.command = command
     this.arguments = rest
   }

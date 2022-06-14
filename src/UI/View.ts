@@ -1,8 +1,10 @@
 import { invariant } from 'ts-invariant'
 import { property } from '@helper'
 import { Matrix4 } from '@math'
-import { Size } from '@rendering'
+import { Offset, Rect, Size } from '@rendering'
 import { RenderObject } from './RenderObject'
+import { RenderBox } from './RenderBox'
+import { TransformLayer } from './Layer'
 
 export class ViewConfiguration {
   public size: Size
@@ -42,7 +44,8 @@ export class ViewConfiguration {
 
 export class RenderView extends RenderObject {
   @property<Size>() public size: Size = Size.zero
-  @property<Size>(function (this, configuration: ViewConfiguration) {
+
+  @property<ViewConfiguration>(function (this, configuration: ViewConfiguration) {
     return configuration
   }, function (this, configuration: ViewConfiguration, k) {
     invariant(configuration != null);
@@ -56,6 +59,32 @@ export class RenderView extends RenderObject {
 
     this.markNeedsLayout()
   }) public configuration: ViewConfiguration
+  
+  @property<Rect>(function (this, paintBounds: Rect) {
+    return Offset.zero.and(
+      this.size.multiply(this.configuration.devicePixelRatio)
+    )
+  }) public paintBounds!: Rect
+
+  @property<Rect>(function (this, semanticBounds: Rect) {
+    invariant(this.rootTransform !== null)
+    return Offset.zero.and(
+      this.size.multiply(this.configuration.devicePixelRatio)
+    )
+  }) public semanticBounds!: Rect
+
+  @property<RenderObject>(function (this, child: RenderObject) {
+    return child
+  }, function (this, child: RenderObject, key: string) {
+    if (this.child !== null) {
+      this.dropChild(this.child)
+    }
+
+    this[key] = child
+    if (this.child !== null) {
+      this.adoptChild(this.child)
+    }
+  }) public child!: RenderObject | null
   
   public window
   public automaticSystemUiAdjustment: boolean = true
