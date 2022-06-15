@@ -4036,7 +4036,11 @@ export class Vector4 extends Float64Array {
   }
 
   constructor (...values: number[]) {
-    super(values)
+    if (values.length === 1) {
+      super(values[0])
+    } else if (values.length > 1) {
+      
+    }
   }
 
 

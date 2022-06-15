@@ -1,5 +1,5 @@
 import { clamp } from './clamp'
-import { Matrix4 } from './VectorMath'
+import { Matrix4 } from './Matrix4'
 
 export class Vector3 extends Float64Array {
   static zero () {
