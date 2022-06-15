@@ -461,7 +461,7 @@ export abstract class RenderBox extends RenderObject {
   Rect get semanticBounds => Offset.zero & size;
 
   @override
-  void debugResetSize() {
+  debugResetSize() {
     // updates the value of size._canBeUsedByParent if necessary
     size = size;
   }
@@ -559,7 +559,7 @@ export abstract class RenderBox extends RenderObject {
   BoxConstraints get constraints => super.constraints as BoxConstraints;
 
   @override
-  void debugAssertDoesMeetConstraints() {
+  debugAssertDoesMeetConstraints() {
     assert(constraints != null);
     assert(() {
       if (!hasSize) {
@@ -635,7 +635,7 @@ export abstract class RenderBox extends RenderObject {
           return result;
         }
 
-        void testIntrinsicsForValues(double Function(double extent) getMin, double Function(double extent) getMax, String name, double constraint) {
+        testIntrinsicsForValues(double Function(double extent) getMin, double Function(double extent) getMax, String name, double constraint) {
           final double min = testIntrinsic(getMin, 'getMinIntrinsic$name', constraint);
           final double max = testIntrinsic(getMax, 'getMaxIntrinsic$name', constraint);
           if (min > max) {
@@ -697,7 +697,7 @@ export abstract class RenderBox extends RenderObject {
   }
 
   @override
-  void markNeedsLayout() {
+  markNeedsLayout() {
     if ((_cachedBaselines != null && _cachedBaselines!.isNotEmpty) ||
         (_cachedIntrinsicDimensions != null && _cachedIntrinsicDimensions!.isNotEmpty) ||
         (_cachedDryLayoutSizes != null && _cachedDryLayoutSizes!.isNotEmpty)) {
@@ -718,14 +718,14 @@ export abstract class RenderBox extends RenderObject {
   }
 
   @override
-  void performResize() {
+  performResize() {
     // default behavior for subclasses that have sizedByParent = true
     size = computeDryLayout(constraints);
     assert(size.isFinite);
   }
 
   @override
-  void performLayout() {
+  performLayout() {
     assert(() {
       if (!sizedByParent) {
         throw FlutterError.fromParts(<DiagnosticsNode>[
@@ -790,7 +790,7 @@ export abstract class RenderBox extends RenderObject {
 
   bool hitTestChildren(BoxHitTestResult result, { required Offset position }) => false;
 
-  void applyPaintTransform(RenderObject child, Matrix4 transform) {
+  applyPaintTransform(RenderObject child, Matrix4 transform) {
     assert(child != null);
     assert(child.parent == this);
     assert(() {
@@ -839,7 +839,7 @@ export abstract class RenderBox extends RenderObject {
   }
 
   @override
-  void handleEvent(PointerEvent event, BoxHitTestEntry entry) {
+  handleEvent(PointerEvent event, BoxHitTestEntry entry) {
     super.handleEvent(event, entry);
   }
 
@@ -861,7 +861,7 @@ export abstract class RenderBox extends RenderObject {
   }
 
   @override
-  void debugPaint(PaintingContext context, Offset offset) {
+  debugPaint(PaintingContext context, Offset offset) {
     assert(() {
       if (debugPaintSizeEnabled)
         debugPaintSize(context, offset);
@@ -877,7 +877,7 @@ export abstract class RenderBox extends RenderObject {
   ///
   /// Called for every [RenderBox] when [debugPaintSizeEnabled] is true.
   @protected
-  void debugPaintSize(PaintingContext context, Offset offset) {
+  debugPaintSize(PaintingContext context, Offset offset) {
     assert(() {
       final Paint paint = Paint()
        ..style = PaintingStyle.stroke
@@ -892,7 +892,7 @@ export abstract class RenderBox extends RenderObject {
   ///
   /// Called for every [RenderBox] when [debugPaintBaselinesEnabled] is true.
   @protected
-  void debugPaintBaselines(PaintingContext context, Offset offset) {
+  debugPaintBaselines(PaintingContext context, Offset offset) {
     assert(() {
       final Paint paint = Paint()
        ..style = PaintingStyle.stroke
@@ -920,7 +920,7 @@ export abstract class RenderBox extends RenderObject {
     }());
   }
 
-  void debugPaintPointers(PaintingContext context, Offset offset) {
+  debugPaintPointers (PaintingContext context, Offset offset) {
     assert(() {
       if (_debugActivePointers > 0) {
         final Paint paint = Paint()
