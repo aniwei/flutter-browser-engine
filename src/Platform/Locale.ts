@@ -133,7 +133,7 @@ export class Locale {
   }
 
   
-  isEqual (other: Locale) {
+  eq (other: Locale) {
     if (other === this) {
       return true
     }

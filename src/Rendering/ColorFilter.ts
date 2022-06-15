@@ -42,7 +42,7 @@ export class ManagedSkiaColorFilter extends ManagedSkiaObject<SkiaColorFilter> {
   }
 
   
-  isEqual (other: ManagedSkiaColorFilter) {
+  eq (other: ManagedSkiaColorFilter) {
     if (other instanceof ManagedSkiaColorFilter) {
       return this.colorFilter === other.colorFilter
     }
@@ -83,7 +83,7 @@ export class BlendModeColorFilter extends ColorFilter {
     )
   }
 
-  isEqual (other: BlendModeColorFilter) {
+  eq (other: BlendModeColorFilter) {
     if (other instanceof BlendModeColorFilter) {
       return (
         other.color === this.color &&
@@ -120,7 +120,7 @@ export class MatrixColorFilter extends ColorFilter {
     return Skia.ColorFilter.MakeMatrix(this.matrix)
   }
 
-  isEqual () {
+  eq () {
 
   }
 
@@ -139,7 +139,7 @@ export class CkLinearToSrgbGammaColorFilter extends ColorFilter {
     return Skia.ColorFilter.MakeLinearToSRGBGamma()
   }
 
-  isEqual (other: CkLinearToSrgbGammaColorFilter) {
+  eq (other: CkLinearToSrgbGammaColorFilter) {
     return other instanceof CkLinearToSrgbGammaColorFilter
   }
 
@@ -177,7 +177,7 @@ export class ComposeColorFilter extends ColorFilter {
     )
   }
 
-  isEqual (other: ComposeColorFilter) {
+  eq (other: ComposeColorFilter) {
     if (other instanceof ComposeColorFilter) {
       return (
         this.outer === other.outer &&

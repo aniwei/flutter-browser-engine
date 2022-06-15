@@ -118,7 +118,7 @@ export class Shadow implements IShadow {
     );
   }
 
-  isEqual (other: Shadow) {
+  eq (other: Shadow) {
     if (this === other) {
       return true
     }
@@ -222,7 +222,7 @@ export class BoxShadow extends Shadow {
     )
   }
 
-  isEqual (other: BoxShadow) {
+  eq (other: BoxShadow) {
     if (other === this) {
       return true
     }

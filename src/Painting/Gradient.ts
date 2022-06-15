@@ -111,7 +111,7 @@ export class GradientRotation extends GradientTransform {
     return matrix
   }
 
-  isEqual (other: GradientRotation) {
+  eq (other: GradientRotation) {
     if (other === this) {
       return true
     }
@@ -339,7 +339,7 @@ export class LinearGradient extends Gradient {
     })
   }
 
-  isEqual (other: LinearGradient) {
+  eq (other: LinearGradient) {
     if (this === other) {
       return true
     }
@@ -475,7 +475,7 @@ export class RadialGradient extends Gradient {
     return super.lerpTo(b, t);
   }
 
-  isEqual (other: RadialGradient) {
+  eq (other: RadialGradient) {
     if (other === this) {
       return true
     }
@@ -486,8 +486,8 @@ export class RadialGradient extends Gradient {
       other.tileMode === this.tileMode &&
       other.transform === this.transform &&
       other.focalRadius === this.focalRadius &&
-      other.center.isEqual(this.center) &&
-      other.focal.isEqual(this.focal) &&
+      other.center.eq(this.center) &&
+      other.focal.eq(this.focal) &&
       listEquals<Color>(other.colors, this.colors) &&
       listEquals<number>(other.stops, this.stops) 
     )
@@ -613,7 +613,7 @@ export class SweepGradient extends Gradient {
     return super.lerpTo(b, t)
   }
 
-  isEqual (other) {
+  eq (other) {
     if (other === this) {
       return true
     }

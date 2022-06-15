@@ -419,7 +419,7 @@ export class ImageCacheStatus {
     this.live = live
   }
 
-  isEqual (other: ImageCacheStatus) {
+  eq (other: ImageCacheStatus) {
     if (other === this) {
       return true
     }

@@ -1,8 +1,22 @@
 import { invariant } from 'ts-invariant'
-import { property } from '@helper'
-import { LayerSceneBuilder, Picture, Offset, Rect, Image, Scene, Clip, RRect, ImageFilter, Path, ColorFilter, OpacityEngineLayer, OffsetEngineLayer, Shader, Size } from '@rendering'
+import { property, PropertySetter } from '@helper'
+import { LayerSceneBuilder, Picture, Offset, Rect, Image, Scene, Clip, RRect, ImageFilter, Path, ColorFilter, OpacityEngineLayer, OffsetEngineLayer, Shader, Size, Color } from '@rendering'
 import { Matrix4 } from '@math'
 import { Skia, SkiaBlendMode, SkiaFilterQuality } from '@skia'
+
+function scene <T> (setter?: PropertySetter<T>) {
+  return property<T>(function get (this, value: T) {
+    return value
+  }, setter ?? function set (this, value: T, k, key) {
+    if (
+      value !== null &&
+      this[key] !== value
+    ) {
+      this[k] = value
+      this.markNeedsAddToScene()
+    }
+  })
+}
 
 export type AnnotationEntry<T> = {
   annotation: T,
@@ -150,7 +164,7 @@ export abstract class Layer {
     this.parent?.removeChild(this)
   }
   
-  findAnnotations<S extends Object>(
+  findAnnotations<S>(
     result: AnnotationResult<S> ,
     localPosition: Offset, 
     onlyFirst: boolean,
@@ -158,7 +172,7 @@ export abstract class Layer {
     return false
   }
 
-  find<S extends Object>(localPosition: Offset): S | null {
+  find<S>(localPosition: Offset): S | null {
     const result: AnnotationResult<S> = new AnnotationResult<S>()
     this.findAnnotations<S>(result, localPosition, true)
     
@@ -322,7 +336,7 @@ export class TextureLayer extends Layer {
     )
   }
   
-  findAnnotations<S extends Object>(
+  findAnnotations<S>(
     result: AnnotationResult<S> , 
     localPosition: Offset,
     onlyFirst: boolean
@@ -397,7 +411,7 @@ export class ContainerLayer extends Layer {
   }
 
   
-  findAnnotations<S extends Object>(
+  findAnnotations<S>(
     result: AnnotationResult<S> , 
     localPosition: Offset,
     onlyFirst: boolean
@@ -587,7 +601,7 @@ export class OffsetLayer extends ContainerLayer {
     this.offset = offset
   }
   
-  findAnnotations<S extends Object>(
+  findAnnotations<S>(
     result: AnnotationResult<S>,
     localPosition: Offset,
     onlyFirst: boolean
@@ -682,7 +696,7 @@ export class ClipRectLayer extends ContainerLayer {
     invariant(clipBehavior !== Clip.None)
   }
   
-  findAnnotations<S extends Object>(
+  findAnnotations<S>(
     result: AnnotationResult<S> , 
     localPosition: Offset,
     onlyFirst: boolean
@@ -746,7 +760,7 @@ export class ClipRRectLayer extends ContainerLayer {
     this.clipBehavior = clipBehavior
   }
   
-  findAnnotations<S extends Object>(
+  findAnnotations<S>(
     result: AnnotationResult<S> , 
     localPosition: Offset,
     onlyFirst: boolean
@@ -811,7 +825,7 @@ export class ClipPathLayer extends ContainerLayer {
     this.clipBehavior = clipBehavior
   }
 
-  findAnnotations<S extends Object>(
+  findAnnotations<S>(
     result: AnnotationResult<S>, 
     localPosition: Offset,
     onlyFirst: boolean
@@ -925,7 +939,7 @@ export class TransformLayer extends OffsetLayer {
   addToScene(builder: LayerSceneBuilder) {
     invariant(this.transform !== null)
     this.lastEffectiveTransform = this.transform
-    if (this.offset.isEqual(Offset.zero)) {
+    if (this.offset.eq(Offset.zero)) {
       const matrix = Matrix4.translationValues(
         this.offset.dx, 
         this.offset.dy, 
@@ -960,7 +974,7 @@ export class TransformLayer extends OffsetLayer {
     )
   }
 
-  findAnnotations<S extends Object>(
+  findAnnotations<S>(
     result: AnnotationResult<S>, 
     localPosition: Offset,
     onlyFirst: boolean
@@ -998,7 +1012,7 @@ export class OpacityLayer extends OffsetLayer {
   }, function set (this, alpha: number, key) {
     invariant(alpha !== null)
     if (alpha !== this.alpha) {
-      if (alpha === 255 || this. === 255) {
+      if (alpha === 255 || this.alpha === 255) {
         this.engineLayer = null
       }
       this[key] = alpha
@@ -1140,92 +1154,41 @@ export class BackdropFilterLayer extends ContainerLayer {
 }
 
 export class PhysicalModelLayer extends ContainerLayer {
+  @scene<number>() public elevation: number | null
+  @scene<Path>() public clipPath: Path | null
+  @scene<Clip>() public clipBehavior: Clip | null
+  @scene<Color>() public color: Color | null
+  @scene<Color>() public shadowColor: Color | null
+
+  constructor (
+    clipPath?: Path | null,
+    clipBehavior: Clip = Clip.None,
+    elevation?: number | null,
+    color?: Color | null,
+    shadowColor?: Color | null,
+  ) {
+    super()
+    this.clipPath = clipPath ?? null
+    this.clipBehavior = clipBehavior ?? null
+    this.elevation = elevation ?? null
+    this.color = color ?? null
+    this.shadowColor = shadowColor ?? null
+  }
   
-  PhysicalModelLayer({
-    Path? clipPath,
-    Clip clipBehavior = Clip.none,
-    double? elevation,
-    Color? color,
-    Color? shadowColor,
-  })  : _clipPath = clipPath,
-        _clipBehavior = clipBehavior,
-        _elevation = elevation,
-        _color = color,
-        _shadowColor = shadowColor;
-
-  /// The path to clip in the parent's coordinate system.
-  ///
-  /// The scene must be explicitly recomposited after this property is changed
-  /// (as described at [Layer]).
-  Path? get clipPath => _clipPath;
-  Path? _clipPath;
-  set clipPath(Path? value) {
-    if (value !== _clipPath) {
-      _clipPath = value;
-      markNeedsAddToScene();
+  findAnnotations<S>(
+    result: AnnotationResult<S>, 
+    localPosition: Offset,
+    onlyFirst: boolean
+  ) {
+    if (!this.clipPath!.contains(localPosition)) {
+      return false
     }
-  }
 
-  /// {@macro flutter.material.Material.clipBehavior}
-  Clip get clipBehavior => _clipBehavior;
-  Clip _clipBehavior;
-  set clipBehavior(Clip value) {
-    invariant(value !== null);
-    if (value !== _clipBehavior) {
-      _clipBehavior = value;
-      markNeedsAddToScene();
-    }
-  }
-
-  /// The z-coordinate at which to place this physical object.
-  ///
-  /// The scene must be explicitly recomposited after this property is changed
-  /// (as described at [Layer]).
-  ///
-  /// In tests, the [debugDisableShadows] flag is set to true by default.
-  /// Several widgets and render objects force all elevations to zero when this
-  /// flag is set. For this reason, this property will often be set to zero in
-  /// tests even if the layer should be raised. To verify the actual value,
-  /// consider setting [debugDisableShadows] to false in your test.
-  double? get elevation => _elevation;
-  double? _elevation;
-  set elevation(double? value) {
-    if (value !== _elevation) {
-      _elevation = value;
-      markNeedsAddToScene();
-    }
-  }
-
-  /// The background color.
-  ///
-  /// The scene must be explicitly recomposited after this property is changed
-  /// (as described at [Layer]).
-  Color? get color => _color;
-  Color? _color;
-  set color(Color? value) {
-    if (value !== _color) {
-      _color = value;
-      markNeedsAddToScene();
-    }
-  }
-
-  /// The shadow color.
-  Color? get shadowColor => _shadowColor;
-  Color? _shadowColor;
-  set shadowColor(Color? value) {
-    if (value !== _shadowColor) {
-      _shadowColor = value;
-      markNeedsAddToScene();
-    }
-  }
-
-  
-  findAnnotations<S extends Object>(
-      result: AnnotationResult<S> , localPosition: Offset,
-      onlyFirst: boolean) {
-    if (!clipPath!.contains(localPosition)) return false;
-    return super
-        .findAnnotations<S>(result, localPosition, onlyFirst: onlyFirst);
+    return super.findAnnotations<S>(
+      result, 
+      localPosition, 
+      onlyFirst
+    )
   }
 
   
@@ -1252,11 +1215,11 @@ export class PhysicalModelLayer extends ContainerLayer {
 }
 
 export class LayerLink {
-  @property<boolean>(function get (this, leaderConnected: boolean) {
+  @property<boolean>(function get (this) {
     return this.leader !== null
   }) public leaderConnected!: boolean
 
-  @property<LeaderLayer | null>(function get (this, debugLeader: LeaderLayer | null) {
+  @property<LeaderLayer | null>(function get (this) {
     return null
   }) public debugLeader!: LeaderLayer | null
 
@@ -1276,7 +1239,7 @@ export class LayerLink {
 }
 
 export class LayerLinkHandle {
-  @property<LeaderLayer>(function get (this, leader: LeaderLayer) {
+  @property<LeaderLayer>(function get (this) {
     return this.link.leader
   }) public leader!: LeaderLayer | null
 
@@ -1294,27 +1257,25 @@ export class LayerLinkHandle {
 }
 
 export class LeaderLayer extends ContainerLayer {
-  @property<LayerLink>(function get (this, link: LayerLink) {
-    return link
-  }, function set (this, link: LayerLink, key) {
-    invariant(link !== null);
-    if (this.link === link) {
-      return
+  @scene<LayerLink>(function set (this, link: LayerLink, key) {
+    if (
+      link !== null &&
+      this.link !== link
+    ) {
+      this.link.leader = null
+      this[key] = link
     }
-    this.link.leader = null
-    this[key] = link
   }) public link: LayerLink
 
-  @property<Offset>(function get (this, offset: Offset) {
-    return offset
-  }, function set (this, offset: Offset, key) {
-    invariant(offset !== null);
-    if (this.offset === offset) {
-      return
-    }
-    this[key] = offset
-    if (!this.alwaysNeedsAddToScene) {
-      this.markNeedsAddToScene()
+  @scene<Offset>(function set (this, offset: Offset, key) {
+    if (
+      offset !== null &&
+      this.offset !== offset
+    ) {
+      this[key] = offset
+      if (!this.alwaysNeedsAddToScene) {
+        this.markNeedsAddToScene()
+      }
     }
   }) public offset: Offset
 
@@ -1349,7 +1310,7 @@ export class LeaderLayer extends ContainerLayer {
     super.detach()
   }
 
-  findAnnotations<S extends Object>(
+  findAnnotations<S>(
     result: AnnotationResult<S>, 
     localPosition: Offset,
     onlyFirst: boolean
@@ -1373,7 +1334,7 @@ export class LeaderLayer extends ContainerLayer {
         this.engineLayer
       )
     this.addChildrenToScene(builder)
-    if (!this.lastOffset?.isEqual(Offset.zero)) {
+    if (!this.lastOffset?.eq(Offset.zero)) {
       builder.pop()
     }
   }
@@ -1383,7 +1344,7 @@ export class LeaderLayer extends ContainerLayer {
     transform: Matrix4
   ) {
     invariant(this.lastOffset !== null)
-    if (!this.lastOffset.isEqual(Offset.zero)) {
+    if (!this.lastOffset.eq(Offset.zero)) {
       transform.translate(
         this.lastOffset!.dx, 
         this.lastOffset!.dy
@@ -1510,7 +1471,7 @@ export class FollowerLayer extends ContainerLayer {
     )
   }
 
-  findAnnotations<S extends Object>(
+  findAnnotations<S>(
     result: AnnotationResult<S>, 
     localPosition: Offset,
     onlyFirst: boolean

@@ -62,11 +62,11 @@ export abstract class AlignmentGeometry {
   abstract multiply (other: number) 
   abstract divide (other: number)
   abstract modulo (other: number)  
-  abstract opposite () 
+  abstract negate () 
 
   abstract resolve (direction: TextDirection | null): Alignment 
 
-  isEqual (other: AlignmentGeometry) {
+  eq (other: AlignmentGeometry) {
     return (
       other instanceof AlignmentGeometry &&
       other.x === this.x &&
@@ -132,7 +132,7 @@ export class Alignment extends AlignmentGeometry {
     )
   }
 
-  opposite () {
+  negate () {
     return new Alignment(
       -this.x,
       -this.y,
@@ -297,7 +297,7 @@ export class AlignmentDirectional extends AlignmentGeometry {
     )
   }
 
-  opposite () {
+  negate () {
     return new AlignmentDirectional(
       -this.start, 
       -this.y
@@ -364,7 +364,7 @@ export class MixedAlignment extends AlignmentGeometry {
     this.y = y
   }
 
-  opposite (): MixedAlignment {
+  negate (): MixedAlignment {
     return new MixedAlignment(
       -this.x,
       -this.start,

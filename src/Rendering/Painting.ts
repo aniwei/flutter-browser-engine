@@ -194,7 +194,7 @@ export class Color extends Float32Array {
   }
 
 
-  isEqual (other: Color) {
+  eq (other: Color) {
     if (other === this) {
       return true
     }

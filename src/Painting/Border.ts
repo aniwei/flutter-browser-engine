@@ -189,7 +189,7 @@ export class BorderSide {
     return paint
   }
 
-  isEqual (other: BorderSide) {
+  eq (other: BorderSide) {
     if (this === other) {
       return true
     }
@@ -438,7 +438,7 @@ export class CompoundBorder extends ShapeBorder {
     }
   }
 
-  isEqual (other: ShapeBorder) {
+  eq (other: ShapeBorder) {
     if (other === this) {
       return true
     }

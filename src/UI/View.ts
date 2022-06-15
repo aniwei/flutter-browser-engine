@@ -24,7 +24,7 @@ export class ViewConfiguration {
   }
 
   
-  isEqual (other: ViewConfiguration) {
+  eq (other: ViewConfiguration) {
     if (other === this) {
       return true
     }

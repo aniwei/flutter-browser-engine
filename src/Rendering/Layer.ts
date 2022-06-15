@@ -377,7 +377,7 @@ export class OpacityEngineLayer extends ContainerLayer {
     paintContext.internalNodesCanvas.save()
     paintContext.internalNodesCanvas.translate(this.offset.dx, this.offset.dy)
 
-    const saveLayerBounds: Rect = this.paintBounds.shift(this.offset.opposite())
+    const saveLayerBounds: Rect = this.paintBounds.shift(this.offset.negate())
 
     paintContext.internalNodesCanvas.saveLayer(saveLayerBounds, paint)
     this.paintChildren(paintContext)

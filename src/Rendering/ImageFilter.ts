@@ -77,7 +77,7 @@ export class BlurImageFilter extends ImageFilter {
     this.tileMode = options.tileMode
   }
 
-  isEqual (other: BlurImageFilter) {
+  eq (other: BlurImageFilter) {
     if (other instanceof BlurImageFilter) {
       return (
         other.sigmaX === this.sigmaX &&
@@ -143,7 +143,7 @@ export class MatrixImageFilter extends ImageFilter {
     )
   }
   
-  isEqual (other: MatrixImageFilter) {
+  eq (other: MatrixImageFilter) {
     if (other instanceof MatrixImageFilter) {
       return (
         this.filterQuality === other.filterQuality
@@ -182,7 +182,7 @@ export class ColorFilterImageFilter extends ImageFilter {
     return this.colorFilter.initRawImageFilter()
   }
 
-  isEqual (other: ColorFilterImageFilter) {
+  eq (other: ColorFilterImageFilter) {
     if (other instanceof ColorFilterImageFilter) {
       return this.colorFilter === other.colorFilter
     }

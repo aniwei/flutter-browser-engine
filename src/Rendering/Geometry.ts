@@ -115,7 +115,7 @@ export class Offset extends OffsetBase {
     )
   }
 
-  opposite () {
+  negate () {
     return new Offset(
       -this.dx,
       -this.dy,
@@ -166,7 +166,7 @@ export class Offset extends OffsetBase {
     )
   }
 
-  isEqual (offset: Offset): boolean {
+  eq (offset: Offset): boolean {
     if (offset === this) {
       return true
     }
@@ -323,7 +323,7 @@ export class Size extends OffsetBase {
     )
   }
 
-  opposite (): Size {
+  negate (): Size {
     return new Size(
       -this.width,
       -this.width,
@@ -441,7 +441,7 @@ export class Size extends OffsetBase {
     )
   }
 
-  isEqual (size: Size) {
+  eq (size: Size) {
     if (size === this) {
       return true
     }
@@ -503,7 +503,7 @@ export class Radius {
     this.y = y
   }
 
-  opposite (): Radius {
+  negate (): Radius {
     return Radius.elliptical(-this.x, -this.y)
   }
 
@@ -533,7 +533,7 @@ export class Radius {
     return Radius.elliptical(this.x & radius, this.y % radius)
   }
 
-  isEqual (radius: Radius) {
+  eq (radius: Radius) {
     if (radius === this) {
       return true
     }
@@ -848,7 +848,7 @@ export class Rect extends Float32Array {
     )
   }
 
-  isEqual (rect: Rect): boolean {
+  eq (rect: Rect): boolean {
     if (this === rect) {
       return true
     }

@@ -73,7 +73,7 @@ export class ImageInfo {
     return ``
   }
 
-  isEqual (other: ImageInfo) {
+  eq (other: ImageInfo) {
     if (other === this) {
       return true
     }
@@ -119,7 +119,7 @@ export class ImageStreamListener {
     this.onError = onError ?? null
   }
 
-  isEqual (other: ImageStreamListener) {
+  eq (other: ImageStreamListener) {
     if (other === this) {
       return true
     }

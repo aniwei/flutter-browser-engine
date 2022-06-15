@@ -76,13 +76,13 @@ export abstract class BorderRadiusGeometry {
     )
   }
 
-  abstract opposite (): BorderRadiusGeometry
+  abstract negate (): BorderRadiusGeometry
   abstract multiply (other: number): BorderRadiusGeometry
   abstract divide (other: number): BorderRadiusGeometry
   abstract modulo (other: number): BorderRadiusGeometry
   abstract resolve (direction: TextDirection | null): BorderRadius
 
-  isEqual (other: BorderRadiusGeometry | null) {
+  eq (other: BorderRadiusGeometry | null) {
     if (other === null) {
       return false
     }
@@ -234,12 +234,12 @@ export class BorderRadius extends BorderRadiusGeometry {
     )
   }
 
-  opposite (): BorderRadius {
+  negate (): BorderRadius {
     return BorderRadius.only(
-      this.topLeft.opposite(),
-      this.topRight.opposite(),
-      this.bottomRight.opposite(),
-      this.bottomLeft.opposite(),
+      this.topLeft.negate(),
+      this.topRight.negate(),
+      this.bottomRight.negate(),
+      this.bottomLeft.negate(),
     )
   }
 
@@ -391,12 +391,12 @@ export class BorderRadiusDirectional extends BorderRadiusGeometry {
     )
   }
 
-  opposite (): BorderRadiusGeometry {
+  negate (): BorderRadiusGeometry {
     return BorderRadiusDirectional.only(
-      this.topStart.opposite(),
-      this.topEnd.opposite(),
-      this.bottomStart.opposite(),
-      this.bottomEnd.opposite(),
+      this.topStart.negate(),
+      this.topEnd.negate(),
+      this.bottomStart.negate(),
+      this.bottomEnd.negate(),
     )
   }
 
@@ -480,16 +480,16 @@ export class MixedBorderRadius extends BorderRadiusGeometry {
     )
   }
 
-  opposite (): MixedBorderRadius {
+  negate (): MixedBorderRadius {
     return new MixedBorderRadius(
-      this.topLeft.opposite(),
-      this.topRight.opposite(),
-      this.bottomLeft.opposite(),
-      this.bottomRight.opposite(),
-      this.topStart.opposite(),
-      this.topEnd.opposite(),
-      this.bottomStart.opposite(),
-      this.bottomEnd.opposite(),
+      this.topLeft.negate(),
+      this.topRight.negate(),
+      this.bottomLeft.negate(),
+      this.bottomRight.negate(),
+      this.topStart.negate(),
+      this.topEnd.negate(),
+      this.bottomStart.negate(),
+      this.bottomEnd.negate(),
     )
   }
 

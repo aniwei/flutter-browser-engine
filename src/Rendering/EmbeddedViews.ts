@@ -25,15 +25,15 @@ export class EmbeddedViewParams {
     this.mutators = MutatorsStack.copy(mutators)
   }
 
-  isEqual (other: EmbeddedViewParams) {
+  eq (other: EmbeddedViewParams) {
     if (other === this) {
       return true
     }
     return (
       other instanceof EmbeddedViewParams &&
-      other.offset.isEqual(this.offset) &&
-      other.size.isEqual(this.size) &&
-      other.mutators.isEqual(this.mutators)
+      other.offset.eq(this.offset) &&
+      other.size.eq(this.size) &&
+      other.mutators.eq(this.mutators)
     )
   }
 }
@@ -131,7 +131,7 @@ export class Mutator {
   }) public alphaFloat!: number
 
 
-  isEqual (other: Mutator) {
+  eq (other: Mutator) {
     if (other === this) {
       return true
     }
@@ -198,7 +198,7 @@ export class MutatorsStack extends Array<Mutator> {
     return this.pop()
   }
 
-  isEqual (other: MutatorsStack) {
+  eq (other: MutatorsStack) {
     if (other === this) {
       return true
     }

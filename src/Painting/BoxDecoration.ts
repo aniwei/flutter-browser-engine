@@ -191,17 +191,17 @@ export class BoxDecoration extends Decoration {
     return super.lerpTo(b, t) as BoxDecoration
   }
 
-  isEqual (other: BoxDecoration) {
+  eq (other: BoxDecoration) {
     if (other === this) {
       return this
     }
     
     return (
       other instanceof BoxDecoration &&
-      other.color?.isEqual(this.color!) &&
+      other.color?.eq(this.color!) &&
       other.image === this.image &&
       other.border === this.border &&
-      other.borderRadius?.isEqual(this.borderRadius) &&
+      other.borderRadius?.eq(this.borderRadius) &&
       listEquals<BoxShadow>(other.boxShadow, this.boxShadow) &&
       other.gradient == this.gradient &&
       other.shape == this.shape

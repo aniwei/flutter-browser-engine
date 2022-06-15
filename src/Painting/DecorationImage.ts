@@ -75,7 +75,7 @@ export class DecorationImage {
     return new DecorationImagePainter(this, onChanged)
   }
 
-  isEqual (other: DecorationImage) {
+  eq (other: DecorationImage) {
     if (other === this) {
       return true
     }
@@ -273,12 +273,12 @@ export function paintImage(
     outputSize = outputSize.add(sliceBorder!)
     destinationSize = destinationSize.add(sliceBorder!)
    
-    invariant(sourceSize.isEqual(inputSize), 'centerSlice was used with a BoxFit that does not guarantee that the image is fully visible.')
+    invariant(sourceSize.eq(inputSize), 'centerSlice was used with a BoxFit that does not guarantee that the image is fully visible.')
   }
 
   if (
     repeat !== ImageRepeat.NoRepeat && 
-    destinationSize.isEqual(outputSize)
+    destinationSize.eq(outputSize)
   ) {
     repeat = ImageRepeat.NoRepeat
   }

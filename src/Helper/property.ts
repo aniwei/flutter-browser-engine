@@ -1,6 +1,9 @@
+export type PropertySetter<T> = { (v: T, k: string, key: string): void }
+export type PropertyGetter<T> = { (v: T, k: string, key: string): T } 
+
 export function property<T> (
-  getter: { (v: T, k?: string): T } = function (v, k) { return v as T },
-  setter: { (v: T, k: string): void } = function (this, v: T, k) { this[k] = v }
+  getter: PropertyGetter<T> = function (v, k) { return v as T },
+  setter: PropertySetter<T> = function (this, v: T, k) { this[k] = v }
 ) {
   return function (
     target,
@@ -13,7 +16,7 @@ export function property<T> (
         return Reflect.apply(getter, this, [this[k], k])
       },
       set (value: T) {
-        return Reflect.apply(setter, this, [value, k])
+        return Reflect.apply(setter, this, [value, k, key])
       }
     })
   }

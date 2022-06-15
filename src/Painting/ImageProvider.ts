@@ -66,7 +66,7 @@ export class ImageConfiguration {
     })
   }
 
-  isEqual (other) {
+  eq (other) {
     if (this === other) {
       return true
     }
@@ -320,7 +320,7 @@ export class AssetBundleImageKey {
     this.scale = scale
   }
 
-  isEqual (other: AssetBundleImageKey) {
+  eq (other: AssetBundleImageKey) {
     if (other === this) {
       return true
     }

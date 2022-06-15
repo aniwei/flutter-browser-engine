@@ -123,7 +123,7 @@ export abstract class EdgeInsetsGeometry {
 
   abstract add (other: EdgeInsetsGeometry): EdgeInsetsGeometry
   abstract subtract (other: EdgeInsetsGeometry): EdgeInsetsGeometry
-  abstract opposite (): EdgeInsetsGeometry
+  abstract negate (): EdgeInsetsGeometry
   abstract multiply (other: number): EdgeInsetsGeometry
   abstract divide (other: number): EdgeInsetsGeometry
   abstract modulo (other: number): EdgeInsetsGeometry
@@ -169,7 +169,7 @@ export abstract class EdgeInsetsGeometry {
     )
   }
 
-  isEqual (other: EdgeInsetsGeometry) {
+  eq (other: EdgeInsetsGeometry) {
     if (other instanceof EdgeInsetsGeometry) {
       return (
         other.left === this.left &&
@@ -355,7 +355,7 @@ export class EdgeInsets extends EdgeInsetsGeometry {
     )
   }
 
-  opposite () {
+  negate () {
     return EdgeInsets.fromLTRB(
       -this.left,
       -this.top,
@@ -536,7 +536,7 @@ export class EdgeInsetsDirectional extends EdgeInsetsGeometry {
     );
   }
 
-  opposite (): EdgeInsetsDirectional {
+  negate (): EdgeInsetsDirectional {
     return EdgeInsetsDirectional.fromSTEB(
       -this.start,
       -this.top,
@@ -641,7 +641,7 @@ export class MixedEdgeInsets extends EdgeInsetsGeometry {
     )
   }
 
-  opposite(): MixedEdgeInsets {
+  negate(): MixedEdgeInsets {
     return MixedEdgeInsets.fromLRSETB(
       -this.left,
       -this.right,

@@ -718,7 +718,7 @@ export class BorderDirectional extends BoxBorder {
     )
   }
 
-  isEqual (other: BorderDirectional) {
+  eq (other: BorderDirectional) {
     if (other === this) {
       return true
     }
