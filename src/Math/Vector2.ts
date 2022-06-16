@@ -5,7 +5,7 @@ import { Vector4 } from './Vector4'
 
 export class Vector2 extends Float64Array {
   static zero () {
-    return new Vector2(2)
+    return new Vector2()
   }
 
   static min (a: Vector2, b: Vector2, result: Vector2) {
@@ -433,7 +433,9 @@ export class Vector2 extends Float64Array {
 
 
   constructor (...values: number[]) {
-    super(values)
+    super(2)
+
+    this.setValues(values[0], values[1])
   }
 
   setValues (x: number, y: number) {
