@@ -1,7 +1,7 @@
 import { invariant } from 'ts-invariant'
 import { Color, Rect, Canvas, Paint, Path } from '@rendering'
 import { Skia, SkiaTextDirection } from '@skia'
-import { lerpDouble, listEquals } from '@math'
+import { lerpDouble, listEquals } from '@helper'
 import { EdgeInsets, EdgeInsetsGeometry } from './EdgeInsets'
 import { BorderRadius } from './BorderRadius'
 import { BoxShape } from './BoxBorder'

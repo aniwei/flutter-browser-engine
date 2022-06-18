@@ -74,6 +74,10 @@ export class Canvas {
 
   public skia: SkiaCanvas
 
+  public get pictureSnapshot () {
+    return null
+  }
+
   constructor (skia: SkiaCanvas) {
     this.skia = skia
   }
@@ -551,7 +555,7 @@ export class PictureSnapshot {
     for (const command of this.commands) {
       command.apply(canvas)
     }
-    
+
     const picture: SkiaPicture = recorder.finishRecordingAsPicture()
     recorder.delete()
 

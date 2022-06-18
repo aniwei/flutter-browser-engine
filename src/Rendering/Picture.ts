@@ -4,9 +4,23 @@ import { ManagedSkiaObject, Skia, SkiaImage, SkiaPicture, SkiaSurface } from '@s
 import { kBrowserSupportsFinalizationRegistry } from '@platform'
 import { Rect } from './Geometry'
 import { Image } from './Image'
+import { PictureSnapshot } from './Canvas'
 
 
+export type PictureInitOptions = {
+  picture: SkiaPicture,
+  cullRect: Rect | null,
+  snapshot: PictureSnapshot | null
+}
 export class Picture extends ManagedSkiaObject<SkiaPicture> {
+  static malloc (options: PictureInitOptions) {
+    return new Picture(
+      options.picture,
+      options.cullRect,
+      options.snapshot
+    )
+  }
+
   @property<boolean>(function (this) {
     return this.isDisposed
   }) public debugIsDisposed!: boolean
@@ -14,13 +28,13 @@ export class Picture extends ManagedSkiaObject<SkiaPicture> {
   public isResurrectionExpensive: boolean = true
   public approximateBytesUsed: number = 0
   public isDisposed: boolean = false
-  public cullRect: Rect
-  public snapshot
+  public cullRect: Rect | null = null
+  public snapshot: PictureSnapshot | null = null
 
   constructor (
     picture: SkiaPicture, 
-    cullRect: Rect, 
-    snapshot
+    cullRect: Rect | null, 
+    snapshot: PictureSnapshot | null
   ) {    
     invariant(
       kBrowserSupportsFinalizationRegistry && snapshot === null || snapshot != null,
@@ -37,7 +51,7 @@ export class Picture extends ManagedSkiaObject<SkiaPicture> {
     invariant(!this.isDisposed, 'Object has been disposed.')
     
     this.isDisposed = true
-    this.snapshot.dispose()
+    this.snapshot?.dispose()
     
     this.rawSkia?.delete();
     this.rawSkia = null
@@ -60,7 +74,7 @@ export class Picture extends ManagedSkiaObject<SkiaPicture> {
 
   resurrect () {
     invariant(!this.isDisposed)
-    return this.snapshot.toPicture()
+    return this.snapshot!.toPicture()
   }
 
   delete () {

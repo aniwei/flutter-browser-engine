@@ -1,5 +1,5 @@
 import { invariant } from 'ts-invariant'
-import { listEquals } from '@math'
+import { listEquals } from '@helper'
 import { VoidCallback } from '@platform'
 import { SkiaBlendMode, SkiaTextDirection } from '@skia'
 import { Canvas, Path, Color, Offset, Rect, Size, Paint } from '@rendering'

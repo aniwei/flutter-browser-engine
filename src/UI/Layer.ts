@@ -1,7 +1,7 @@
 import { invariant } from 'ts-invariant'
 import { property, PropertySetter } from '@helper'
-import { LayerSceneBuilder, Picture, Offset, Rect, Image, Scene, Clip, RRect, ImageFilter, Path, ColorFilter, OpacityEngineLayer, OffsetEngineLayer, Shader, Size, Color } from '@rendering'
-import { Matrix4 } from '@math'
+import { LayerSceneBuilder, Picture, Offset, Rect, Image, Scene, Clip, RRect, ImageFilter, Path, ColorFilter, OpacityEngineLayer, OffsetEngineLayer, Shader, Size, Color, ImageFilterEngineLayer, ColorFilterEngineLayer } from '@rendering'
+import { Matrix4, Vector4 } from '@math'
 import { Skia, SkiaBlendMode, SkiaFilterQuality } from '@skia'
 
 function scene <T> (setter?: PropertySetter<T>) {
@@ -876,7 +876,7 @@ export class ColorFilterLayer extends ContainerLayer {
     invariant(this.colorFilter !== null)
     this.engineLayer = builder.pushColorFilter(
       this.colorFilter,
-      this.engineLayer,
+      this.engineLayer as ColorFilterEngineLayer,
     )
 
     this.addChildrenToScene(builder)
@@ -903,10 +903,10 @@ export class ImageFilterLayer extends ContainerLayer {
     invariant(this.imageFilter !== null);
     this.engineLayer = builder.pushImageFilter(
       this.imageFilter!,
-      this.engineLayer
+      this.engineLayer as ImageFilterEngineLayer
     )
     this.addChildrenToScene(builder)
-    this.builder.pop()
+    builder.pop()
   }
 }
 
@@ -946,7 +946,8 @@ export class TransformLayer extends OffsetLayer {
         this.offset.dy, 
         0.0
       )
-      this.lastEffectiveTransform = matrix.multiply(this.lastEffectiveTransform)
+      matrix.multiply(this.lastEffectiveTransform)
+      this.lastEffectiveTransform = matrix
     }
     // @TODO
     
@@ -1466,7 +1467,7 @@ export class FollowerLayer extends ContainerLayer {
       return null
     }
 
-    const vector = new Vector4(localPosition.dx, localPosition.dy, 0.0, 1.0)
+    const vector = new Vector4([localPosition.dx, localPosition.dy, 0.0, 1.0])
     const result = this.invertedTransform!.transform(vector)
     return new Offset(
       result[0] - this.linkedOffset!.dx, 
@@ -1634,7 +1635,7 @@ export class AnnotatedRegionLayer<T> extends ContainerLayer {
   constructor (
     value: T,
     size: Size,
-    offset?: Offset | null = null,
+    offset: Offset | null = null,
     opaque: boolean = false,
   ) {
     invariant(value !== null)

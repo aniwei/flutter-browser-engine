@@ -1,7 +1,8 @@
 import { invariant } from 'ts-invariant'
 import { SkiaTextDirection, SkiaTileMode } from '@skia'
 import { Color, Offset, Rect, Shader } from '@rendering'
-import { lerpDouble, listEquals, Matrix4 } from '@math'
+import { lerpDouble, listEquals } from '@helper'
+import { Matrix4 } from '@math'
 import * as UI from '@rendering'
 import { Alignment, AlignmentGeometry } from './Alignment'
 
@@ -218,10 +219,11 @@ export abstract class Gradient {
     bounds: Rect, 
     textDirection?: SkiaTextDirection | null
   ): Float64Array | null {
+    // @TOCHECK
     return this.transform?.transform(
       bounds, 
       textDirection
-    )?.toFloat64() as Float64Array
+    ) as Float64Array
   }
 }
 

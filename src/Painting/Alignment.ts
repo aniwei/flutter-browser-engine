@@ -1,5 +1,5 @@
 import { invariant } from 'ts-invariant'
-import { lerpDouble } from '@math'
+import { lerpDouble } from '@helper'
 import { Offset, Rect, Size } from '@rendering'
 import { Skia } from '@skia'
 import { TextDirection } from 'canvaskit-wasm'

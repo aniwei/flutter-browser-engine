@@ -1,6 +1,6 @@
 import invariant from 'ts-invariant'
 import { Offset, Rect, Size } from '@rendering'
-import { clamp, lerpDouble } from '@math'
+import { clamp, lerpDouble } from '@helper'
 import { TextDirection } from 'canvaskit-wasm'
 import { Axis } from '.'
 import { Skia } from '@skia'

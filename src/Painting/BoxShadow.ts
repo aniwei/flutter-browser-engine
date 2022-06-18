@@ -1,5 +1,5 @@
 import invariant from 'ts-invariant'
-import { lerpDouble } from '@math'
+import { lerpDouble } from '@helper'
 import { Skia, SkiaBlurStyle } from '@skia'
 import { Color, MaskFilter, Offset, Paint } from '@rendering'
 

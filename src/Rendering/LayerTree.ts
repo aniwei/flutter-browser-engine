@@ -6,6 +6,7 @@ import { Rect, Size } from './Geometry'
 import { NWayCanvas } from './NWayCanvas'
 import { RasterCache } from './RasterCache'
 import { PaintContext, PrerollContext, RootLayer } from './Layer'
+import { PictureRecorder } from './PictureRecorder'
 
 export class LayerTree {
   public rootLayer: RootLayer
@@ -55,7 +56,11 @@ export class LayerTree {
 
     const internalNodesCanvas: NWayCanvas = new NWayCanvas()
     internalNodesCanvas.addCanvas(canvas)
-    const paintContext: PaintContext = new PaintContext(internalNodesCanvas, canvas, null, null)
+    const paintContext: PaintContext = new PaintContext(
+      internalNodesCanvas, 
+      canvas, 
+      null
+    )
     if (this.rootLayer.needsPainting) {
       this.rootLayer.paint(paintContext)
     }
