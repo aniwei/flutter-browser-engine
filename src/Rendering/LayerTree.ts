@@ -1,11 +1,11 @@
 import { Matrix4 } from '@math'
 import { Canvas } from './Canvas'
-import { Rect, Size } from './Geometry'
-import { PaintContext, PrerollContext, RootLayer } from './Layer'
-import { NWayCanvas } from './NWayCanvas'
 import { Color } from './Painting'
 import { Picture } from './Picture'
+import { Rect, Size } from './Geometry'
+import { NWayCanvas } from './NWayCanvas'
 import { RasterCache } from './RasterCache'
+import { PaintContext, PrerollContext, RootLayer } from './Layer'
 
 export class LayerTree {
   public rootLayer: RootLayer
@@ -15,7 +15,6 @@ export class LayerTree {
   constructor (rootLayer: RootLayer) {
     this.rootLayer = rootLayer
   }
-
   
   preroll (
     frame: Frame, 

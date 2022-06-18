@@ -1,7 +1,7 @@
-import { clamp } from './clamp'
+import { clamp } from '@helper'
 import { Vector2 } from './Vector2'
-import { Matrix4 } from './Matrix4'
 import { Vector3 } from './Vector3'
+import { Matrix4 } from './Matrix4'
 
 export class Vector4 extends Float64Array {
   static min (
@@ -49,7 +49,7 @@ export class Vector4 extends Float64Array {
   }
 
   static zero() {
-    const vec = new Vector4(4)
+    const vec = new Vector4([4])
     return vec
   }
 
@@ -71,28 +71,32 @@ export class Vector4 extends Float64Array {
     return vec
   }
 
-  static fromFloat64Array (v4storage: Float64Array) {
-    return new Vector4(...Array.from(v4storage))
+  static fromFloat64Array (v4: Float64Array) {
+    return new Vector4(v4)
   }
 
   
   static fromBuffer (
     buffer: ArrayBuffer, 
-    offset: number
+    offset: number,
+    length: number = 4
   ) {
-    const length = Math.floor(buffer.byteLength - 4 / Float64Array.BYTES_PER_ELEMENT)
+    length ??= Math.floor(
+      (buffer.byteLength - offset) / 
+      Float64Array.BYTES_PER_ELEMENT
+    )
 
     return Vector4.fromFloat64Array(new Float64Array(
       buffer, 
       offset, 
-      Math.floor(buffer.byteLength - 4 / Float64Array.BYTES_PER_ELEMENT)
+      length
     ))
   }
  
 
   static random (random?: { (): number }) {
     random ??= () => Math.random()
-    return new Vector4(random(), random(), random())
+    return new Vector4([random(), random(), random()])
   }
 
   public get storage () {
@@ -975,1012 +979,1012 @@ export class Vector4 extends Float64Array {
   	this.wzyx = arg
 	}
   get xx () {
-  	return new Vector2(this[0], this[0])
+  	return new Vector2([this[0], this[0]])
 	} 
   get xy () {
-  	return new Vector2(this[0], this[1])
+  	return new Vector2([this[0], this[1]])
 	} 
   get xz () {
-  	return new Vector2(this[0], this[2])
+  	return new Vector2([this[0], this[2]])
 	} 
   get xw () {
-  	return new Vector2(this[0], this[3])
+  	return new Vector2([this[0], this[3]])
 	} 
   get yx () {
-  	return new Vector2(this[1], this[0])
+  	return new Vector2([this[1], this[0]])
 	} 
   get yy () {
-  	return new Vector2(this[1], this[1])
+  	return new Vector2([this[1], this[1]])
 	} 
   get yz () {
-  	return new Vector2(this[1], this[2])
+  	return new Vector2([this[1], this[2]])
 	} 
   get yw () {
-  	return new Vector2(this[1], this[3])
+  	return new Vector2([this[1], this[3]])
 	} 
   get zx () {
-  	return new Vector2(this[2], this[0])
+  	return new Vector2([this[2], this[0]])
 	} 
   get zy () {
-  	return new Vector2(this[2], this[1])
+  	return new Vector2([this[2], this[1]])
 	} 
   get zz () {
-  	return new Vector2(this[2], this[2])
+  	return new Vector2([this[2], this[2]])
 	} 
   get zw () {
-  	return new Vector2(this[2], this[3])
+  	return new Vector2([this[2], this[3]])
 	} 
   get wx () {
-  	return new Vector2(this[3], this[0])
+  	return new Vector2([this[3], this[0]])
 	} 
   get wy () {
-  	return new Vector2(this[3], this[1])
+  	return new Vector2([this[3], this[1]])
 	} 
   get wz () {
-  	return new Vector2(this[3], this[2])
+  	return new Vector2([this[3], this[2]])
 	} 
   get ww () {
-  	return new Vector2(this[3], this[3])
+  	return new Vector2([this[3], this[3]])
 	} 
   get xxx () {
-  	return new Vector3(this[0], this[0], this[0])
+  	return new Vector3([this[0], this[0], this[0]])
 	} 
   get xxy () {
-  	return new Vector3(this[0], this[0], this[1])
+  	return new Vector3([this[0], this[0], this[1]])
 	} 
   get xxz () {
-  	return new Vector3(this[0], this[0], this[2])
+  	return new Vector3([this[0], this[0], this[2]])
 	} 
   get xxw () {
-  	return new Vector3(this[0], this[0], this[3])
+  	return new Vector3([this[0], this[0], this[3]])
 	} 
   get xyx () {
-  	return new Vector3(this[0], this[1], this[0])
+  	return new Vector3([this[0], this[1], this[0]])
 	} 
   get xyy () {
-  	return new Vector3(this[0], this[1], this[1])
+  	return new Vector3([this[0], this[1], this[1]])
 	} 
   get xyz () {
-  	return new Vector3(this[0], this[1], this[2])
+  	return new Vector3([this[0], this[1], this[2]])
 	} 
   get xyw () {
-  	return new Vector3(this[0], this[1], this[3])
+  	return new Vector3([this[0], this[1], this[3]])
 	} 
   get xzx () {
-  	return new Vector3(this[0], this[2], this[0])
+  	return new Vector3([this[0], this[2], this[0]])
 	} 
   get xzy () {
-  	return new Vector3(this[0], this[2], this[1])
+  	return new Vector3([this[0], this[2], this[1]])
 	} 
   get xzz () {
-  	return new Vector3(this[0], this[2], this[2])
+  	return new Vector3([this[0], this[2], this[2]])
 	} 
   get xzw () {
-  	return new Vector3(this[0], this[2], this[3])
+  	return new Vector3([this[0], this[2], this[3]])
 	} 
   get xwx () {
-  	return new Vector3(this[0], this[3], this[0])
+  	return new Vector3([this[0], this[3], this[0]])
 	} 
   get xwy () {
-  	return new Vector3(this[0], this[3], this[1])
+  	return new Vector3([this[0], this[3], this[1]])
 	} 
   get xwz () {
-  	return new Vector3(this[0], this[3], this[2])
+  	return new Vector3([this[0], this[3], this[2]])
 	} 
   get xww () {
-  	return new Vector3(this[0], this[3], this[3])
+  	return new Vector3([this[0], this[3], this[3]])
 	} 
   get yxx () {
-  	return new Vector3(this[1], this[0], this[0])
+  	return new Vector3([this[1], this[0], this[0]])
 	} 
   get yxy () {
-  	return new Vector3(this[1], this[0], this[1])
+  	return new Vector3([this[1], this[0], this[1]])
 	} 
   get yxz () {
-  	return new Vector3(this[1], this[0], this[2])
+  	return new Vector3([this[1], this[0], this[2]])
 	} 
   get yxw () {
-  	return new Vector3(this[1], this[0], this[3])
+  	return new Vector3([this[1], this[0], this[3]])
 	} 
   get yyx () {
-  	return new Vector3(this[1], this[1], this[0])
+  	return new Vector3([this[1], this[1], this[0]])
 	} 
   get yyy () {
-  	return new Vector3(this[1], this[1], this[1])
+  	return new Vector3([this[1], this[1], this[1]])
 	} 
   get yyz () {
-  	return new Vector3(this[1], this[1], this[2])
+  	return new Vector3([this[1], this[1], this[2]])
 	} 
   get yyw () {
-  	return new Vector3(this[1], this[1], this[3])
+  	return new Vector3([this[1], this[1], this[3]])
 	} 
   get yzx () {
-  	return new Vector3(this[1], this[2], this[0])
+  	return new Vector3([this[1], this[2], this[0]])
 	} 
   get yzy () {
-  	return new Vector3(this[1], this[2], this[1])
+  	return new Vector3([this[1], this[2], this[1]])
 	} 
   get yzz () {
-  	return new Vector3(this[1], this[2], this[2])
+  	return new Vector3([this[1], this[2], this[2]])
 	} 
   get yzw () {
-  	return new Vector3(this[1], this[2], this[3])
+  	return new Vector3([this[1], this[2], this[3]])
 	} 
   get ywx () {
-  	return new Vector3(this[1], this[3], this[0])
+  	return new Vector3([this[1], this[3], this[0]])
 	} 
   get ywy () {
-  	return new Vector3(this[1], this[3], this[1])
+  	return new Vector3([this[1], this[3], this[1]])
 	} 
   get ywz () {
-  	return new Vector3(this[1], this[3], this[2])
+  	return new Vector3([this[1], this[3], this[2]])
 	} 
   get yww () {
-  	return new Vector3(this[1], this[3], this[3])
+  	return new Vector3([this[1], this[3], this[3]])
 	} 
   get zxx () {
-  	return new Vector3(this[2], this[0], this[0])
+  	return new Vector3([this[2], this[0], this[0]])
 	} 
   get zxy () {
-  	return new Vector3(this[2], this[0], this[1])
+  	return new Vector3([this[2], this[0], this[1]])
 	} 
   get zxz () {
-  	return new Vector3(this[2], this[0], this[2])
+  	return new Vector3([this[2], this[0], this[2]])
 	} 
   get zxw () {
-  	return new Vector3(this[2], this[0], this[3])
+  	return new Vector3([this[2], this[0], this[3]])
 	} 
   get zyx () {
-  	return new Vector3(this[2], this[1], this[0])
+  	return new Vector3([this[2], this[1], this[0]])
 	} 
   get zyy () {
-  	return new Vector3(this[2], this[1], this[1])
+  	return new Vector3([this[2], this[1], this[1]])
 	} 
   get zyz () {
-  	return new Vector3(this[2], this[1], this[2])
+  	return new Vector3([this[2], this[1], this[2]])
 	} 
   get zyw () {
-  	return new Vector3(this[2], this[1], this[3])
+  	return new Vector3([this[2], this[1], this[3]])
 	} 
   get zzx () {
-  	return new Vector3(this[2], this[2], this[0])
+  	return new Vector3([this[2], this[2], this[0]])
 	} 
   get zzy () {
-  	return new Vector3(this[2], this[2], this[1])
+  	return new Vector3([this[2], this[2], this[1]])
 	} 
   get zzz () {
-  	return new Vector3(this[2], this[2], this[2])
+  	return new Vector3([this[2], this[2], this[2]])
 	} 
   get zzw () {
-  	return new Vector3(this[2], this[2], this[3])
+  	return new Vector3([this[2], this[2], this[3]])
 	} 
   get zwx () {
-  	return new Vector3(this[2], this[3], this[0])
+  	return new Vector3([this[2], this[3], this[0]])
 	} 
   get zwy () {
-  	return new Vector3(this[2], this[3], this[1])
+  	return new Vector3([this[2], this[3], this[1]])
 	} 
   get zwz () {
-  	return new Vector3(this[2], this[3], this[2])
+  	return new Vector3([this[2], this[3], this[2]])
 	} 
   get zww () {
-  	return new Vector3(this[2], this[3], this[3])
+  	return new Vector3([this[2], this[3], this[3]])
 	} 
   get wxx () {
-  	return new Vector3(this[3], this[0], this[0])
+  	return new Vector3([this[3], this[0], this[0]])
 	} 
   get wxy () {
-  	return new Vector3(this[3], this[0], this[1])
+  	return new Vector3([this[3], this[0], this[1]])
 	} 
   get wxz () {
-  	return new Vector3(this[3], this[0], this[2])
+  	return new Vector3([this[3], this[0], this[2]])
 	} 
   get wxw () {
-  	return new Vector3(this[3], this[0], this[3])
+  	return new Vector3([this[3], this[0], this[3]])
 	} 
   get wyx () {
-  	return new Vector3(this[3], this[1], this[0])
+  	return new Vector3([this[3], this[1], this[0]])
 	} 
   get wyy () {
-  	return new Vector3(this[3], this[1], this[1])
+  	return new Vector3([this[3], this[1], this[1]])
 	} 
   get wyz () {
-  	return new Vector3(this[3], this[1], this[2])
+  	return new Vector3([this[3], this[1], this[2]])
 	} 
   get wyw () {
-  	return new Vector3(this[3], this[1], this[3])
+  	return new Vector3([this[3], this[1], this[3]])
 	} 
   get wzx () {
-  	return new Vector3(this[3], this[2], this[0])
+  	return new Vector3([this[3], this[2], this[0]])
 	} 
   get wzy () {
-  	return new Vector3(this[3], this[2], this[1])
+  	return new Vector3([this[3], this[2], this[1]])
 	} 
   get wzz () {
-  	return new Vector3(this[3], this[2], this[2])
+  	return new Vector3([this[3], this[2], this[2]])
 	} 
   get wzw () {
-  	return new Vector3(this[3], this[2], this[3])
+  	return new Vector3([this[3], this[2], this[3]])
 	} 
   get wwx () {
-  	return new Vector3(this[3], this[3], this[0])
+  	return new Vector3([this[3], this[3], this[0]])
 	} 
   get wwy () {
-  	return new Vector3(this[3], this[3], this[1])
+  	return new Vector3([this[3], this[3], this[1]])
 	} 
   get wwz () {
-  	return new Vector3(this[3], this[3], this[2])
+  	return new Vector3([this[3], this[3], this[2]])
 	} 
   get www () {
-  	return new Vector3(this[3], this[3], this[3])
+  	return new Vector3([this[3], this[3], this[3]])
 	} 
   get xxxx () {
-  	return new Vector4(this[0], this[0], this[0], this[0])
+  	return new Vector4([this[0], this[0], this[0], this[0]])
 	} 
   get xxxy () {
-  	return new Vector4(this[0], this[0], this[0], this[1])
+  	return new Vector4([this[0], this[0], this[0], this[1]])
 	} 
   get xxxz () {
-  	return new Vector4(this[0], this[0], this[0], this[2])
+  	return new Vector4([this[0], this[0], this[0], this[2]])
 	} 
   get xxxw () {
-  	return new Vector4(this[0], this[0], this[0], this[3])
+  	return new Vector4([this[0], this[0], this[0], this[3]])
 	} 
   get xxyx () {
-  	return new Vector4(this[0], this[0], this[1], this[0])
+  	return new Vector4([this[0], this[0], this[1], this[0]])
 	} 
   get xxyy () {
-  	return new Vector4(this[0], this[0], this[1], this[1])
+  	return new Vector4([this[0], this[0], this[1], this[1]])
 	} 
   get xxyz () {
-  	return new Vector4(this[0], this[0], this[1], this[2])
+  	return new Vector4([this[0], this[0], this[1], this[2]])
 	} 
   get xxyw () {
-  	return new Vector4(this[0], this[0], this[1], this[3])
+  	return new Vector4([this[0], this[0], this[1], this[3]])
 	} 
   get xxzx () {
-  	return new Vector4(this[0], this[0], this[2], this[0])
+  	return new Vector4([this[0], this[0], this[2], this[0]])
 	} 
   get xxzy () {
-  	return new Vector4(this[0], this[0], this[2], this[1])
+  	return new Vector4([this[0], this[0], this[2], this[1]])
 	} 
   get xxzz () {
-  	return new Vector4(this[0], this[0], this[2], this[2])
+  	return new Vector4([this[0], this[0], this[2], this[2]])
 	} 
   get xxzw () {
-  	return new Vector4(this[0], this[0], this[2], this[3])
+  	return new Vector4([this[0], this[0], this[2], this[3]])
 	} 
   get xxwx () {
-  	return new Vector4(this[0], this[0], this[3], this[0])
+  	return new Vector4([this[0], this[0], this[3], this[0]])
 	} 
   get xxwy () {
-  	return new Vector4(this[0], this[0], this[3], this[1])
+  	return new Vector4([this[0], this[0], this[3], this[1]])
 	} 
   get xxwz () {
-  	return new Vector4(this[0], this[0], this[3], this[2])
+  	return new Vector4([this[0], this[0], this[3], this[2]])
 	} 
   get xxww () {
-  	return new Vector4(this[0], this[0], this[3], this[3])
+  	return new Vector4([this[0], this[0], this[3], this[3]])
 	} 
   get xyxx () {
-  	return new Vector4(this[0], this[1], this[0], this[0])
+  	return new Vector4([this[0], this[1], this[0], this[0]])
 	} 
   get xyxy () {
-  	return new Vector4(this[0], this[1], this[0], this[1])
+  	return new Vector4([this[0], this[1], this[0], this[1]])
 	} 
   get xyxz () {
-  	return new Vector4(this[0], this[1], this[0], this[2])
+  	return new Vector4([this[0], this[1], this[0], this[2]])
 	} 
   get xyxw () {
-  	return new Vector4(this[0], this[1], this[0], this[3])
+  	return new Vector4([this[0], this[1], this[0], this[3]])
 	} 
   get xyyx () {
-  	return new Vector4(this[0], this[1], this[1], this[0])
+  	return new Vector4([this[0], this[1], this[1], this[0]])
 	} 
   get xyyy () {
-  	return new Vector4(this[0], this[1], this[1], this[1])
+  	return new Vector4([this[0], this[1], this[1], this[1]])
 	} 
   get xyyz () {
-  	return new Vector4(this[0], this[1], this[1], this[2])
+  	return new Vector4([this[0], this[1], this[1], this[2]])
 	} 
   get xyyw () {
-  	return new Vector4(this[0], this[1], this[1], this[3])
+  	return new Vector4([this[0], this[1], this[1], this[3]])
 	} 
   get xyzx () {
-  	return new Vector4(this[0], this[1], this[2], this[0])
+  	return new Vector4([this[0], this[1], this[2], this[0]])
 	} 
   get xyzy () {
-  	return new Vector4(this[0], this[1], this[2], this[1])
+  	return new Vector4([this[0], this[1], this[2], this[1]])
 	} 
   get xyzz () {
-  	return new Vector4(this[0], this[1], this[2], this[2])
+  	return new Vector4([this[0], this[1], this[2], this[2]])
 	} 
   get xyzw () {
-  	return new Vector4(this[0], this[1], this[2], this[3])
+  	return new Vector4([this[0], this[1], this[2], this[3]])
 	} 
   get xywx () {
-  	return new Vector4(this[0], this[1], this[3], this[0])
+  	return new Vector4([this[0], this[1], this[3], this[0]])
 	} 
   get xywy () {
-  	return new Vector4(this[0], this[1], this[3], this[1])
+  	return new Vector4([this[0], this[1], this[3], this[1]])
 	} 
   get xywz () {
-  	return new Vector4(this[0], this[1], this[3], this[2])
+  	return new Vector4([this[0], this[1], this[3], this[2]])
 	} 
   get xyww () {
-  	return new Vector4(this[0], this[1], this[3], this[3])
+  	return new Vector4([this[0], this[1], this[3], this[3]])
 	} 
   get xzxx () {
-  	return new Vector4(this[0], this[2], this[0], this[0])
+  	return new Vector4([this[0], this[2], this[0], this[0]])
 	} 
   get xzxy () {
-  	return new Vector4(this[0], this[2], this[0], this[1])
+  	return new Vector4([this[0], this[2], this[0], this[1]])
 	} 
   get xzxz () {
-  	return new Vector4(this[0], this[2], this[0], this[2])
+  	return new Vector4([this[0], this[2], this[0], this[2]])
 	} 
   get xzxw () {
-  	return new Vector4(this[0], this[2], this[0], this[3])
+  	return new Vector4([this[0], this[2], this[0], this[3]])
 	} 
   get xzyx () {
-  	return new Vector4(this[0], this[2], this[1], this[0])
+  	return new Vector4([this[0], this[2], this[1], this[0]])
 	} 
   get xzyy () {
-  	return new Vector4(this[0], this[2], this[1], this[1])
+  	return new Vector4([this[0], this[2], this[1], this[1]])
 	} 
   get xzyz () {
-  	return new Vector4(this[0], this[2], this[1], this[2])
+  	return new Vector4([this[0], this[2], this[1], this[2]])
 	} 
   get xzyw () {
-  	return new Vector4(this[0], this[2], this[1], this[3])
+  	return new Vector4([this[0], this[2], this[1], this[3]])
 	} 
   get xzzx () {
-  	return new Vector4(this[0], this[2], this[2], this[0])
+  	return new Vector4([this[0], this[2], this[2], this[0]])
 	} 
   get xzzy () {
-  	return new Vector4(this[0], this[2], this[2], this[1])
+  	return new Vector4([this[0], this[2], this[2], this[1]])
 	} 
   get xzzz () {
-  	return new Vector4(this[0], this[2], this[2], this[2])
+  	return new Vector4([this[0], this[2], this[2], this[2]])
 	} 
   get xzzw () {
-  	return new Vector4(this[0], this[2], this[2], this[3])
+  	return new Vector4([this[0], this[2], this[2], this[3]])
 	} 
   get xzwx () {
-  	return new Vector4(this[0], this[2], this[3], this[0])
+  	return new Vector4([this[0], this[2], this[3], this[0]])
 	} 
   get xzwy () {
-  	return new Vector4(this[0], this[2], this[3], this[1])
+  	return new Vector4([this[0], this[2], this[3], this[1]])
 	} 
   get xzwz () {
-  	return new Vector4(this[0], this[2], this[3], this[2])
+  	return new Vector4([this[0], this[2], this[3], this[2]])
 	} 
   get xzww () {
-  	return new Vector4(this[0], this[2], this[3], this[3])
+  	return new Vector4([this[0], this[2], this[3], this[3]])
 	} 
   get xwxx () {
-  	return new Vector4(this[0], this[3], this[0], this[0])
+  	return new Vector4([this[0], this[3], this[0], this[0]])
 	} 
   get xwxy () {
-  	return new Vector4(this[0], this[3], this[0], this[1])
+  	return new Vector4([this[0], this[3], this[0], this[1]])
 	} 
   get xwxz () {
-  	return new Vector4(this[0], this[3], this[0], this[2])
+  	return new Vector4([this[0], this[3], this[0], this[2]])
 	} 
   get xwxw () {
-  	return new Vector4(this[0], this[3], this[0], this[3])
+  	return new Vector4([this[0], this[3], this[0], this[3]])
 	} 
   get xwyx () {
-  	return new Vector4(this[0], this[3], this[1], this[0])
+  	return new Vector4([this[0], this[3], this[1], this[0]])
 	} 
   get xwyy () {
-  	return new Vector4(this[0], this[3], this[1], this[1])
+  	return new Vector4([this[0], this[3], this[1], this[1]])
 	} 
   get xwyz () {
-  	return new Vector4(this[0], this[3], this[1], this[2])
+  	return new Vector4([this[0], this[3], this[1], this[2]])
 	} 
   get xwyw () {
-  	return new Vector4(this[0], this[3], this[1], this[3])
+  	return new Vector4([this[0], this[3], this[1], this[3]])
 	} 
   get xwzx () {
-  	return new Vector4(this[0], this[3], this[2], this[0])
+  	return new Vector4([this[0], this[3], this[2], this[0]])
 	} 
   get xwzy () {
-  	return new Vector4(this[0], this[3], this[2], this[1])
+  	return new Vector4([this[0], this[3], this[2], this[1]])
 	} 
   get xwzz () {
-  	return new Vector4(this[0], this[3], this[2], this[2])
+  	return new Vector4([this[0], this[3], this[2], this[2]])
 	} 
   get xwzw () {
-  	return new Vector4(this[0], this[3], this[2], this[3])
+  	return new Vector4([this[0], this[3], this[2], this[3]])
 	} 
   get xwwx () {
-  	return new Vector4(this[0], this[3], this[3], this[0])
+  	return new Vector4([this[0], this[3], this[3], this[0]])
 	} 
   get xwwy () {
-  	return new Vector4(this[0], this[3], this[3], this[1])
+  	return new Vector4([this[0], this[3], this[3], this[1]])
 	} 
   get xwwz () {
-  	return new Vector4(this[0], this[3], this[3], this[2])
+  	return new Vector4([this[0], this[3], this[3], this[2]])
 	} 
   get xwww () {
-  	return new Vector4(this[0], this[3], this[3], this[3])
+  	return new Vector4([this[0], this[3], this[3], this[3]])
 	} 
   get yxxx () {
-  	return new Vector4(this[1], this[0], this[0], this[0])
+  	return new Vector4([this[1], this[0], this[0], this[0]])
 	} 
   get yxxy () {
-  	return new Vector4(this[1], this[0], this[0], this[1])
+  	return new Vector4([this[1], this[0], this[0], this[1]])
 	} 
   get yxxz () {
-  	return new Vector4(this[1], this[0], this[0], this[2])
+  	return new Vector4([this[1], this[0], this[0], this[2]])
 	} 
   get yxxw () {
-  	return new Vector4(this[1], this[0], this[0], this[3])
+  	return new Vector4([this[1], this[0], this[0], this[3]])
 	} 
   get yxyx () {
-  	return new Vector4(this[1], this[0], this[1], this[0])
+  	return new Vector4([this[1], this[0], this[1], this[0]])
 	} 
   get yxyy () {
-  	return new Vector4(this[1], this[0], this[1], this[1])
+  	return new Vector4([this[1], this[0], this[1], this[1]])
 	} 
   get yxyz () {
-  	return new Vector4(this[1], this[0], this[1], this[2])
+  	return new Vector4([this[1], this[0], this[1], this[2]])
 	} 
   get yxyw () {
-  	return new Vector4(this[1], this[0], this[1], this[3])
+  	return new Vector4([this[1], this[0], this[1], this[3]])
 	} 
   get yxzx () {
-  	return new Vector4(this[1], this[0], this[2], this[0])
+  	return new Vector4([this[1], this[0], this[2], this[0]])
 	} 
   get yxzy () {
-  	return new Vector4(this[1], this[0], this[2], this[1])
+  	return new Vector4([this[1], this[0], this[2], this[1]])
 	} 
   get yxzz () {
-  	return new Vector4(this[1], this[0], this[2], this[2])
+  	return new Vector4([this[1], this[0], this[2], this[2]])
 	} 
   get yxzw () {
-  	return new Vector4(this[1], this[0], this[2], this[3])
+  	return new Vector4([this[1], this[0], this[2], this[3]])
 	} 
   get yxwx () {
-  	return new Vector4(this[1], this[0], this[3], this[0])
+  	return new Vector4([this[1], this[0], this[3], this[0]])
 	} 
   get yxwy () {
-  	return new Vector4(this[1], this[0], this[3], this[1])
+  	return new Vector4([this[1], this[0], this[3], this[1]])
 	} 
   get yxwz () {
-  	return new Vector4(this[1], this[0], this[3], this[2])
+  	return new Vector4([this[1], this[0], this[3], this[2]])
 	} 
   get yxww () {
-  	return new Vector4(this[1], this[0], this[3], this[3])
+  	return new Vector4([this[1], this[0], this[3], this[3]])
 	} 
   get yyxx () {
-  	return new Vector4(this[1], this[1], this[0], this[0])
+  	return new Vector4([this[1], this[1], this[0], this[0]])
 	} 
   get yyxy () {
-  	return new Vector4(this[1], this[1], this[0], this[1])
+  	return new Vector4([this[1], this[1], this[0], this[1]])
 	} 
   get yyxz () {
-  	return new Vector4(this[1], this[1], this[0], this[2])
+  	return new Vector4([this[1], this[1], this[0], this[2]])
 	} 
   get yyxw () {
-  	return new Vector4(this[1], this[1], this[0], this[3])
+  	return new Vector4([this[1], this[1], this[0], this[3]])
 	} 
   get yyyx () {
-  	return new Vector4(this[1], this[1], this[1], this[0])
+  	return new Vector4([this[1], this[1], this[1], this[0]])
 	} 
   get yyyy () {
-  	return new Vector4(this[1], this[1], this[1], this[1])
+  	return new Vector4([this[1], this[1], this[1], this[1]])
 	} 
   get yyyz () {
-  	return new Vector4(this[1], this[1], this[1], this[2])
+  	return new Vector4([this[1], this[1], this[1], this[2]])
 	} 
   get yyyw () {
-  	return new Vector4(this[1], this[1], this[1], this[3])
+  	return new Vector4([this[1], this[1], this[1], this[3]])
 	} 
   get yyzx () {
-  	return new Vector4(this[1], this[1], this[2], this[0])
+  	return new Vector4([this[1], this[1], this[2], this[0]])
 	} 
   get yyzy () {
-  	return new Vector4(this[1], this[1], this[2], this[1])
+  	return new Vector4([this[1], this[1], this[2], this[1]])
 	} 
   get yyzz () {
-  	return new Vector4(this[1], this[1], this[2], this[2])
+  	return new Vector4([this[1], this[1], this[2], this[2]])
 	} 
   get yyzw () {
-  	return new Vector4(this[1], this[1], this[2], this[3])
+  	return new Vector4([this[1], this[1], this[2], this[3]])
 	} 
   get yywx () {
-  	return new Vector4(this[1], this[1], this[3], this[0])
+  	return new Vector4([this[1], this[1], this[3], this[0]])
 	} 
   get yywy () {
-  	return new Vector4(this[1], this[1], this[3], this[1])
+  	return new Vector4([this[1], this[1], this[3], this[1]])
 	} 
   get yywz () {
-  	return new Vector4(this[1], this[1], this[3], this[2])
+  	return new Vector4([this[1], this[1], this[3], this[2]])
 	} 
   get yyww () {
-  	return new Vector4(this[1], this[1], this[3], this[3])
+  	return new Vector4([this[1], this[1], this[3], this[3]])
 	} 
   get yzxx () {
-  	return new Vector4(this[1], this[2], this[0], this[0])
+  	return new Vector4([this[1], this[2], this[0], this[0]])
 	} 
   get yzxy () {
-  	return new Vector4(this[1], this[2], this[0], this[1])
+  	return new Vector4([this[1], this[2], this[0], this[1]])
 	} 
   get yzxz () {
-  	return new Vector4(this[1], this[2], this[0], this[2])
+  	return new Vector4([this[1], this[2], this[0], this[2]])
 	} 
   get yzxw () {
-  	return new Vector4(this[1], this[2], this[0], this[3])
+  	return new Vector4([this[1], this[2], this[0], this[3]])
 	} 
   get yzyx () {
-  	return new Vector4(this[1], this[2], this[1], this[0])
+  	return new Vector4([this[1], this[2], this[1], this[0]])
 	} 
   get yzyy () {
-  	return new Vector4(this[1], this[2], this[1], this[1])
+  	return new Vector4([this[1], this[2], this[1], this[1]])
 	} 
   get yzyz () {
-  	return new Vector4(this[1], this[2], this[1], this[2])
+  	return new Vector4([this[1], this[2], this[1], this[2]])
 	} 
   get yzyw () {
-  	return new Vector4(this[1], this[2], this[1], this[3])
+  	return new Vector4([this[1], this[2], this[1], this[3]])
 	} 
   get yzzx () {
-  	return new Vector4(this[1], this[2], this[2], this[0])
+  	return new Vector4([this[1], this[2], this[2], this[0]])
 	} 
   get yzzy () {
-  	return new Vector4(this[1], this[2], this[2], this[1])
+  	return new Vector4([this[1], this[2], this[2], this[1]])
 	} 
   get yzzz () {
-  	return new Vector4(this[1], this[2], this[2], this[2])
+  	return new Vector4([this[1], this[2], this[2], this[2]])
 	} 
   get yzzw () {
-  	return new Vector4(this[1], this[2], this[2], this[3])
+  	return new Vector4([this[1], this[2], this[2], this[3]])
 	} 
   get yzwx () {
-  	return new Vector4(this[1], this[2], this[3], this[0])
+  	return new Vector4([this[1], this[2], this[3], this[0]])
 	} 
   get yzwy () {
-  	return new Vector4(this[1], this[2], this[3], this[1])
+  	return new Vector4([this[1], this[2], this[3], this[1]])
 	} 
   get yzwz () {
-  	return new Vector4(this[1], this[2], this[3], this[2])
+  	return new Vector4([this[1], this[2], this[3], this[2]])
 	} 
   get yzww () {
-  	return new Vector4(this[1], this[2], this[3], this[3])
+  	return new Vector4([this[1], this[2], this[3], this[3]])
 	} 
   get ywxx () {
-  	return new Vector4(this[1], this[3], this[0], this[0])
+  	return new Vector4([this[1], this[3], this[0], this[0]])
 	} 
   get ywxy () {
-  	return new Vector4(this[1], this[3], this[0], this[1])
+  	return new Vector4([this[1], this[3], this[0], this[1]])
 	} 
   get ywxz () {
-  	return new Vector4(this[1], this[3], this[0], this[2])
+  	return new Vector4([this[1], this[3], this[0], this[2]])
 	} 
   get ywxw () {
-  	return new Vector4(this[1], this[3], this[0], this[3])
+  	return new Vector4([this[1], this[3], this[0], this[3]])
 	} 
   get ywyx () {
-  	return new Vector4(this[1], this[3], this[1], this[0])
+  	return new Vector4([this[1], this[3], this[1], this[0]])
 	} 
   get ywyy () {
-  	return new Vector4(this[1], this[3], this[1], this[1])
+  	return new Vector4([this[1], this[3], this[1], this[1]])
 	} 
   get ywyz () {
-  	return new Vector4(this[1], this[3], this[1], this[2])
+  	return new Vector4([this[1], this[3], this[1], this[2]])
 	} 
   get ywyw () {
-  	return new Vector4(this[1], this[3], this[1], this[3])
+  	return new Vector4([this[1], this[3], this[1], this[3]])
 	} 
   get ywzx () {
-  	return new Vector4(this[1], this[3], this[2], this[0])
+  	return new Vector4([this[1], this[3], this[2], this[0]])
 	} 
   get ywzy () {
-  	return new Vector4(this[1], this[3], this[2], this[1])
+  	return new Vector4([this[1], this[3], this[2], this[1]])
 	} 
   get ywzz () {
-  	return new Vector4(this[1], this[3], this[2], this[2])
+  	return new Vector4([this[1], this[3], this[2], this[2]])
 	} 
   get ywzw () {
-  	return new Vector4(this[1], this[3], this[2], this[3])
+  	return new Vector4([this[1], this[3], this[2], this[3]])
 	} 
   get ywwx () {
-  	return new Vector4(this[1], this[3], this[3], this[0])
+  	return new Vector4([this[1], this[3], this[3], this[0]])
 	} 
   get ywwy () {
-  	return new Vector4(this[1], this[3], this[3], this[1])
+  	return new Vector4([this[1], this[3], this[3], this[1]])
 	} 
   get ywwz () {
-  	return new Vector4(this[1], this[3], this[3], this[2])
+  	return new Vector4([this[1], this[3], this[3], this[2]])
 	} 
   get ywww () {
-  	return new Vector4(this[1], this[3], this[3], this[3])
+  	return new Vector4([this[1], this[3], this[3], this[3]])
 	} 
   get zxxx () {
-  	return new Vector4(this[2], this[0], this[0], this[0])
+  	return new Vector4([this[2], this[0], this[0], this[0]])
 	} 
   get zxxy () {
-  	return new Vector4(this[2], this[0], this[0], this[1])
+  	return new Vector4([this[2], this[0], this[0], this[1]])
 	} 
   get zxxz () {
-  	return new Vector4(this[2], this[0], this[0], this[2])
+  	return new Vector4([this[2], this[0], this[0], this[2]])
 	} 
   get zxxw () {
-  	return new Vector4(this[2], this[0], this[0], this[3])
+  	return new Vector4([this[2], this[0], this[0], this[3]])
 	} 
   get zxyx () {
-  	return new Vector4(this[2], this[0], this[1], this[0])
+  	return new Vector4([this[2], this[0], this[1], this[0]])
 	} 
   get zxyy () {
-  	return new Vector4(this[2], this[0], this[1], this[1])
+  	return new Vector4([this[2], this[0], this[1], this[1]])
 	} 
   get zxyz () {
-  	return new Vector4(this[2], this[0], this[1], this[2])
+  	return new Vector4([this[2], this[0], this[1], this[2]])
 	} 
   get zxyw () {
-  	return new Vector4(this[2], this[0], this[1], this[3])
+  	return new Vector4([this[2], this[0], this[1], this[3]])
 	} 
   get zxzx () {
-  	return new Vector4(this[2], this[0], this[2], this[0])
+  	return new Vector4([this[2], this[0], this[2], this[0]])
 	} 
   get zxzy () {
-  	return new Vector4(this[2], this[0], this[2], this[1])
+  	return new Vector4([this[2], this[0], this[2], this[1]])
 	} 
   get zxzz () {
-  	return new Vector4(this[2], this[0], this[2], this[2])
+  	return new Vector4([this[2], this[0], this[2], this[2]])
 	} 
   get zxzw () {
-  	return new Vector4(this[2], this[0], this[2], this[3])
+  	return new Vector4([this[2], this[0], this[2], this[3]])
 	} 
   get zxwx () {
-  	return new Vector4(this[2], this[0], this[3], this[0])
+  	return new Vector4([this[2], this[0], this[3], this[0]])
 	} 
   get zxwy () {
-  	return new Vector4(this[2], this[0], this[3], this[1])
+  	return new Vector4([this[2], this[0], this[3], this[1]])
 	} 
   get zxwz () {
-  	return new Vector4(this[2], this[0], this[3], this[2])
+  	return new Vector4([this[2], this[0], this[3], this[2]])
 	} 
   get zxww () {
-  	return new Vector4(this[2], this[0], this[3], this[3])
+  	return new Vector4([this[2], this[0], this[3], this[3]])
 	} 
   get zyxx () {
-  	return new Vector4(this[2], this[1], this[0], this[0])
+  	return new Vector4([this[2], this[1], this[0], this[0]])
 	} 
   get zyxy () {
-  	return new Vector4(this[2], this[1], this[0], this[1])
+  	return new Vector4([this[2], this[1], this[0], this[1]])
 	} 
   get zyxz () {
-  	return new Vector4(this[2], this[1], this[0], this[2])
+  	return new Vector4([this[2], this[1], this[0], this[2]])
 	} 
   get zyxw () {
-  	return new Vector4(this[2], this[1], this[0], this[3])
+  	return new Vector4([this[2], this[1], this[0], this[3]])
 	} 
   get zyyx () {
-  	return new Vector4(this[2], this[1], this[1], this[0])
+  	return new Vector4([this[2], this[1], this[1], this[0]])
 	} 
   get zyyy () {
-  	return new Vector4(this[2], this[1], this[1], this[1])
+  	return new Vector4([this[2], this[1], this[1], this[1]])
 	} 
   get zyyz () {
-  	return new Vector4(this[2], this[1], this[1], this[2])
+  	return new Vector4([this[2], this[1], this[1], this[2]])
 	} 
   get zyyw () {
-  	return new Vector4(this[2], this[1], this[1], this[3])
+  	return new Vector4([this[2], this[1], this[1], this[3]])
 	} 
   get zyzx () {
-  	return new Vector4(this[2], this[1], this[2], this[0])
+  	return new Vector4([this[2], this[1], this[2], this[0]])
 	} 
   get zyzy () {
-  	return new Vector4(this[2], this[1], this[2], this[1])
+  	return new Vector4([this[2], this[1], this[2], this[1]])
 	} 
   get zyzz () {
-  	return new Vector4(this[2], this[1], this[2], this[2])
+  	return new Vector4([this[2], this[1], this[2], this[2]])
 	} 
   get zyzw () {
-  	return new Vector4(this[2], this[1], this[2], this[3])
+  	return new Vector4([this[2], this[1], this[2], this[3]])
 	} 
   get zywx () {
-  	return new Vector4(this[2], this[1], this[3], this[0])
+  	return new Vector4([this[2], this[1], this[3], this[0]])
 	} 
   get zywy () {
-  	return new Vector4(this[2], this[1], this[3], this[1])
+  	return new Vector4([this[2], this[1], this[3], this[1]])
 	} 
   get zywz () {
-  	return new Vector4(this[2], this[1], this[3], this[2])
+  	return new Vector4([this[2], this[1], this[3], this[2]])
 	} 
   get zyww () {
-  	return new Vector4(this[2], this[1], this[3], this[3])
+  	return new Vector4([this[2], this[1], this[3], this[3]])
 	} 
   get zzxx () {
-  	return new Vector4(this[2], this[2], this[0], this[0])
+  	return new Vector4([this[2], this[2], this[0], this[0]])
 	} 
   get zzxy () {
-  	return new Vector4(this[2], this[2], this[0], this[1])
+  	return new Vector4([this[2], this[2], this[0], this[1]])
 	} 
   get zzxz () {
-  	return new Vector4(this[2], this[2], this[0], this[2])
+  	return new Vector4([this[2], this[2], this[0], this[2]])
 	} 
   get zzxw () {
-  	return new Vector4(this[2], this[2], this[0], this[3])
+  	return new Vector4([this[2], this[2], this[0], this[3]])
 	} 
   get zzyx () {
-  	return new Vector4(this[2], this[2], this[1], this[0])
+  	return new Vector4([this[2], this[2], this[1], this[0]])
 	} 
   get zzyy () {
-  	return new Vector4(this[2], this[2], this[1], this[1])
+  	return new Vector4([this[2], this[2], this[1], this[1]])
 	} 
   get zzyz () {
-  	return new Vector4(this[2], this[2], this[1], this[2])
+  	return new Vector4([this[2], this[2], this[1], this[2]])
 	} 
   get zzyw () {
-  	return new Vector4(this[2], this[2], this[1], this[3])
+  	return new Vector4([this[2], this[2], this[1], this[3]])
 	} 
   get zzzx () {
-  	return new Vector4(this[2], this[2], this[2], this[0])
+  	return new Vector4([this[2], this[2], this[2], this[0]])
 	} 
   get zzzy () {
-  	return new Vector4(this[2], this[2], this[2], this[1])
+  	return new Vector4([this[2], this[2], this[2], this[1]])
 	} 
   get zzzz () {
-  	return new Vector4(this[2], this[2], this[2], this[2])
+  	return new Vector4([this[2], this[2], this[2], this[2]])
 	} 
   get zzzw () {
-  	return new Vector4(this[2], this[2], this[2], this[3])
+  	return new Vector4([this[2], this[2], this[2], this[3]])
 	} 
   get zzwx () {
-  	return new Vector4(this[2], this[2], this[3], this[0])
+  	return new Vector4([this[2], this[2], this[3], this[0]])
 	} 
   get zzwy () {
-  	return new Vector4(this[2], this[2], this[3], this[1])
+  	return new Vector4([this[2], this[2], this[3], this[1]])
 	} 
   get zzwz () {
-  	return new Vector4(this[2], this[2], this[3], this[2])
+  	return new Vector4([this[2], this[2], this[3], this[2]])
 	} 
   get zzww () {
-  	return new Vector4(this[2], this[2], this[3], this[3])
+  	return new Vector4([this[2], this[2], this[3], this[3]])
 	} 
   get zwxx () {
-  	return new Vector4(this[2], this[3], this[0], this[0])
+  	return new Vector4([this[2], this[3], this[0], this[0]])
 	} 
   get zwxy () {
-  	return new Vector4(this[2], this[3], this[0], this[1])
+  	return new Vector4([this[2], this[3], this[0], this[1]])
 	} 
   get zwxz () {
-  	return new Vector4(this[2], this[3], this[0], this[2])
+  	return new Vector4([this[2], this[3], this[0], this[2]])
 	} 
   get zwxw () {
-  	return new Vector4(this[2], this[3], this[0], this[3])
+  	return new Vector4([this[2], this[3], this[0], this[3]])
 	} 
   get zwyx () {
-  	return new Vector4(this[2], this[3], this[1], this[0])
+  	return new Vector4([this[2], this[3], this[1], this[0]])
 	} 
   get zwyy () {
-  	return new Vector4(this[2], this[3], this[1], this[1])
+  	return new Vector4([this[2], this[3], this[1], this[1]])
 	} 
   get zwyz () {
-  	return new Vector4(this[2], this[3], this[1], this[2])
+  	return new Vector4([this[2], this[3], this[1], this[2]])
 	} 
   get zwyw () {
-  	return new Vector4(this[2], this[3], this[1], this[3])
+  	return new Vector4([this[2], this[3], this[1], this[3]])
 	} 
   get zwzx () {
-  	return new Vector4(this[2], this[3], this[2], this[0])
+  	return new Vector4([this[2], this[3], this[2], this[0]])
 	} 
   get zwzy () {
-  	return new Vector4(this[2], this[3], this[2], this[1])
+  	return new Vector4([this[2], this[3], this[2], this[1]])
 	} 
   get zwzz () {
-  	return new Vector4(this[2], this[3], this[2], this[2])
+  	return new Vector4([this[2], this[3], this[2], this[2]])
 	} 
   get zwzw () {
-  	return new Vector4(this[2], this[3], this[2], this[3])
+  	return new Vector4([this[2], this[3], this[2], this[3]])
 	} 
   get zwwx () {
-  	return new Vector4(this[2], this[3], this[3], this[0])
+  	return new Vector4([this[2], this[3], this[3], this[0]])
 	} 
   get zwwy () {
-  	return new Vector4(this[2], this[3], this[3], this[1])
+  	return new Vector4([this[2], this[3], this[3], this[1]])
 	} 
   get zwwz () {
-  	return new Vector4(this[2], this[3], this[3], this[2])
+  	return new Vector4([this[2], this[3], this[3], this[2]])
 	} 
   get zwww () {
-  	return new Vector4(this[2], this[3], this[3], this[3])
+  	return new Vector4([this[2], this[3], this[3], this[3]])
 	} 
   get wxxx () {
-  	return new Vector4(this[3], this[0], this[0], this[0])
+  	return new Vector4([this[3], this[0], this[0], this[0]])
 	} 
   get wxxy () {
-  	return new Vector4(this[3], this[0], this[0], this[1])
+  	return new Vector4([this[3], this[0], this[0], this[1]])
 	} 
   get wxxz () {
-  	return new Vector4(this[3], this[0], this[0], this[2])
+  	return new Vector4([this[3], this[0], this[0], this[2]])
 	} 
   get wxxw () {
-  	return new Vector4(this[3], this[0], this[0], this[3])
+  	return new Vector4([this[3], this[0], this[0], this[3]])
 	} 
   get wxyx () {
-  	return new Vector4(this[3], this[0], this[1], this[0])
+  	return new Vector4([this[3], this[0], this[1], this[0]])
 	} 
   get wxyy () {
-  	return new Vector4(this[3], this[0], this[1], this[1])
+  	return new Vector4([this[3], this[0], this[1], this[1]])
 	} 
   get wxyz () {
-  	return new Vector4(this[3], this[0], this[1], this[2])
+  	return new Vector4([this[3], this[0], this[1], this[2]])
 	} 
   get wxyw () {
-  	return new Vector4(this[3], this[0], this[1], this[3])
+  	return new Vector4([this[3], this[0], this[1], this[3]])
 	} 
   get wxzx () {
-  	return new Vector4(this[3], this[0], this[2], this[0])
+  	return new Vector4([this[3], this[0], this[2], this[0]])
 	} 
   get wxzy () {
-  	return new Vector4(this[3], this[0], this[2], this[1])
+  	return new Vector4([this[3], this[0], this[2], this[1]])
 	} 
   get wxzz () {
-  	return new Vector4(this[3], this[0], this[2], this[2])
+  	return new Vector4([this[3], this[0], this[2], this[2]])
 	} 
   get wxzw () {
-  	return new Vector4(this[3], this[0], this[2], this[3])
+  	return new Vector4([this[3], this[0], this[2], this[3]])
 	} 
   get wxwx () {
-  	return new Vector4(this[3], this[0], this[3], this[0])
+  	return new Vector4([this[3], this[0], this[3], this[0]])
 	} 
   get wxwy () {
-  	return new Vector4(this[3], this[0], this[3], this[1])
+  	return new Vector4([this[3], this[0], this[3], this[1]])
 	} 
   get wxwz () {
-  	return new Vector4(this[3], this[0], this[3], this[2])
+  	return new Vector4([this[3], this[0], this[3], this[2]])
 	} 
   get wxww () {
-  	return new Vector4(this[3], this[0], this[3], this[3])
+  	return new Vector4([this[3], this[0], this[3], this[3]])
 	} 
   get wyxx () {
-  	return new Vector4(this[3], this[1], this[0], this[0])
+  	return new Vector4([this[3], this[1], this[0], this[0]])
 	} 
   get wyxy () {
-  	return new Vector4(this[3], this[1], this[0], this[1])
+  	return new Vector4([this[3], this[1], this[0], this[1]])
 	} 
   get wyxz () {
-  	return new Vector4(this[3], this[1], this[0], this[2])
+  	return new Vector4([this[3], this[1], this[0], this[2]])
 	} 
   get wyxw () {
-  	return new Vector4(this[3], this[1], this[0], this[3])
+  	return new Vector4([this[3], this[1], this[0], this[3]])
 	} 
   get wyyx () {
-  	return new Vector4(this[3], this[1], this[1], this[0])
+  	return new Vector4([this[3], this[1], this[1], this[0]])
 	} 
   get wyyy () {
-  	return new Vector4(this[3], this[1], this[1], this[1])
+  	return new Vector4([this[3], this[1], this[1], this[1]])
 	} 
   get wyyz () {
-  	return new Vector4(this[3], this[1], this[1], this[2])
+  	return new Vector4([this[3], this[1], this[1], this[2]])
 	} 
   get wyyw () {
-  	return new Vector4(this[3], this[1], this[1], this[3])
+  	return new Vector4([this[3], this[1], this[1], this[3]])
 	} 
   get wyzx () {
-  	return new Vector4(this[3], this[1], this[2], this[0])
+  	return new Vector4([this[3], this[1], this[2], this[0]])
 	} 
   get wyzy () {
-  	return new Vector4(this[3], this[1], this[2], this[1])
+  	return new Vector4([this[3], this[1], this[2], this[1]])
 	} 
   get wyzz () {
-  	return new Vector4(this[3], this[1], this[2], this[2])
+  	return new Vector4([this[3], this[1], this[2], this[2]])
 	} 
   get wyzw () {
-  	return new Vector4(this[3], this[1], this[2], this[3])
+  	return new Vector4([this[3], this[1], this[2], this[3]])
 	} 
   get wywx () {
-  	return new Vector4(this[3], this[1], this[3], this[0])
+  	return new Vector4([this[3], this[1], this[3], this[0]])
 	} 
   get wywy () {
-  	return new Vector4(this[3], this[1], this[3], this[1])
+  	return new Vector4([this[3], this[1], this[3], this[1]])
 	} 
   get wywz () {
-  	return new Vector4(this[3], this[1], this[3], this[2])
+  	return new Vector4([this[3], this[1], this[3], this[2]])
 	} 
   get wyww () {
-  	return new Vector4(this[3], this[1], this[3], this[3])
+  	return new Vector4([this[3], this[1], this[3], this[3]])
 	} 
   get wzxx () {
-  	return new Vector4(this[3], this[2], this[0], this[0])
+  	return new Vector4([this[3], this[2], this[0], this[0]])
 	} 
   get wzxy () {
-  	return new Vector4(this[3], this[2], this[0], this[1])
+  	return new Vector4([this[3], this[2], this[0], this[1]])
 	} 
   get wzxz () {
-  	return new Vector4(this[3], this[2], this[0], this[2])
+  	return new Vector4([this[3], this[2], this[0], this[2]])
 	} 
   get wzxw () {
-  	return new Vector4(this[3], this[2], this[0], this[3])
+  	return new Vector4([this[3], this[2], this[0], this[3]])
 	} 
   get wzyx () {
-  	return new Vector4(this[3], this[2], this[1], this[0])
+  	return new Vector4([this[3], this[2], this[1], this[0]])
 	} 
   get wzyy () {
-  	return new Vector4(this[3], this[2], this[1], this[1])
+  	return new Vector4([this[3], this[2], this[1], this[1]])
 	} 
   get wzyz () {
-  	return new Vector4(this[3], this[2], this[1], this[2])
+  	return new Vector4([this[3], this[2], this[1], this[2]])
 	} 
   get wzyw () {
-  	return new Vector4(this[3], this[2], this[1], this[3])
+  	return new Vector4([this[3], this[2], this[1], this[3]])
 	} 
   get wzzx () {
-  	return new Vector4(this[3], this[2], this[2], this[0])
+  	return new Vector4([this[3], this[2], this[2], this[0]])
 	} 
   get wzzy () {
-  	return new Vector4(this[3], this[2], this[2], this[1])
+  	return new Vector4([this[3], this[2], this[2], this[1]])
 	} 
   get wzzz () {
-  	return new Vector4(this[3], this[2], this[2], this[2])
+  	return new Vector4([this[3], this[2], this[2], this[2]])
 	} 
   get wzzw () {
-  	return new Vector4(this[3], this[2], this[2], this[3])
+  	return new Vector4([this[3], this[2], this[2], this[3]])
 	} 
   get wzwx () {
-  	return new Vector4(this[3], this[2], this[3], this[0])
+  	return new Vector4([this[3], this[2], this[3], this[0]])
 	} 
   get wzwy () {
-  	return new Vector4(this[3], this[2], this[3], this[1])
+  	return new Vector4([this[3], this[2], this[3], this[1]])
 	} 
   get wzwz () {
-  	return new Vector4(this[3], this[2], this[3], this[2])
+  	return new Vector4([this[3], this[2], this[3], this[2]])
 	} 
   get wzww () {
-  	return new Vector4(this[3], this[2], this[3], this[3])
+  	return new Vector4([this[3], this[2], this[3], this[3]])
 	} 
   get wwxx () {
-  	return new Vector4(this[3], this[3], this[0], this[0])
+  	return new Vector4([this[3], this[3], this[0], this[0]])
 	} 
   get wwxy () {
-  	return new Vector4(this[3], this[3], this[0], this[1])
+  	return new Vector4([this[3], this[3], this[0], this[1]])
 	} 
   get wwxz () {
-  	return new Vector4(this[3], this[3], this[0], this[2])
+  	return new Vector4([this[3], this[3], this[0], this[2]])
 	} 
   get wwxw () {
-  	return new Vector4(this[3], this[3], this[0], this[3])
+  	return new Vector4([this[3], this[3], this[0], this[3]])
 	} 
   get wwyx () {
-  	return new Vector4(this[3], this[3], this[1], this[0])
+  	return new Vector4([this[3], this[3], this[1], this[0]])
 	} 
   get wwyy () {
-  	return new Vector4(this[3], this[3], this[1], this[1])
+  	return new Vector4([this[3], this[3], this[1], this[1]])
 	} 
   get wwyz () {
-  	return new Vector4(this[3], this[3], this[1], this[2])
+  	return new Vector4([this[3], this[3], this[1], this[2]])
 	} 
   get wwyw () {
-  	return new Vector4(this[3], this[3], this[1], this[3])
+  	return new Vector4([this[3], this[3], this[1], this[3]])
 	} 
   get wwzx () {
-  	return new Vector4(this[3], this[3], this[2], this[0])
+  	return new Vector4([this[3], this[3], this[2], this[0]])
 	} 
   get wwzy () {
-  	return new Vector4(this[3], this[3], this[2], this[1])
+  	return new Vector4([this[3], this[3], this[2], this[1]])
 	} 
   get wwzz () {
-  	return new Vector4(this[3], this[3], this[2], this[2])
+  	return new Vector4([this[3], this[3], this[2], this[2]])
 	} 
   get wwzw () {
-  	return new Vector4(this[3], this[3], this[2], this[3])
+  	return new Vector4([this[3], this[3], this[2], this[3]])
 	} 
   get wwwx () {
-  	return new Vector4(this[3], this[3], this[3], this[0])
+  	return new Vector4([this[3], this[3], this[3], this[0]])
 	} 
   get wwwy () {
-  	return new Vector4(this[3], this[3], this[3], this[1])
+  	return new Vector4([this[3], this[3], this[3], this[1]])
 	} 
   get wwwz () {
-  	return new Vector4(this[3], this[3], this[3], this[2])
+  	return new Vector4([this[3], this[3], this[3], this[2]])
 	} 
   get wwww () {
-  	return new Vector4(this[3], this[3], this[3], this[3])
+  	return new Vector4([this[3], this[3], this[3], this[3]])
 	} 
   get r () {
     return this.x
@@ -4035,15 +4039,6 @@ export class Vector4 extends Float64Array {
     return this.wwww
   }
 
-  constructor (...values: number[]) {
-    if (values.length === 1) {
-      super(values[0])
-    } else if (values.length > 1) {
-      
-    }
-  }
-
-
   setValues (
     x: number, 
     y: number, 
@@ -4320,10 +4315,10 @@ export class Vector4 extends Float64Array {
   }
 
   copyInto (arg: Vector4) {
-    a[0] = this[0]
-    a[1] = this[1]
-    a[2] = this[2]
-    a[3] = this[3]
+    arg[0] = this[0]
+    arg[1] = this[1]
+    arg[2] = this[2]
+    arg[3] = this[3]
     return arg
   }
 

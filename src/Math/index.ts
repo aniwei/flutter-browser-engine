@@ -1,6 +1,3 @@
-export * from './lerp'
-export * from './list'
-export * from './clamp'
 export * from './Vector2'
 export * from './Matrix2'
 export * from './Vector3'

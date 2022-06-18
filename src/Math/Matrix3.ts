@@ -30,10 +30,8 @@ export class Matrix3 extends Float64Array {
       det = 1.0 / det
     }
 
-    // @TODO
-    x
-      ..x = det * (a22 * bx - a12 * by)
-      ..y = det * (a11 * by - a21 * bx)
+    x.x = det * (a22 * bx - a12 * by)
+    x.y = det * (a11 * by - a21 * bx)
   }
 
   static solve (
@@ -76,11 +74,9 @@ export class Matrix3 extends Float64Array {
     
     const z1 = det * (A0x * rx + A0y * ry + A0z * rz)
 
-    // @TODO
-    x
-      ..x = x1
-      ..y = y1
-      ..z = z1
+    x.x = x1
+    x.y = y1
+    x.z = z1
   }
 
   index (
@@ -476,7 +472,8 @@ export class Matrix3 extends Float64Array {
   }
 
    elativeError (correct: Matrix3) {
-    const diff = correct - this
+    const diff = correct.clone() 
+    diff.substract(this)
     const correctNorm = correct.infinityNorm()
     const diffNorm = diff.infinityNorm()
     return diffNorm / correctNorm
@@ -837,21 +834,21 @@ export class Matrix3 extends Float64Array {
     const x = this[0]
     const y = this[1]
     const z = this[2]
-    return new Vector3(x, y, z)
+    return new Vector3([x, y, z])
   }
 
   get up () {
     const x = this[3]
     const y = this[4]
     const z = this[5]
-    return new Vector3(x, y, z)
+    return new Vector3([x, y, z])
   }
 
   get forward () {
     const x = this[6]
     const y = this[7]
     const z = this[8]
-    return new Vector3(x, y, z)
+    return new Vector3([x, y, z])
   }
 
   isIdentity () {

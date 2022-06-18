@@ -1,4 +1,4 @@
-import invariant from "ts-invariant"
+import invariant from 'ts-invariant'
 
 const kDeprecatedLanguageSubtagMap: Map<string, string> = new Map()
 

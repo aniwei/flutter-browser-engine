@@ -622,7 +622,8 @@ export class OffsetLayer extends ContainerLayer {
     transform.multiply(
       Matrix4.translationValues(
         this.offset.dx, 
-        this.offset.dy, 0.0
+        this.offset.dy,
+        0.0
       )
     )
   }
@@ -1099,15 +1100,17 @@ export class ShaderMaskLayer extends ContainerLayer {
   }
   
   addToScene (builder: LayerSceneBuilder) {
-    invariant(this.shader !== null);
-    invariant(this.maskRect !== null);
-    invariant(this.blendMode !== null);
+    invariant(this.shader !== null)
+    invariant(this.maskRect !== null)
+    invariant(this.blendMode !== null)
+
     this.engineLayer = builder.pushShaderMask(
       this.shader!,
       this.maskRect!,
       this.blendMode!,
       this.engineLayer
     )
+
     this.addChildrenToScene(builder)
     builder.pop()
   }

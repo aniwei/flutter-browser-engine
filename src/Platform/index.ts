@@ -1,4 +1,3 @@
-
 export type VoidCallback = { (): void }
 export enum TargetPlatform {
   Android,

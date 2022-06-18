@@ -2,16 +2,16 @@ import { invariant } from 'ts-invariant'
 import { Matrix4 } from '@math'
 import { UnimplementedError } from '@internal'
 import { Skia, SkiaBlendMode, SkiaFilterQuality, toMatrix32 } from '@skia'
-import { Offset, Rect, RRect } from './Geometry'
+import { Path } from './Path'
 import { Image } from './Image'
-import { BackdropFilterEngineLayer, Clip, ClipPathEngineLayer, ClipRectEngineLayer, ClipRRectEngineLayer, ColorFilterEngineLayer, ContainerLayer, EngineLayer, ImageFilterEngineLayer, Layer, OffsetEngineLayer, OpacityEngineLayer, PhysicalShapeEngineLayer, PictureLayer, RootLayer, ShaderMaskEngineLayer, TransformEngineLayer, } from './Layer'
 import { Picture } from './Picture'
 import { Shader } from './Shader'
-import { ImageFilter } from './ImageFilter'
-import { Path } from './Path'
 import { Color } from './Painting'
 import { ColorFilter } from './ColorFilter'
 import { LayerTree } from './LayerTree'
+import { ImageFilter } from './ImageFilter'
+import { Offset, Rect, RRect } from './Geometry'
+import { BackdropFilterEngineLayer, Clip, ClipPathEngineLayer, ClipRectEngineLayer, ClipRRectEngineLayer, ColorFilterEngineLayer, ContainerLayer, EngineLayer, ImageFilterEngineLayer, Layer, OffsetEngineLayer, OpacityEngineLayer, PhysicalShapeEngineLayer, PictureLayer, RootLayer, ShaderMaskEngineLayer, TransformEngineLayer, } from './Layer'
 
 
 export class LayerScene {
@@ -64,13 +64,11 @@ export class LayerSceneBuilder {
       )
     )
   }
-
   
   addRetained (retainedLayer: EngineLayer) {
     this.currentLayer.add(retainedLayer as Layer)
   }
 
-  
   addTexture (
     textureId: number,
     offset: Offset = Offset.zero,
@@ -86,7 +84,6 @@ export class LayerSceneBuilder {
     return new LayerScene(this.rootLayer)
   }
 
-  
   pop () {
     if (this.currentLayer === this.rootLayer) {
       return
@@ -99,7 +96,7 @@ export class LayerSceneBuilder {
   pushBackdropFilter (
     filter: ImageFilter,
     blendMode: SkiaBlendMode = Skia.BlendMode.SrcOver,
-    oldLayer: EngineLayer,
+    oldLayer?: EngineLayer | null,
   ): BackdropFilterEngineLayer {
     return this.pushLayer<BackdropFilterEngineLayer>(
       new BackdropFilterEngineLayer(
@@ -113,7 +110,7 @@ export class LayerSceneBuilder {
   pushClipPath(
     path: Path,
     clipBehavior: Clip = Clip.AntiAlias,
-    oldLayer: EngineLayer,
+    oldLayer?: EngineLayer | null,
   ): ClipPathEngineLayer {
     return this.pushLayer<ClipPathEngineLayer>(
       new ClipPathEngineLayer(path as Path, clipBehavior)
@@ -208,7 +205,7 @@ export class LayerSceneBuilder {
     shader: Shader,
     maskRect: Rect,
     blendMode: SkiaBlendMode,
-    oldLayer: EngineLayer,
+    oldLayer?: EngineLayer | null,
     filterQuality: SkiaFilterQuality = SkiaFilterQuality.Low,
   ): ShaderMaskEngineLayer {
     return this.pushLayer<ShaderMaskEngineLayer>(
@@ -220,7 +217,7 @@ export class LayerSceneBuilder {
     matrix4: Float64Array,
     oldLayer?: EngineLayer | null,
   ): TransformEngineLayer  {
-    const matrix = Matrix4.fromFloat32Array(toMatrix32(matrix4))
+    const matrix = Matrix4.fromFloat64Array(matrix4)
     return this.pushLayer<TransformEngineLayer>(
       new TransformEngineLayer(matrix)
     )

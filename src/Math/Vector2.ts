@@ -1,4 +1,4 @@
-import { clamp } from './clamp'
+import { clamp } from '@helper'
 import { Matrix2 } from './Matrix2'
 import { Vector3 } from './Vector3'
 import { Vector4 } from './Vector4'
@@ -26,7 +26,7 @@ export class Vector2 extends Float64Array {
   }
 
   static array (
-    number[],
+    array: number[],
     offset = 0
   ) {
     const vec = Vector2.zero()
@@ -49,8 +49,8 @@ export class Vector2 extends Float64Array {
   }
 
   
-  static fromFloat64Array (v4storage: Float64Array) {
-    return new Vector2(...Array.from(v4storage))
+  static fromFloat64Array (v: Float64Array) {
+    return new Vector2(v)
   }
 
   static fromBuffer (
@@ -70,7 +70,7 @@ export class Vector2 extends Float64Array {
 
   static random (random?: { (): number }) {
     random ??= () => Math.random()
-    return new Vector2(random(), random())
+    return new Vector2([random(), random()])
   }
 
   public get storage () {
@@ -290,40 +290,40 @@ export class Vector2 extends Float64Array {
   }
 
   get xx () {
-    return new Vector2(this[0], this[0])
+    return new Vector2([this[0], this[0]])
   }
   get xy () {
-    return new Vector2(this[0], this[1])
+    return new Vector2([this[0], this[1]])
   }
   get yx () {
-    return new Vector2(this[1], this[0])
+    return new Vector2([this[1], this[0]])
   }
   get yy () {
-    return new Vector2(this[1], this[1])
+    return new Vector2([this[1], this[1]])
   }
   get xxx () {
-    return new Vector3(this[0], this[0], this[0])
+    return new Vector3([this[0], this[0], this[0]])
   }
   get xxy () {
-    return new Vector3(this[0], this[0], this[1])
+    return new Vector3([this[0], this[0], this[1]])
   }
   get xyx () {
-    return new Vector3(this[0], this[1], this[0])
+    return new Vector3([this[0], this[1], this[0]])
   }
   get xyy () {
-    return new Vector3(this[0], this[1], this[1])
+    return new Vector3([this[0], this[1], this[1]])
   }
   get yxx () {
-    return new Vector3(this[1], this[0], this[0])
+    return new Vector3([this[1], this[0], this[0]])
   }
   get yxy () {
-    return new Vector3(this[1], this[0], this[1])
+    return new Vector3([this[1], this[0], this[1]])
   }
   get yyx () {
-    return new Vector3(this[1], this[1], this[0])
+    return new Vector3([this[1], this[1], this[0]])
   }
   get yyy () {
-    return new Vector3(this[1], this[1], this[1])
+    return new Vector3([this[1], this[1], this[1]])
   }
 
   set xy (arg: Vector2) {
@@ -369,52 +369,52 @@ export class Vector2 extends Float64Array {
 
 
   get xxxx () {
-  	return new Vector4(this[0], this[0], this[0], this[0])
+  	return new Vector4([this[0], this[0], this[0], this[0]])
 	}
   get xxxy () {
-  	return new Vector4(this[0], this[0], this[0], this[1])
+  	return new Vector4([this[0], this[0], this[0], this[1]])
 	}
   get xxyx () {
-  	return new Vector4(this[0], this[0], this[1], this[0])
+  	return new Vector4([this[0], this[0], this[1], this[0]])
 	}
   get xxyy () {
-  	return new Vector4(this[0], this[0], this[1], this[1])
+  	return new Vector4([this[0], this[0], this[1], this[1]])
 	}
   get xyxx () {
-  	return new Vector4(this[0], this[1], this[0], this[0])
+  	return new Vector4([this[0], this[1], this[0], this[0]])
 	}
   get xyxy () {
-  	return new Vector4(this[0], this[1], this[0], this[1])
+  	return new Vector4([this[0], this[1], this[0], this[1]])
 	}
   get xyyx () {
-  	return new Vector4(this[0], this[1], this[1], this[0])
+  	return new Vector4([this[0], this[1], this[1], this[0]])
 	}
   get xyyy () {
-  	return new Vector4(this[0], this[1], this[1], this[1])
+  	return new Vector4([this[0], this[1], this[1], this[1]])
 	}
   get yxxx () {
-  	return new Vector4(this[1], this[0], this[0], this[0])
+  	return new Vector4([this[1], this[0], this[0], this[0]])
 	}
   get yxxy () {
-  	return new Vector4(this[1], this[0], this[0], this[1])
+  	return new Vector4([this[1], this[0], this[0], this[1]])
 	}
   get yxyx () {
-  	return new Vector4(this[1], this[0], this[1], this[0])
+  	return new Vector4([this[1], this[0], this[1], this[0]])
 	}
   get yxyy () {
-  	return new Vector4(this[1], this[0], this[1], this[1])
+  	return new Vector4([this[1], this[0], this[1], this[1]])
 	}
   get yyxx () {
-  	return new Vector4(this[1], this[1], this[0], this[0])
+  	return new Vector4([this[1], this[1], this[0], this[0]])
 	}
   get yyxy () {
-  	return new Vector4(this[1], this[1], this[0], this[1])
+  	return new Vector4([this[1], this[1], this[0], this[1]])
 	}
   get yyyx () {
-  	return new Vector4(this[1], this[1], this[1], this[0])
+  	return new Vector4([this[1], this[1], this[1], this[0]])
 	}
   get yyyy () {
-  	return new Vector4(this[1], this[1], this[1], this[1])
+  	return new Vector4([this[1], this[1], this[1], this[1]])
 	}
 
   get isInfinite () {
@@ -425,17 +425,10 @@ export class Vector2 extends Float64Array {
   }
 
   get isNaN () {
-    var isNan = false
-    isNan = isNan || Number.isNaN(this[0])
-    isNan = isNan || Number.isNaN(this[1])
-    return isNan
-  }
-
-
-  constructor (...values: number[]) {
-    super(2)
-
-    this.setValues(values[0], values[1])
+    let isNaN = false
+    isNaN = isNaN || Number.isNaN(this[0])
+    isNaN = isNaN || Number.isNaN(this[1])
+    return isNaN
   }
 
   setValues (x: number, y: number) {
@@ -564,7 +557,7 @@ export class Vector2 extends Float64Array {
   }
 
   reflect (normal: Vector2) {
-    this.subtract(normal.scaled(2.0 * normal.dot(this)))
+    this.substract(normal.scaled(2.0 * normal.dot(this)))
   }
 
   reflected (normal: Vector2) {
@@ -575,14 +568,16 @@ export class Vector2 extends Float64Array {
 
   relativeError (correct: Vector2) {
     const correctNorm = correct.length
-     // @TODO
-    const diffNorm = (this - correct).length
+    const diff = this.clone()
+    diff.substract(correct)
+    const diffNorm = diff.length
     return diffNorm / correctNorm
   }
 
   absoluteError (correct: Vector2) {
-    // @TODO
-    (this - correct).length
+    const diff = this.clone()
+    diff.substract(correct)
+    return diff.length
   }
 
 
@@ -672,13 +667,11 @@ export class Vector2 extends Float64Array {
       : Math.floor(this[1])
   }
 
-
   clone () {
     return Vector2.copy(this)
   }
 
   copyInto(arg: Vector2 ) {
-    final arg = arg.this
     arg[1] = this[1]
     arg[0] = this[0]
     return arg

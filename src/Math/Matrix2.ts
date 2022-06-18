@@ -70,10 +70,8 @@ export class Matrix2 extends Float64Array {
       det = 1.0 / det
     }
 
-    // @TODO
-    x
-      ..x = det * (a22 * bx - a12 * by)
-      ..y = det * (a11 * by - a21 * bx);
+    x.x = det * (a22 * bx - a12 * by)
+    x.y = det * (a11 * by - a21 * bx)
   }
 
   get storage () {
@@ -313,8 +311,8 @@ export class Matrix2 extends Float64Array {
   }
 
   relativeError (correct: Matrix2) {
-    // @TODO
-    const diff = correct - this
+    const diff = correct.clone() 
+    diff.substract(this)
     const correctNorm = correct.infinityNorm()
     const diffNorm = diff.infinityNorm()
     return diffNorm / correctNorm
@@ -365,6 +363,7 @@ export class Matrix2 extends Float64Array {
   }
 
   scaleAdjoint (scale: number) {
+    const temp = this[0]
     this[0] = this[3] * scale
     this[2] = -this[2] * scale
     this[1] = -this[1] * scale
