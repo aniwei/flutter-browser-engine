@@ -1,4 +1,4 @@
-import { Skia, SkiaClipOp, SkiaFilterQuality, SkiaPicture, SkiaPictureRecorder } from '@skia'
+import { Skia, SkiaClipOp, FilterQuality, SkiaPicture, SkiaPictureRecorder } from '@skia'
 import type { Color } from './Painting'
 import type { Image } from './Image'
 import type { Paint } from './Paint'
@@ -197,7 +197,7 @@ export class Canvas {
   ) {
     const filterQuality = paint.filterQuality
     
-    if (filterQuality == SkiaFilterQuality.High) {
+    if (filterQuality == FilterQuality.High) {
       this.skia.drawImageCubic(
         image.skia,
         offset.dx,
@@ -211,9 +211,9 @@ export class Canvas {
         image.skia,
         offset.dx,
         offset.dy,
-        filterQuality === SkiaFilterQuality.None ?
+        filterQuality === FilterQuality.None ?
           Skia.FilterMode.Nearest : Skia.FilterMode.Linear,
-        filterQuality === SkiaFilterQuality.Medium ? 
+        filterQuality === FilterQuality.Medium ? 
           Skia.MipmapMode.Linear : Skia.MipmapMode.None,
         paint.skia,
       )
@@ -227,7 +227,7 @@ export class Canvas {
     paint: Paint
   ) {
     const filterQuality = paint.filterQuality
-    if (filterQuality == SkiaFilterQuality.High) {
+    if (filterQuality == FilterQuality.High) {
       this.skia.drawImageRectCubic(
         image.skia,
         src,
@@ -241,9 +241,9 @@ export class Canvas {
         image.skia,
         src,
         dst,
-        filterQuality === SkiaFilterQuality.None ?
+        filterQuality === FilterQuality.None ?
           Skia.FilterMode.Nearest : Skia.FilterMode.Linear,
-        filterQuality === SkiaFilterQuality.Medium ? 
+        filterQuality === FilterQuality.Medium ? 
           Skia.MipmapMode.Linear : Skia.MipmapMode.None,
         paint.skia,
       )
@@ -260,7 +260,7 @@ export class Canvas {
       image.skia,
       center as unknown as Int32Array,
       dist,
-      paint.filterQuality === SkiaFilterQuality.None ?
+      paint.filterQuality === FilterQuality.None ?
         Skia.FilterMode.Nearest : Skia.FilterMode.Linear,
       paint.skia,
     )

@@ -1,13 +1,14 @@
 import { RenderObject } from './RenderObject'
 
 export abstract class RenderBox extends RenderObject {
+  static debugIntrinsicsDepth = 0
+
+  public cachedIntrinsicDimensions: Map<_IntrinsicDimensionsCacheEntry, number> | null = null
+
   setupParentData (child: RenderObject) {
     if (child.parentData is! BoxParentData)
       child.parentData = BoxParentData();
-  }
-
-  Map<_IntrinsicDimensionsCacheEntry, double>? _cachedIntrinsicDimensions;
-  static int _debugIntrinsicsDepth = 0;
+  }  
 
   computeIntrinsicDimension (
     dimension, 
@@ -457,10 +458,10 @@ export abstract class RenderBox extends RenderObject {
     return result;
   }
 
-  @override
+  
   Rect get semanticBounds => Offset.zero & size;
 
-  @override
+  
   debugResetSize() {
     // updates the value of size._canBeUsedByParent if necessary
     size = size;
@@ -555,10 +556,10 @@ export abstract class RenderBox extends RenderObject {
   }
 
   /// The box constraints most recently received from the parent.
-  @override
+  
   BoxConstraints get constraints => super.constraints as BoxConstraints;
 
-  @override
+  
   debugAssertDoesMeetConstraints() {
     assert(constraints != null);
     assert(() {
@@ -696,7 +697,7 @@ export abstract class RenderBox extends RenderObject {
     }());
   }
 
-  @override
+  
   markNeedsLayout() {
     if ((_cachedBaselines != null && _cachedBaselines!.isNotEmpty) ||
         (_cachedIntrinsicDimensions != null && _cachedIntrinsicDimensions!.isNotEmpty) ||
@@ -717,14 +718,14 @@ export abstract class RenderBox extends RenderObject {
     super.markNeedsLayout();
   }
 
-  @override
+  
   performResize() {
     // default behavior for subclasses that have sizedByParent = true
     size = computeDryLayout(constraints);
     assert(size.isFinite);
   }
 
-  @override
+  
   performLayout() {
     assert(() {
       if (!sizedByParent) {
@@ -838,7 +839,7 @@ export abstract class RenderBox extends RenderObject {
     return Offset.zero.and(size)
   }
 
-  @override
+  
   handleEvent(PointerEvent event, BoxHitTestEntry entry) {
     super.handleEvent(event, entry);
   }
@@ -860,7 +861,7 @@ export abstract class RenderBox extends RenderObject {
     return true;
   }
 
-  @override
+  
   debugPaint(PaintingContext context, Offset offset) {
     assert(() {
       if (debugPaintSizeEnabled)
@@ -919,15 +920,513 @@ export abstract class RenderBox extends RenderObject {
       return true;
     }());
   }
+}
 
-  debugPaintPointers (PaintingContext context, Offset offset) {
+
+export class BoxConstraints extends Constraints {
+  /// Creates box constraints with the given constraints.
+  static {
+    this.minWidth = 0.0,
+    this.maxWidth = double.infinity,
+    this.minHeight = 0.0,
+    this.maxHeight = double.infinity,
+  }) : assert(minWidth != null),
+       assert(maxWidth != null),
+       assert(minHeight != null),
+       assert(maxHeight != null);
+
+  BoxConstraints.tight(Size size)
+    : minWidth = size.width,
+      maxWidth = size.width,
+      minHeight = size.height,
+      maxHeight = size.height;
+
+  /// Creates box constraints that require the given width or height.
+  ///
+  /// See also:
+  ///
+  ///  * [new BoxConstraints.tightForFinite], which is similar but instead of
+  ///    being tight if the value is non-null, is tight if the value is not
+  ///    infinite.
+  static tightFor({
+    double? width,
+    double? height,
+  }) : minWidth = width ?? 0.0,
+       maxWidth = width ?? double.infinity,
+       minHeight = height ?? 0.0,
+       maxHeight = height ?? double.infinity;
+
+  static tightForFinite(
+    width: number = Number.POSITIVE_INFINITY,
+    height: number = Number.POSITIVE_INFINITY,
+  ) {
+    : minWidth = width != double.infinity ? width : 0.0,
+       maxWidth = width != double.infinity ? width : double.infinity,
+       minHeight = height != double.infinity ? height : 0.0,
+       maxHeight = height != double.infinity ? height : double.infinity;
+  }
+
+  BoxConstraints.loose(Size size)
+    : minWidth = 0.0,
+      maxWidth = size.width,
+      minHeight = 0.0,
+      maxHeight = size.height;
+
+  static expand({
+    double? width,
+    double? height,
+  }) : minWidth = width ?? double.infinity,
+       maxWidth = width ?? double.infinity,
+       minHeight = height ?? double.infinity,
+       maxHeight = height ?? double.infinity;
+
+  public minWidth: number
+  public maxWidth: number
+  public minHeight: number
+  public maxHeight: number
+
+  static copyWith(
+    minWidth: number | null = null,
+    maxWidth: number | null = null,
+    minHeight: number | null = null,
+    maxHeight: number | null = null,
+  ) {
+    return BoxConstraints(
+      minWidth ?? this.minWidth,
+      maxWidth ?? this.maxWidth,
+      minHeight ?? this.minHeight,
+      maxHeight ?? this.maxHeight,
+    );
+  }
+
+  static deflate (edges: EdgeInsets) {
+    assert(edges != null);
+    assert(debugAssertIsValid());
+    final double horizontal = edges.horizontal;
+    final double vertical = edges.vertical;
+    final double deflatedMinWidth = math.max(0.0, minWidth - horizontal);
+    final double deflatedMinHeight = math.max(0.0, minHeight - vertical);
+    return BoxConstraints(
+      minWidth: deflatedMinWidth,
+      maxWidth: math.max(deflatedMinWidth, maxWidth - horizontal),
+      minHeight: deflatedMinHeight,
+      maxHeight: math.max(deflatedMinHeight, maxHeight - vertical),
+    );
+  }
+
+  /// Returns new box constraints that remove the minimum width and height requirements.
+  BoxConstraints loosen() {
+    assert(debugAssertIsValid());
+    return BoxConstraints(
+      maxWidth: maxWidth,
+      maxHeight: maxHeight,
+    );
+  }
+
+  /// Returns new box constraints that respect the given constraints while being
+  /// as close as possible to the original constraints.
+  BoxConstraints enforce(BoxConstraints constraints) {
+    return BoxConstraints(
+      minWidth: minWidth.clamp(constraints.minWidth, constraints.maxWidth),
+      maxWidth: maxWidth.clamp(constraints.minWidth, constraints.maxWidth),
+      minHeight: minHeight.clamp(constraints.minHeight, constraints.maxHeight),
+      maxHeight: maxHeight.clamp(constraints.minHeight, constraints.maxHeight),
+    );
+  }
+
+  /// Returns new box constraints with a tight width and/or height as close to
+  /// the given width and height as possible while still respecting the original
+  /// box constraints.
+  BoxConstraints tighten({ double? width, double? height }) {
+    return BoxConstraints(
+      minWidth: width == null ? minWidth : width.clamp(minWidth, maxWidth),
+      maxWidth: width == null ? maxWidth : width.clamp(minWidth, maxWidth),
+      minHeight: height == null ? minHeight : height.clamp(minHeight, maxHeight),
+      maxHeight: height == null ? maxHeight : height.clamp(minHeight, maxHeight),
+    );
+  }
+
+  /// A box constraints with the width and height constraints flipped.
+  BoxConstraints get flipped {
+    return BoxConstraints(
+      minWidth: minHeight,
+      maxWidth: maxHeight,
+      minHeight: minWidth,
+      maxHeight: maxWidth,
+    );
+  }
+
+  /// Returns box constraints with the same width constraints but with
+  /// unconstrained height.
+  BoxConstraints widthConstraints() => BoxConstraints(minWidth: minWidth, maxWidth: maxWidth);
+
+  /// Returns box constraints with the same height constraints but with
+  /// unconstrained width.
+  BoxConstraints heightConstraints() => BoxConstraints(minHeight: minHeight, maxHeight: maxHeight);
+
+  /// Returns the width that both satisfies the constraints and is as close as
+  /// possible to the given width.
+  double constrainWidth([ double width = double.infinity ]) {
+    assert(debugAssertIsValid());
+    return width.clamp(minWidth, maxWidth);
+  }
+
+  /// Returns the height that both satisfies the constraints and is as close as
+  /// possible to the given height.
+  double constrainHeight([ double height = double.infinity ]) {
+    assert(debugAssertIsValid());
+    return height.clamp(minHeight, maxHeight);
+  }
+
+  Size _debugPropagateDebugSize(Size size, Size result) {
     assert(() {
-      if (_debugActivePointers > 0) {
-        final Paint paint = Paint()
-         ..color = Color(0x00BBBB | ((0x04000000 * depth) & 0xFF000000));
-        context.canvas.drawRect(offset & size, paint);
-      }
+      if (size is _DebugSize)
+        result = _DebugSize(result, size._owner, size._canBeUsedByParent);
       return true;
     }());
+    return result;
+  }
+
+  /// Returns the size that both satisfies the constraints and is as close as
+  /// possible to the given size.
+  ///
+  /// See also:
+  ///
+  ///  * [constrainDimensions], which applies the same algorithm to
+  ///    separately provided widths and heights.
+  Size constrain(Size size) {
+    Size result = Size(constrainWidth(size.width), constrainHeight(size.height));
+    assert(() {
+      result = _debugPropagateDebugSize(size, result);
+      return true;
+    }());
+    return result;
+  }
+
+  /// Returns the size that both satisfies the constraints and is as close as
+  /// possible to the given width and height.
+  ///
+  /// When you already have a [Size], prefer [constrain], which applies the same
+  /// algorithm to a [Size] directly.
+  Size constrainDimensions(double width, double height) {
+    return Size(constrainWidth(width), constrainHeight(height));
+  }
+
+  /// Returns a size that attempts to meet the following conditions, in order:
+  ///
+  ///  * The size must satisfy these constraints.
+  ///  * The aspect ratio of the returned size matches the aspect ratio of the
+  ///    given size.
+  ///  * The returned size as big as possible while still being equal to or
+  ///    smaller than the given size.
+  Size constrainSizeAndAttemptToPreserveAspectRatio(Size size) {
+    if (isTight) {
+      Size result = smallest;
+      assert(() {
+        result = _debugPropagateDebugSize(size, result);
+        return true;
+      }());
+      return result;
+    }
+
+    double width = size.width;
+    double height = size.height;
+    assert(width > 0.0);
+    assert(height > 0.0);
+    final double aspectRatio = width / height;
+
+    if (width > maxWidth) {
+      width = maxWidth;
+      height = width / aspectRatio;
+    }
+
+    if (height > maxHeight) {
+      height = maxHeight;
+      width = height * aspectRatio;
+    }
+
+    if (width < minWidth) {
+      width = minWidth;
+      height = width / aspectRatio;
+    }
+
+    if (height < minHeight) {
+      height = minHeight;
+      width = height * aspectRatio;
+    }
+
+    Size result = Size(constrainWidth(width), constrainHeight(height));
+    assert(() {
+      result = _debugPropagateDebugSize(size, result);
+      return true;
+    }());
+    return result;
+  }
+
+  /// The biggest size that satisfies the constraints.
+  Size get biggest => Size(constrainWidth(), constrainHeight());
+
+  /// The smallest size that satisfies the constraints.
+  Size get smallest => Size(constrainWidth(0.0), constrainHeight(0.0));
+
+  /// Whether there is exactly one width value that satisfies the constraints.
+  bool get hasTightWidth => minWidth >= maxWidth;
+
+  /// Whether there is exactly one height value that satisfies the constraints.
+  bool get hasTightHeight => minHeight >= maxHeight;
+
+  /// Whether there is exactly one size that satisfies the constraints.
+  
+  bool get isTight => hasTightWidth && hasTightHeight;
+
+  /// Whether there is an upper bound on the maximum width.
+  ///
+  /// See also:
+  ///
+  ///  * [hasBoundedHeight], the equivalent for the vertical axis.
+  ///  * [hasInfiniteWidth], which describes whether the minimum width
+  ///    constraint is infinite.
+  bool get hasBoundedWidth => maxWidth < double.infinity;
+
+  /// Whether there is an upper bound on the maximum height.
+  ///
+  /// See also:
+  ///
+  ///  * [hasBoundedWidth], the equivalent for the horizontal axis.
+  ///  * [hasInfiniteHeight], which describes whether the minimum height
+  ///    constraint is infinite.
+  bool get hasBoundedHeight => maxHeight < double.infinity;
+
+  /// Whether the width constraint is infinite.
+  ///
+  /// Such a constraint is used to indicate that a box should grow as large as
+  /// some other constraint (in this case, horizontally). If constraints are
+  /// infinite, then they must have other (non-infinite) constraints [enforce]d
+  /// upon them, or must be [tighten]ed, before they can be used to derive a
+  /// [Size] for a [RenderBox.size].
+  ///
+  /// See also:
+  ///
+  ///  * [hasInfiniteHeight], the equivalent for the vertical axis.
+  ///  * [hasBoundedWidth], which describes whether the maximum width
+  ///    constraint is finite.
+  bool get hasInfiniteWidth => minWidth >= double.infinity;
+
+  /// Whether the height constraint is infinite.
+  ///
+  /// Such a constraint is used to indicate that a box should grow as large as
+  /// some other constraint (in this case, vertically). If constraints are
+  /// infinite, then they must have other (non-infinite) constraints [enforce]d
+  /// upon them, or must be [tighten]ed, before they can be used to derive a
+  /// [Size] for a [RenderBox.size].
+  ///
+  /// See also:
+  ///
+  ///  * [hasInfiniteWidth], the equivalent for the horizontal axis.
+  ///  * [hasBoundedHeight], which describes whether the maximum height
+  ///    constraint is finite.
+  bool get hasInfiniteHeight => minHeight >= double.infinity;
+
+  /// Whether the given size satisfies the constraints.
+  bool isSatisfiedBy(Size size) {
+    assert(debugAssertIsValid());
+    return (minWidth <= size.width) && (size.width <= maxWidth) &&
+           (minHeight <= size.height) && (size.height <= maxHeight);
+  }
+
+  /// Scales each constraint parameter by the given factor.
+  BoxConstraints operator*(double factor) {
+    return BoxConstraints(
+      minWidth: minWidth * factor,
+      maxWidth: maxWidth * factor,
+      minHeight: minHeight * factor,
+      maxHeight: maxHeight * factor,
+    );
+  }
+
+  /// Scales each constraint parameter by the inverse of the given factor.
+  BoxConstraints operator/(double factor) {
+    return BoxConstraints(
+      minWidth: minWidth / factor,
+      maxWidth: maxWidth / factor,
+      minHeight: minHeight / factor,
+      maxHeight: maxHeight / factor,
+    );
+  }
+
+  /// Scales each constraint parameter by the inverse of the given factor, rounded to the nearest integer.
+  BoxConstraints operator~/(double factor) {
+    return BoxConstraints(
+      minWidth: (minWidth ~/ factor).toDouble(),
+      maxWidth: (maxWidth ~/ factor).toDouble(),
+      minHeight: (minHeight ~/ factor).toDouble(),
+      maxHeight: (maxHeight ~/ factor).toDouble(),
+    );
+  }
+
+  /// Computes the remainder of each constraint parameter by the given value.
+  BoxConstraints operator%(double value) {
+    return BoxConstraints(
+      minWidth: minWidth % value,
+      maxWidth: maxWidth % value,
+      minHeight: minHeight % value,
+      maxHeight: maxHeight % value,
+    );
+  }
+
+  /// Linearly interpolate between two BoxConstraints.
+  ///
+  /// If either is null, this function interpolates from a [BoxConstraints]
+  /// object whose fields are all set to 0.0.
+  ///
+  /// {@macro dart.ui.shadow.lerp}
+  static BoxConstraints? lerp(BoxConstraints? a, BoxConstraints? b, double t) {
+    assert(t != null);
+    if (a == null && b == null)
+      return null;
+    if (a == null)
+      return b! * t;
+    if (b == null)
+      return a * (1.0 - t);
+    assert(a.debugAssertIsValid());
+    assert(b.debugAssertIsValid());
+    assert((a.minWidth.isFinite && b.minWidth.isFinite) || (a.minWidth == double.infinity && b.minWidth == double.infinity), 'Cannot interpolate between finite constraints and unbounded constraints.');
+    assert((a.maxWidth.isFinite && b.maxWidth.isFinite) || (a.maxWidth == double.infinity && b.maxWidth == double.infinity), 'Cannot interpolate between finite constraints and unbounded constraints.');
+    assert((a.minHeight.isFinite && b.minHeight.isFinite) || (a.minHeight == double.infinity && b.minHeight == double.infinity), 'Cannot interpolate between finite constraints and unbounded constraints.');
+    assert((a.maxHeight.isFinite && b.maxHeight.isFinite) || (a.maxHeight == double.infinity && b.maxHeight == double.infinity), 'Cannot interpolate between finite constraints and unbounded constraints.');
+    return BoxConstraints(
+      minWidth: a.minWidth.isFinite ? ui.lerpDouble(a.minWidth, b.minWidth, t)! : double.infinity,
+      maxWidth: a.maxWidth.isFinite ? ui.lerpDouble(a.maxWidth, b.maxWidth, t)! : double.infinity,
+      minHeight: a.minHeight.isFinite ? ui.lerpDouble(a.minHeight, b.minHeight, t)! : double.infinity,
+      maxHeight: a.maxHeight.isFinite ? ui.lerpDouble(a.maxHeight, b.maxHeight, t)! : double.infinity,
+    );
+  }
+
+  /// Returns whether the object's constraints are normalized.
+  /// Constraints are normalized if the minimums are less than or
+  /// equal to the corresponding maximums.
+  ///
+  /// For example, a BoxConstraints object with a minWidth of 100.0
+  /// and a maxWidth of 90.0 is not normalized.
+  ///
+  /// Most of the APIs on BoxConstraints expect the constraints to be
+  /// normalized and have undefined behavior when they are not. In
+  /// debug mode, many of these APIs will assert if the constraints
+  /// are not normalized.
+  
+  bool get isNormalized {
+    return minWidth >= 0.0 &&
+           minWidth <= maxWidth &&
+           minHeight >= 0.0 &&
+           minHeight <= maxHeight;
+  }
+
+  
+  bool debugAssertIsValid({
+    bool isAppliedConstraint = false,
+    InformationCollector? informationCollector,
+  }) {
+    assert(() {
+      void throwError(DiagnosticsNode message) {
+        throw FlutterError.fromParts(<DiagnosticsNode>[
+          message,
+          if (informationCollector != null) ...informationCollector(),
+          DiagnosticsProperty<BoxConstraints>('The offending constraints were', this, style: DiagnosticsTreeStyle.errorProperty),
+        ]);
+      }
+      if (minWidth.isNaN || maxWidth.isNaN || minHeight.isNaN || maxHeight.isNaN) {
+        final List<String> affectedFieldsList = <String>[
+          if (minWidth.isNaN) 'minWidth',
+          if (maxWidth.isNaN) 'maxWidth',
+          if (minHeight.isNaN) 'minHeight',
+          if (maxHeight.isNaN) 'maxHeight',
+        ];
+        assert(affectedFieldsList.isNotEmpty);
+        if (affectedFieldsList.length > 1)
+          affectedFieldsList.add('and ${affectedFieldsList.removeLast()}');
+        String whichFields = '';
+        if (affectedFieldsList.length > 2) {
+          whichFields = affectedFieldsList.join(', ');
+        } else if (affectedFieldsList.length == 2) {
+          whichFields = affectedFieldsList.join(' ');
+        } else {
+          whichFields = affectedFieldsList.single;
+        }
+        throwError(ErrorSummary('BoxConstraints has ${affectedFieldsList.length == 1 ? 'a NaN value' : 'NaN values' } in $whichFields.'));
+      }
+      if (minWidth < 0.0 && minHeight < 0.0)
+        throwError(ErrorSummary('BoxConstraints has both a negative minimum width and a negative minimum height.'));
+      if (minWidth < 0.0)
+        throwError(ErrorSummary('BoxConstraints has a negative minimum width.'));
+      if (minHeight < 0.0)
+        throwError(ErrorSummary('BoxConstraints has a negative minimum height.'));
+      if (maxWidth < minWidth && maxHeight < minHeight)
+        throwError(ErrorSummary('BoxConstraints has both width and height constraints non-normalized.'));
+      if (maxWidth < minWidth)
+        throwError(ErrorSummary('BoxConstraints has non-normalized width constraints.'));
+      if (maxHeight < minHeight)
+        throwError(ErrorSummary('BoxConstraints has non-normalized height constraints.'));
+      if (isAppliedConstraint) {
+        if (minWidth.isInfinite && minHeight.isInfinite)
+          throwError(ErrorSummary('BoxConstraints forces an infinite width and infinite height.'));
+        if (minWidth.isInfinite)
+          throwError(ErrorSummary('BoxConstraints forces an infinite width.'));
+        if (minHeight.isInfinite)
+          throwError(ErrorSummary('BoxConstraints forces an infinite height.'));
+      }
+      assert(isNormalized);
+      return true;
+    }());
+    return isNormalized;
+  }
+
+  /// Returns a box constraints that [isNormalized].
+  ///
+  /// The returned [maxWidth] is at least as large as the [minWidth]. Similarly,
+  /// the returned [maxHeight] is at least as large as the [minHeight].
+  BoxConstraints normalize() {
+    if (isNormalized)
+      return this;
+    final double minWidth = this.minWidth >= 0.0 ? this.minWidth : 0.0;
+    final double minHeight = this.minHeight >= 0.0 ? this.minHeight : 0.0;
+    return BoxConstraints(
+      minWidth: minWidth,
+      maxWidth: minWidth > maxWidth ? minWidth : maxWidth,
+      minHeight: minHeight,
+      maxHeight: minHeight > maxHeight ? minHeight : maxHeight,
+    );
+  }
+
+  
+  bool operator ==(Object other) {
+    assert(debugAssertIsValid());
+    if (identical(this, other))
+      return true;
+    if (other.runtimeType != runtimeType)
+      return false;
+    assert(other is BoxConstraints && other.debugAssertIsValid());
+    return other is BoxConstraints
+        && other.minWidth == minWidth
+        && other.maxWidth == maxWidth
+        && other.minHeight == minHeight
+        && other.maxHeight == maxHeight;
+  }
+  
+  String toString() {
+    final String annotation = isNormalized ? '' : '; NOT NORMALIZED';
+    if (minWidth == double.infinity && minHeight == double.infinity)
+      return 'BoxConstraints(biggest$annotation)';
+    if (minWidth == 0 && maxWidth == double.infinity &&
+        minHeight == 0 && maxHeight == double.infinity)
+      return 'BoxConstraints(unconstrained$annotation)';
+    String describe(double min, double max, String dim) {
+      if (min == max)
+        return '$dim=${min.toStringAsFixed(1)}';
+      return '${min.toStringAsFixed(1)}<=$dim<=${max.toStringAsFixed(1)}';
+    }
+    final String width = describe(minWidth, maxWidth, 'w');
+    final String height = describe(minHeight, maxHeight, 'h');
+    return 'BoxConstraints($width, $height$annotation)';
   }
 }
+

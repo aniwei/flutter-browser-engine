@@ -1,7 +1,7 @@
 import { invariant } from 'ts-invariant'
 import { Matrix4 } from '@math'
 import { UnimplementedError } from '@internal'
-import { Skia, SkiaBlendMode, SkiaFilterQuality, toMatrix32 } from '@skia'
+import { Skia, SkiaBlendMode, FilterQuality, toMatrix32 } from '@skia'
 import { Path } from './Path'
 import { Image } from './Image'
 import { Picture } from './Picture'
@@ -75,7 +75,7 @@ export class LayerSceneBuilder {
     width: number = 0.0,
     height: number = 0.0,
     freeze: boolean = false,
-    filterQuality: SkiaFilterQuality = SkiaFilterQuality.Low,
+    filterQuality: FilterQuality = FilterQuality.Low,
   ) {
     // TODO(hterkelsen): implement addTexture, b/128315641
   }
@@ -206,7 +206,7 @@ export class LayerSceneBuilder {
     maskRect: Rect,
     blendMode: SkiaBlendMode,
     oldLayer?: EngineLayer | null,
-    filterQuality: SkiaFilterQuality = SkiaFilterQuality.Low,
+    filterQuality: FilterQuality = FilterQuality.Low,
   ): ShaderMaskEngineLayer {
     return this.pushLayer<ShaderMaskEngineLayer>(
       new ShaderMaskEngineLayer(shader, maskRect, blendMode, filterQuality)

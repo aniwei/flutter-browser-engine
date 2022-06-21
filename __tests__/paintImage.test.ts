@@ -1,5 +1,5 @@
 import { resolve } from 'path'
-import { Skia, SkiaCanvas, SkiaFilterQuality, toSkiaFilterQuality } from '@skia'
+import { Skia, SkiaCanvas, FilterQuality, toFilterQuality } from '@skia'
 import { URI } from '@platform'
 import { Alignment, ImageConfiguration, ImageStreamListener, NetworkImage } from '@painting'
 import { runApp } from '../src'
@@ -34,7 +34,7 @@ test(`paintImage`, async () => {
       ImageRepeat.NoRepeat,
       false,
       false,
-      SkiaFilterQuality.Low,
+      FilterQuality.Low,
       true
     )
     surface?.flush()

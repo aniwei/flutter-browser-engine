@@ -1,7 +1,7 @@
 import { Color, Offset, Rect, RRect } from '@rendering'
 import { Skia } from '@skia'
 import { CubicResampler, FilterOptions, MallocObj } from 'canvaskit-wasm'
-import { SkiaFilterQuality } from './Skia'
+import { FilterQuality } from './Skia'
 import invariant from 'ts-invariant'
 
 const kMatrixIndexToMatrix4Index = [
@@ -59,18 +59,18 @@ export function toSkiaPointFromOffset (offset: Offset) {
   return skPoint
 }
 
-export function toSkiaFilterQuality (filterQuality: SkiaFilterQuality): CubicResampler | FilterOptions {
-  if (filterQuality === SkiaFilterQuality.None) {
+export function toFilterQuality (filterQuality: FilterQuality): CubicResampler | FilterOptions {
+  if (filterQuality === FilterQuality.None) {
     return {
       filter: Skia.FilterMode.Nearest,
       mipmap: Skia.MipmapMode.None
     }
-  } else if (filterQuality === SkiaFilterQuality.Low) {
+  } else if (filterQuality === FilterQuality.Low) {
     return {
       filter: Skia.FilterMode.Linear,
       mipmap: Skia.MipmapMode.None
     }
-  } else if (filterQuality === SkiaFilterQuality.Medium) {
+  } else if (filterQuality === FilterQuality.Medium) {
     return {
       filter: Skia.FilterMode.Linear,
       mipmap: Skia.MipmapMode.Linear
@@ -84,15 +84,15 @@ export function toSkiaFilterQuality (filterQuality: SkiaFilterQuality): CubicRes
 }
 
 export function toSkiaFilterMode (
-  filterQuality: SkiaFilterQuality
+  filterQuality: FilterQuality
 ) {
-  return filterQuality === SkiaFilterQuality.None
+  return filterQuality === FilterQuality.None
       ? Skia.FilterMode.Nearest
       : Skia.FilterMode.Linear
 }
 
-export function toSkiaMipmapMode (filterQuality: SkiaFilterQuality) {
-  return filterQuality === SkiaFilterQuality.Medium
+export function toSkiaMipmapMode (filterQuality: FilterQuality) {
+  return filterQuality === FilterQuality.Medium
       ? Skia.MipmapMode.Linear
       : Skia.MipmapMode.None
 }

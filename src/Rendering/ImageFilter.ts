@@ -1,5 +1,5 @@
 import { UnimplementedError } from '@internal'
-import { ManagedSkiaObject, Skia, SkiaFilterQuality, SkiaImageFilter, SkiaTileMode, toSkiaFilterQuality, toSkiaMatrixFromFloat64 } from '@skia'
+import { ManagedSkiaObject, Skia, FilterQuality, SkiaImageFilter, SkiaTileMode, toFilterQuality, toSkiaMatrixFromFloat64 } from '@skia'
 import type { ColorFilter } from './ColorFilter'
 
 export abstract class ManagedSkImageFilterConvertible {
@@ -105,7 +105,7 @@ export class BlurImageFilter extends ImageFilter {
 
 export type MatrixImageFilterOptions = {
   matrix: Float64Array, 
-  filterQuality: SkiaFilterQuality
+  filterQuality: FilterQuality
 }
 
 export class MatrixImageFilter extends ImageFilter {
@@ -113,7 +113,7 @@ export class MatrixImageFilter extends ImageFilter {
     const matrixImageFilter = new MatrixImageFilter(
       Skia.ImageFilter.MakeMatrixTransform(
         toSkiaMatrixFromFloat64(options.matrix),
-        toSkiaFilterQuality(options.filterQuality),
+        toFilterQuality(options.filterQuality),
         null,
       ), 
       options
@@ -123,7 +123,7 @@ export class MatrixImageFilter extends ImageFilter {
   }
 
   public matrix: Float64Array
-  public filterQuality: SkiaFilterQuality
+  public filterQuality: FilterQuality
 
   constructor (
     skia: SkiaImageFilter, 
@@ -138,7 +138,7 @@ export class MatrixImageFilter extends ImageFilter {
   resurrect (): SkiaImageFilter {
     return Skia.ImageFilter.MakeMatrixTransform(
       toSkiaMatrixFromFloat64(this.matrix),
-      toSkiaFilterQuality(this.filterQuality),
+      toFilterQuality(this.filterQuality),
       null,
     )
   }

@@ -1,12 +1,12 @@
 import { invariant } from 'ts-invariant'
-import { Skia, ManagedSkiaObject, SkiaFilterQuality, SkiaShader, SkiaTileMode, toFlatColors, toSkiaColorStops, toSkiaMatrixFromFloat32, matrix4IsValid, toSkiaPoint, offsetIsValid, toSkiaMatrixFromFloat64, toSkiaFilterQuality, toSkiaMipmapMode, toSkiaFilterMode } from '@skia'
+import { Skia, ManagedSkiaObject, FilterQuality, SkiaShader, SkiaTileMode, toFlatColors, toSkiaColorStops, toSkiaMatrixFromFloat32, matrix4IsValid, toSkiaPoint, offsetIsValid, toSkiaMatrixFromFloat64, toFilterQuality, toSkiaMipmapMode, toSkiaFilterMode } from '@skia'
 import { Offset } from './Geometry'
 import { Color } from './Painting'
 import { Image } from './Image'
 
 
 export abstract class Shader extends ManagedSkiaObject<SkiaShader> {
-  withQuality (contextualQuality: SkiaFilterQuality) {
+  withQuality (contextualQuality: FilterQuality) {
     return this.skia
   }
 
@@ -342,7 +342,7 @@ export type ImageShaderInitOptions = {
   tileModeX: SkiaTileMode
   tileModeY: SkiaTileMode
   matrix4: Float64Array | null
-  filterQuality: SkiaFilterQuality
+  filterQuality: FilterQuality
 }
 
 export class ImageShader extends Shader {
@@ -359,16 +359,16 @@ export class ImageShader extends Shader {
   public tileModeX: SkiaTileMode
   public tileModeY: SkiaTileMode
   public matrix4: Float64Array | null
-  public filterQuality: SkiaFilterQuality
+  public filterQuality: FilterQuality
   public image: Image
-  public cachedQuality: SkiaFilterQuality | null
+  public cachedQuality: FilterQuality | null
 
   constructor (
     image: Image, 
     tileModeX: SkiaTileMode, 
     tileModeY: SkiaTileMode, 
     matrix4: Float64Array | null,
-    filterQuality: SkiaFilterQuality
+    filterQuality: FilterQuality
   ) {
     super(image.skia)
 
@@ -380,7 +380,7 @@ export class ImageShader extends Shader {
     this.cachedQuality = null
   }
   
-  withQuality (contextualQuality: SkiaFilterQuality) {
+  withQuality (contextualQuality: FilterQuality) {
     const quality = this.filterQuality ?? contextualQuality
     let shader = this.skia
     
@@ -388,7 +388,7 @@ export class ImageShader extends Shader {
       this.cachedQuality !== quality || 
       shader === null
     ) {
-      if (quality === SkiaFilterQuality.High) {
+      if (quality === FilterQuality.High) {
         shader = this.image.skia.makeShaderCubic(
           this.tileModeX,
           this.tileModeY,
@@ -413,7 +413,7 @@ export class ImageShader extends Shader {
   }
 
   resurrect () {
-    return this.withQuality(this.cachedQuality ?? SkiaFilterQuality.None)
+    return this.withQuality(this.cachedQuality ?? FilterQuality.None)
   } 
 
   

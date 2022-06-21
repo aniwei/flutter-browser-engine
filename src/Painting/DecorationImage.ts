@@ -1,5 +1,5 @@
 import invariant from 'ts-invariant'
-import { Skia, SkiaFilterQuality } from '@skia'
+import { Skia, FilterQuality } from '@skia'
 import { Canvas, Color, ColorFilter, Image, Offset, Paint, Path, Rect, Size } from '@rendering'
 import { VoidCallback } from '@platform'
 import { Alignment, AlignmentGeometry } from './Alignment'
@@ -25,7 +25,7 @@ export class DecorationImage {
   public matchTextDirection: boolean
   public scale: number
   public opacity: number
-  public filterQuality: SkiaFilterQuality
+  public filterQuality: FilterQuality
   public invertColors: boolean
   public isAntiAlias: boolean
   
@@ -40,7 +40,7 @@ export class DecorationImage {
     matchTextDirection: boolean = false,
     scale: number = 1.0,
     opacity: number = 1.0,
-    filterQuality: SkiaFilterQuality = SkiaFilterQuality.Low,
+    filterQuality: FilterQuality = FilterQuality.Low,
     invertColors: boolean = false,
     isAntiAlias: boolean = false,
   ) {
@@ -226,7 +226,7 @@ export function paintImage(
   repeat: ImageRepeat = ImageRepeat.NoRepeat,
   flipHorizontally: boolean = false,
   invertColors: boolean = false,
-  filterQuality: SkiaFilterQuality = SkiaFilterQuality.Low,
+  filterQuality: FilterQuality = FilterQuality.Low,
   isAntiAlias: boolean = false,
 ) {
   debugImageLabel = debugImageLabel ?? null

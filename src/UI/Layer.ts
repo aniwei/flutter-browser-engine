@@ -2,7 +2,7 @@ import { invariant } from 'ts-invariant'
 import { property, PropertySetter } from '@helper'
 import { LayerSceneBuilder, Picture, Offset, Rect, Image, Scene, Clip, RRect, ImageFilter, Path, ColorFilter, OpacityEngineLayer, OffsetEngineLayer, Shader, Size, Color, ImageFilterEngineLayer, ColorFilterEngineLayer } from '@rendering'
 import { Matrix4, Vector4 } from '@math'
-import { Skia, SkiaBlendMode, SkiaFilterQuality } from '@skia'
+import { Skia, SkiaBlendMode, FilterQuality } from '@skia'
 
 function scene <T> (setter?: PropertySetter<T>) {
   return property<T>(function get (this, value: T) {
@@ -305,13 +305,13 @@ export class TextureLayer extends Layer {
   public rect: Rect
   public textureId: number
   public freeze: boolean
-  public filterQuality: SkiaFilterQuality
+  public filterQuality: FilterQuality
 
   constructor(
     rect: Rect,
     textureId: number,
     freeze: boolean = false,
-    filterQuality = SkiaFilterQuality.Low,
+    filterQuality = FilterQuality.Low,
   ) {
     super()
     invariant(rect !== null)

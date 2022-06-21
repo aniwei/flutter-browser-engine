@@ -6,7 +6,7 @@ export type SkiaInit = {
   (options: CanvasKitInitOptions): Promise<CanvasKit>
 }
 
-export enum SkiaFilterQuality {
+export enum FilterQuality {
   None,
   Low,
   Medium,
@@ -54,22 +54,22 @@ export type {
   
 } from 'canvaskit-wasm'
 
-export class SkiaFilterOptions extends Map<SkiaFilterQuality, SkiaCubicFilterOption | SkiaTransformFilterOption> {
+export class SkiaFilterOptions extends Map<FilterQuality, SkiaCubicFilterOption | SkiaTransformFilterOption> {
   static from (skia: CanvasKit) {
     const options = new SkiaFilterOptions()
-    options.set(SkiaFilterQuality.None, {
+    options.set(FilterQuality.None, {
       filter: skia.FilterMode.Nearest,
       mipmap: skia.MipmapMode.None
     })
-    options.set(SkiaFilterQuality.Low, {
+    options.set(FilterQuality.Low, {
       filter: skia.FilterMode.Linear,
       mipmap: skia.MipmapMode.None
     })
-    options.set(SkiaFilterQuality.Medium, {
+    options.set(FilterQuality.Medium, {
       filter: skia.FilterMode.Linear,
       mipmap: skia.MipmapMode.Linear
     })
-    options.set(SkiaFilterQuality.High, {
+    options.set(FilterQuality.High, {
       B: 1.0 / 3,
       C: 1.0 / 3
     })

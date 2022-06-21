@@ -16,4 +16,5 @@ export * from './ImageProvider'
 export * from './NetworkImage'
 export * from './DecorationImage'
 
+export * from './BoxFit'
 export * from './PaintingBinding'

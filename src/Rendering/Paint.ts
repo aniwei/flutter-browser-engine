@@ -1,5 +1,5 @@
 import { Color } from '@rendering'
-import { ManagedSkiaObject, Skia, SkiaFilterQuality } from '@skia'
+import { ManagedSkiaObject, Skia, FilterQuality } from '@skia'
 import { ManagedSkiaColorFilter, ComposeColorFilter, MatrixColorFilter, ColorFilter } from './ColorFilter'
 import { MaskFilter } from './MaskFilter'
 
@@ -157,16 +157,16 @@ export class Paint extends ManagedSkiaObject<SkiaPaint> {
   }) public maskFilter: MaskFilter | null = null
 
   // @TODO
-  @property<SkiaFilterQuality>(function (value) {
+  @property<FilterQuality>(function (value) {
     return value
-  }, function (this, filterQuality: SkiaFilterQuality) {
+  }, function (this, filterQuality: FilterQuality) {
     if (this.filterQuality !== filterQuality) {
       this._filterQuality = filterQuality
       if (this.shader !== null) {
         this.skia.setShader((this.shader as Shader).withQuality(this.filterQuality))
       }
     }
-  }) public filterQuality: SkiaFilterQuality = SkiaFilterQuality.None
+  }) public filterQuality: FilterQuality = FilterQuality.None
 
   @property<ColorFilter>(function (value) {
     return value

@@ -2,7 +2,7 @@ import { invariant } from 'ts-invariant'
 import { property, transformRect, computeSkiaShadowBounds } from '@helper'
 import { Matrix4 } from '@math'
 import { Rect, NWayCanvas } from '@rendering'
-import { Skia, SkiaBlendMode, SkiaFilterQuality, SkiaImageFilter } from '@skia'
+import { Skia, SkiaBlendMode, FilterQuality, SkiaImageFilter } from '@skia'
 import { MutatorsStack, MutatorType } from './EmbeddedViews'
 import { RasterCache } from './RasterCache'
 import { Canvas } from './Canvas'
@@ -444,13 +444,13 @@ export class ShaderMaskEngineLayer extends ContainerLayer {
   public shader: Shader
   public maskRect: Rect
   public blendMode: SkiaBlendMode
-  public filterQuality: SkiaFilterQuality
+  public filterQuality: FilterQuality
 
   constructor (
     shader: Shader,
     maskRect: Rect,
     blendMode: SkiaBlendMode,
-    filterQuality: SkiaFilterQuality
+    filterQuality: FilterQuality
   ) {
     super()
 
