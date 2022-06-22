@@ -1,3 +1,4 @@
+export * from './CacheMap'
 export * from './StringBuffer'
 
 export * from './ArgumentError'

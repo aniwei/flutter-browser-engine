@@ -10,6 +10,13 @@ export type PaintingContextCallback = { (
   offset: Offset
 ): void }
 
+export class ParentData {
+  detach () {}
+  toString () {
+    return '<none>'
+  }
+}
+
 export class PaintingContext {
   static repaintCompositedChild(
     child: RenderObject,

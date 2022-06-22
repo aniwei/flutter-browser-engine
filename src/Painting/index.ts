@@ -17,4 +17,5 @@ export * from './NetworkImage'
 export * from './DecorationImage'
 
 export * from './BoxFit'
+export * from './EdgeInsets'
 export * from './PaintingBinding'

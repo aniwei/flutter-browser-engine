@@ -14,6 +14,7 @@ export function validateColorStops (
   }
 }
 
+export * from './Text'
 export * from './Path'
 export * from './Paint'
 export * from './Image'

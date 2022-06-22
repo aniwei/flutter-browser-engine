@@ -34,6 +34,7 @@
       "@platform": ["src/Platform/index.ts"],
       "@services": ["src/Services/index.ts"],
       "@painting": ["src/Painting/index.ts"],
+      "@gestures": ["src/Gestures/index.ts"],
       "@rendering": ["src/Rendering/index.ts"]
     },
     "plugins": [
