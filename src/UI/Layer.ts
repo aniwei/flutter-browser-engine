@@ -640,11 +640,11 @@ export class ClipRectLayer extends ContainerLayer {
   @scene<Clip>() public clipBehavior: Clip
 
   constructor (
-    clipRect: Rect | null,
+    clipRect: Rect | null = null,
     clipBehavior: Clip = Clip.HardEdge,
   ) {
     super()
-    this.clipRect = clipRect,
+    this.clipRect = clipRect ?? null
     this.clipBehavior = clipBehavior
     invariant(clipBehavior !== null)
     invariant(clipBehavior !== Clip.None)

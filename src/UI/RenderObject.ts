@@ -1,9 +1,9 @@
 import { invariant } from 'ts-invariant' 
-import { Matrix4 } from '@math'
+import { Matrix4, MatrixUtils } from '@math'
 import { property } from '@helper'
 import { VoidCallback } from '@platform'
 import { Canvas, Clip, ColorFilter, Offset, Path, PictureRecorder, Rect, RRect } from '@rendering'
-import { ClipRRectLayer, ContainerLayer, Layer, OffsetLayer, PictureLayer } from './Layer'
+import { ClipPathLayer, ClipRectLayer, ClipRRectLayer, ColorFilterLayer, ContainerLayer, Layer, LayerHandle, OffsetLayer, OpacityLayer, PictureLayer, TransformLayer } from './Layer'
 
 export type PaintingContextCallback = { (
   context: PaintingContext,
@@ -223,7 +223,7 @@ export class PaintingContext {
     offset: Offset,
     clipRect: Rect, 
     painter: PaintingContextCallback ,
-    clipBehavior: Clip = Clip.hardEdge, 
+    clipBehavior: Clip = Clip.HardEdge, 
     oldLayer?: ClipRectLayer | null
   ): ClipRectLayer | null {
     const offsetClipRect = clipRect.shift(offset)
@@ -293,7 +293,7 @@ export class PaintingContext {
     bounds: Rect,
     clipPath: Path, 
     painter: PaintingContextCallback,
-    clipBehavior: Clip = Clip.antiAlias, 
+    clipBehavior: Clip = Clip.AntiAlias, 
     oldLayer?: ClipPathLayer | null
   ): ClipPathLayer | null {
     invariant(clipBehavior !== null)
@@ -622,14 +622,12 @@ export abstract class RenderObject extends AbstractNode {
   abstract performLayout (): void
 
   setupParentData (child: RenderObject) {
-    invariant(this.debugCanPerformMutations)
     if (!(child.parentData instanceof ParentData)) {
       child.parentData = new ParentData()
     }
   }
 
   adoptChild (child: RenderObject) {
-    invariant(this.debugCanPerformMutations)
     invariant(this.child !== null)
     this.setupParentData(child)
     this.markNeedsLayout()
@@ -640,7 +638,6 @@ export abstract class RenderObject extends AbstractNode {
   }
 
   dropChild (child: RenderObject) {
-    invariant(this.debugCanPerformMutations)
     invariant(this.child !== null)
     invariant(child.parentData !== null)
     
@@ -933,7 +930,7 @@ export abstract class RenderObject extends AbstractNode {
     }
   }
 
-  replaceRootLayer (rootLayer: Offsetlayer) {
+  replaceRootLayer (rootLayer: OffsetLayer) {
     invariant(rootLayer.attached)
     invariant(!this.debugDisposed)
     invariant(this.attached)
