@@ -35,6 +35,7 @@ export * from './Picture'
 export * from './NWayCanvas'
 export * from './RasterCache'
 export * from './EmbeddedViews'
+export * from './PictureRecorder'
 export * from './LayerSceneBuilder'
 
 

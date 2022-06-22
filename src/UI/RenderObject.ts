@@ -1,9 +1,9 @@
 import { invariant } from 'ts-invariant' 
-import { Canvas, ColorFilter, Offset, Path, Rect, RRect } from '@rendering'
 import { Matrix4 } from '@math'
-import { ContainerLayer, OffsetLayer, PictureLayer } from './Layer'
 import { property } from '@helper'
 import { VoidCallback } from '@platform'
+import { Canvas, Clip, ColorFilter, Offset, Path, PictureRecorder, Rect, RRect } from '@rendering'
+import { ClipRRectLayer, ContainerLayer, Layer, OffsetLayer, PictureLayer } from './Layer'
 
 export type PaintingContextCallback = { (
   context: PaintingContext,
@@ -154,7 +154,7 @@ export class PaintingContext {
   appendLayer (layer: Layer) {
     invariant(!this.isRecording)
     layer.remove()
-    this.containerLayer.append(layer)
+    this.containerLayer?.append(layer)
   }
 
   startRecording () {
@@ -258,7 +258,7 @@ export class PaintingContext {
     bounds: Rect, 
     clipRRect: RRect, 
     painter: PaintingContextCallback,
-    clipBehavior: Clip = Clip.antiAlias, 
+    clipBehavior: Clip = Clip.AntiAlias, 
     oldLayer?: ClipRRectLayer | null
   ): ClipRRectLayer | null  {
     invariant(clipBehavior !== null)
@@ -492,7 +492,7 @@ export abstract class Constraints {
   abstract isNormalized: boolean
 }
 
-export abstract class AbstractNode {
+abstract class AbstractNode {
   @property<boolean>(function get (this) {
     return this.owner !== null
   }) public attached!: boolean
