@@ -78,8 +78,16 @@ export class Canvas {
     return null
   }
 
+  public get saveCount () {
+    return this.skia.getSaveCount()
+  }
+
   constructor (skia: SkiaCanvas) {
     this.skia = skia
+  }
+
+  getSaveCount () {
+    return this.saveCount
   }
 
   clear (color: Color) {

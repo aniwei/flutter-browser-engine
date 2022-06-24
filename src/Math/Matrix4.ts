@@ -240,18 +240,21 @@ export class Matrix4 extends Float64Array{
     const m = Matrix4.zero()
     m[15] = 1.0
     m.setRotationX(radians)
+    return m
   }
 
   static rotationY (radians: number) {
     const m = Matrix4.zero()
     m[15] = 1.0
     m.setRotationY(radians)
+    return m
   }
 
   static rotationZ (radians: number) {
     const m = Matrix4.zero()
     m[15] = 1.0
     m.setRotationZ(radians)
+    return m
   }
 
   static translation (translation: Vector3) {

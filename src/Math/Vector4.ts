@@ -4220,7 +4220,7 @@ export class Vector4 extends Float64Array {
     this[3] = this[3] * arg[3]
   }
 
-  division (arg: Vector4) {
+  divide (arg: Vector4) {
     this[0] = this[0] / arg[0]
     this[1] = this[1] / arg[1]
     this[2] = this[2] / arg[2]

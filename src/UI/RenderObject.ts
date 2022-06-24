@@ -1,7 +1,7 @@
 import { invariant } from 'ts-invariant' 
-import { Canvas, ColorFilter, Offset, Path, Rect, RRect } from '@rendering'
+import { Canvas, Clip, ColorFilter, Offset, Path, PictureRecorder, Rect, RRect } from '@rendering'
 import { Matrix4 } from '@math'
-import { ContainerLayer, OffsetLayer, PictureLayer } from './Layer'
+import { ClipPathLayer, ClipRectLayer, ClipRRectLayer, ColorFilterLayer, ContainerLayer, Layer, OffsetLayer, PictureLayer, TransformLayer } from './Layer'
 import { property } from '@helper'
 import { VoidCallback } from '@platform'
 
@@ -20,38 +20,29 @@ export class ParentData {
 export class PaintingContext {
   static repaintCompositedChild(
     child: RenderObject,
-    debugAlsoPaintedParent: boolean = false,
     childContext?: PaintingContext | null,
   ) {
     invariant(child.needsPaint)
-
     invariant(child.isRepaintBoundary)
-    
-    child.debugRegisterRepaintBoundaryPaint(
-      debugAlsoPaintedParent,
-      true,
-    )
-    
+
+    childContext = childContext ?? null
+  
+    // @TODO-DEBUG
+
     let childLayer = child.layerHandle.layer
-    if (childLayer == null) {
-      invariant(debugAlsoPaintedParent)
+    if (childLayer === null) {
       invariant(child.layerHandle.layer === null)
       
       const layer = new OffsetLayer()
       child.layerHandle.layer = childLayer = layer
     } else {
-      invariant(
-        debugAlsoPaintedParent || 
-        childLayer.attached
-      )
+      invariant(childLayer.attached)
       childLayer.removeAllChildren()
     }
 
     invariant(childLayer === child.layerHandle.layer)
     invariant(child.layerHandle.layer instanceof OffsetLayer)
-    
-    // childLayer!.debugCreator = child.debugCreator ?? child.runtimeType;
-    
+        
     childContext ??= new PaintingContext(childLayer, child.paintBounds)
     child.paintWithContext(childContext, Offset.zero)
 
@@ -59,20 +50,9 @@ export class PaintingContext {
     childContext.stopRecordingIfNeeded()
   }
 
-  static debugInstrumentRepaintCompositedChild (
-    child: RenderObject,
-    debugAlsoPaintedParent: boolean = false,
-    customContext: PaintingContext,
-  ) {
-    PaintingContext.repaintCompositedChild(
-      child,
-      debugAlsoPaintedParent,
-      customContext,
-    )
-  }
-
   public estimatedBounds: Rect
-  public containerLayer: ContainerLayer | null = null
+  public containerLayer: ContainerLayer
+
   public currentLayer: PictureLayer  | null = null
   public recorder: PictureRecorder | null = null
 
@@ -90,7 +70,7 @@ export class PaintingContext {
     }
 
     return hasCanvas
-  }) public isRecording: boolean
+  }) public isRecording!: boolean
 
   @property<Canvas>(function (this, v) {
     if (v === null) {
@@ -99,7 +79,7 @@ export class PaintingContext {
 
     invariant(this.currentLayer !== null)
     return v
-  }) public canvas: Canvas | null
+  }) public canvas: Canvas | null = null
 
   constructor (
     containerLayer,
@@ -133,15 +113,11 @@ export class PaintingContext {
     invariant(child.isRepaintBoundary)
     invariant(
       this.canvas == null || 
-      this.canvas!.getSaveCount() == 1
+      this.canvas!.getSaveCount() === 1
     )
 
-    // Create a layer for our child, and paint the child into it.
     if (child.needsPaint) {
-      PaintingContext.repaintCompositedChild(child, true)
-    } else {
-      child.debugRegisterRepaintBoundaryPaint()
-      child.layerHandle.layer.debugCreator = child.debugCreator ?? child
+      PaintingContext.repaintCompositedChild(child)
     }
     
     invariant(child.layerHandle.layer instanceof OffsetLayer)
@@ -154,7 +130,7 @@ export class PaintingContext {
   appendLayer (layer: Layer) {
     invariant(!this.isRecording)
     layer.remove()
-    this.containerLayer.append(layer)
+    this.containerLayer?.append(layer)
   }
 
   startRecording () {
@@ -170,18 +146,18 @@ export class PaintingContext {
       return
     }
     
-    this.currentLayer.picture = this.recorder.endRecording()
+    this.currentLayer!.picture = this.recorder?.endRecording()!
     this.currentLayer = null
     this.recorder = null
     this.canvas = null
   }
 
   setIsComplexHint () {
-    this.currentLayer.isComplexHint = true
+    this.currentLayer!.isComplexHint = true
   }
 
   setWillChangeHint () {
-    this.currentLayer.willChangeHint = true
+    this.currentLayer!.willChangeHint = true
   }
 
   addLayer (layer: Layer) {
@@ -196,6 +172,8 @@ export class PaintingContext {
     childPaintBounds?: Rect | null
   ) {
     invariant(painter !== null)
+
+    childPaintBounds = childPaintBounds ?? null
     
     if (childLayer.hasChildren) {
       childLayer.removeAllChildren()
@@ -223,7 +201,7 @@ export class PaintingContext {
     offset: Offset,
     clipRect: Rect, 
     painter: PaintingContextCallback ,
-    clipBehavior: Clip = Clip.hardEdge, 
+    clipBehavior: Clip = Clip.HardEdge, 
     oldLayer?: ClipRectLayer | null
   ): ClipRectLayer | null {
     const offsetClipRect = clipRect.shift(offset)
@@ -241,6 +219,7 @@ export class PaintingContext {
 
       return layer
     } else {
+      // @TODO
       this.clipRectAndPaint(
         offsetClipRect, 
         clipBehavior, 
@@ -258,12 +237,12 @@ export class PaintingContext {
     bounds: Rect, 
     clipRRect: RRect, 
     painter: PaintingContextCallback,
-    clipBehavior: Clip = Clip.antiAlias, 
+    clipBehavior: Clip = Clip.AntiAlias, 
     oldLayer?: ClipRRectLayer | null
   ): ClipRRectLayer | null  {
     invariant(clipBehavior !== null)
     const offsetBounds = bounds.shift(offset)
-    const offsetClipRRect = clipRRect.shift(offset)
+    const offsetClipRRect = clipRRect.shift(offset) //@TODO
     
     if (needsCompositing) {
       const layer = oldLayer ?? new ClipRRectLayer()
@@ -277,7 +256,7 @@ export class PaintingContext {
       )
       return layer
     } else {
-      this.clipRRectAndPaint(
+      clipRRectAndPaint(
         offsetClipRRect, 
         clipBehavior, 
         offsetBounds,
@@ -293,7 +272,7 @@ export class PaintingContext {
     bounds: Rect,
     clipPath: Path, 
     painter: PaintingContextCallback,
-    clipBehavior: Clip = Clip.antiAlias, 
+    clipBehavior: Clip = Clip.AntiAlias, 
     oldLayer?: ClipPathLayer | null
   ): ClipPathLayer | null {
     invariant(clipBehavior !== null)
@@ -311,7 +290,7 @@ export class PaintingContext {
       )
       return layer
     } else {
-      this.clipPathAndPaint(
+      clipPathAndPaint(
         offsetClipPath, 
         clipBehavior, 
         offsetBounds,

@@ -6,6 +6,7 @@ import { Offset, Size, TextBaseline } from '@rendering'
 import { Matrix4, Vector3 } from '@math'
 import { EdgeInsets } from '@painting'
 import { HitTestEntry, HitTestResult } from '@gestures'
+import { MatrixUtils } from 'src/Math/MatrixUtils'
 
 export enum IntrinsicDimension { 
   minWidth, 
@@ -756,7 +757,7 @@ export class BoxConstraints extends Constraints {
     )
   }
 
-  division (factor: number) {
+  divide (factor: number) {
     return new BoxConstraints(
       this.minWidth / factor,
       this.maxWidth / factor,
