@@ -1,26 +1,39 @@
 import { invariant } from 'ts-invariant'
 import { property, PropertySetter } from '@helper'
 import { LayerSceneBuilder, Picture, Offset, Rect, Image, Scene, Clip, RRect, ImageFilter, Path, ColorFilter, OpacityEngineLayer, OffsetEngineLayer, Shader, Size, Color, ImageFilterEngineLayer, ColorFilterEngineLayer } from '@rendering'
-import { Matrix4, Vector4 } from '@math'
+import { Matrix4, MatrixUtils, Vector4 } from '@math'
 import { Skia, SkiaBlendMode, FilterQuality } from '@skia'
 
 function scene <T> (setter?: PropertySetter<T>) {
   return property<T>(function get (this, value: T) {
     return value
-  }, setter ?? function set (this, value: T, k, key) {
+  }, setter ?? function set (this, value: T, key) {
     if (
       value !== null &&
       this[key] !== value
     ) {
-      this[k] = value
+      this[key] = value
       this.markNeedsAddToScene()
     }
   })
 }
 
-export type AnnotationEntry<T> = {
-  annotation: T,
-  localPosition: Offset
+export class AnnotationEntry<T> {
+  public annotation: T
+  public localPosition: Offset
+
+  constructor (
+    annotation: T,
+    localPosition: Offset
+  ) {
+    invariant(localPosition !== null)
+    this.annotation = annotation
+    this.localPosition = localPosition
+  }
+
+  toString () {
+    return ``
+  }
 }
 
 export class AnnotationResult<T> extends Array<AnnotationEntry<T>> {
@@ -29,35 +42,88 @@ export class AnnotationResult<T> extends Array<AnnotationEntry<T>> {
       return entry.annotation
     })
   }) public annotations!: T[]
+
+  add (entry: AnnotationEntry<T>) {
+    this.push(entry)
+  }
 }
 
 export abstract class EngineLayer {
   dispose () {}
 }
 
-export abstract class Layer {
-  @property<boolean>(function (this, debugDisposed: boolean) {
-    return debugDisposed
-  }) public debugDisposed = false
+abstract class AbstractNode {
+  @property<boolean>(function get (this) {
+    return this.owner !== null
+  }) public attached!: boolean
 
-  @property<boolean>(function (this, v) {
-    return this.refCount
-  }) public debugHandleCount!: number
+  public depth = 0
+  public owner: unknown | null = null
+  public parent: AbstractNode | null = null
 
-  @property<boolean>(function (this, v) {
-    return this.needsAddToScene
-  }) public debugSubtreeNeedsAddToScene!: boolean | null
+  redepthChild (child: AbstractNode) {
+    invariant(child.owner === this.owner)
 
+    if (child.depth <= this.depth) {
+      child.depth = this.depth + 1
+      child.redepthChildren()
+    }
+  }
+
+  redepthChildren () {}
+
+  attach (owner: unknown) {
+    invariant(owner !== null)
+    invariant(this.owner === null)
+    this.owner = owner
+  }
+
+  detach () {
+    invariant(this.owner !== null)
+    this.owner = null
+    invariant(parent === null || this.attached === this.parent!.attached)
+  }
+
+  adoptChild (child: AbstractNode) {
+    invariant(child !== null)
+    invariant(child.parent == null)
+    invariant((() => {
+      let node: AbstractNode = this
+      while (node.parent !== null) {
+        node = node.parent!
+      }
+      invariant(node !== child)
+      return true
+    })())
+
+    child.parent = this
+    if (this.attached) {
+      child.attach(this.owner!)
+    }
+    this.redepthChild(child)
+  }
+
+  dropChild (child: AbstractNode) {
+    invariant(child !== null)
+    invariant(child.parent === this)
+    invariant(child.attached === this.attached)
+    child.parent = null
+    if (this.attached) {
+      child.detach()
+    }
+  }
+}
+
+export abstract class Layer extends AbstractNode {
   @property<boolean>(function (this, v) {
     return this.owner !== null
   }) public attached!: boolean
 
-  @property<EngineLayer>(function (this, engineLayer: EngineLayer) {
+  @property<EngineLayer>(function get (this, engineLayer: EngineLayer) {
     return engineLayer
-  }, function (this, engineLayer: EngineLayer, key: string) {
-    invariant(!this.debugDisposed)
+  }, function set (this, engineLayer: EngineLayer, key: string) {
     this.engineLayer.dispose()
-    this[key] = engineLayer
+    this._engineLayer = engineLayer
 
     if (!this.alwaysNeedsAddToScene) {
       if (
@@ -78,7 +144,8 @@ export abstract class Layer {
   public parentHandle: LayerHandle<Layer> = new LayerHandle<Layer>()
   public nextSibling: Layer | null = null
   public previousSibling: Layer | null = null
-  public debugCreator
+
+  abstract addToScene (builder: LayerSceneBuilder) 
 
   attach (owner) {
     invariant(owner !== null)
@@ -96,18 +163,16 @@ export abstract class Layer {
   }
 
   markNeedsAddToScene () {
-    invariant(this.alwaysNeedsAddToScene)
-    invariant(!this.debugDisposed)
+    invariant(
+      !this.alwaysNeedsAddToScene,
+      `The layer's alwaysNeedsAddToScene is set to true, and therefore it should not call markNeedsAddToScene.`
+    )
 
     if (this.needsAddToScene) {
       return
     }
 
     this.needsAddToScene = true
-  }
-
-  debugMarkClean () {
-    this.needsAddToScene = false
   }
 
   updateSubtreeNeedsAddToScene () {
@@ -125,39 +190,18 @@ export abstract class Layer {
   redepthChildren () {}
 
 
-  dropChild (child: Layer) {
+  dropChild (child: AbstractNode) {
     if (!this.alwaysNeedsAddToScene) {
       this.markNeedsAddToScene()
     }
-    invariant(child !== null)
-    invariant(child.parent === this)
-    invariant(child.attached === this.attached)
-    child.parent = null
-    
-    if (this.attached) {
-      child.detach()
-    }
+    super.dropChild(child)
   }
 
-  adoptChild (child: Layer) {
+  adoptChild (child: AbstractNode) {
     if (!this.alwaysNeedsAddToScene) {
       this.markNeedsAddToScene()
     }
-    invariant(child !== null)
-    invariant(child.parent === null)
-
-    let node = this as Layer
-    while (node.parent !== null) {
-      node = node.parent
-    }
-    
-    invariant(node !== child)
-    child.parent = this
-    if (this.attached) {
-      child.attach(this.owner)
-    }
-
-    this.redepthChild(child)
+    super.adoptChild(child)
   }
 
   remove () {
@@ -179,14 +223,12 @@ export abstract class Layer {
     return result.length === 0 ? null : result[0].annotation
   }
 
-
   findAllAnnotations<S>(localPosition: Offset): AnnotationResult<S> {
     const result: AnnotationResult<S> = new AnnotationResult<S>()
     this.findAnnotations<S>(result, localPosition, false)
     return result
   }
 
-  abstract addToScene (builder: LayerSceneBuilder) 
 
   addToSceneWithRetainedRendering (builder: LayerSceneBuilder) {
     if (
@@ -210,27 +252,21 @@ export abstract class Layer {
   }
 
   dispose () {
-    invariant(!this.debugDisposed)
-    invariant(this.refCount === 0)
-
-    this.debugDisposed = true
     this.engineLayer?.dispose()
     this.engineLayer = null
   }
 }
 
 export class LayerHandle<T extends Layer> {
-  @property<T>(function (this, v) {
-    return v
-  }, function (this, v) {
-    invariant(!v.debugDisposed)
-
-    if (v === this.layer) {
+  @property<T>(function get (this, layer: T) {
+    return layer
+  }, function (this, layer: T) {
+    if (layer === this.layer) {
       return
     }
 
     this.layer.unref()
-    this.layer = v
+    this._layer = layer
     if (this.layer !== null) {
       this.layer.refCount += 1
     }
@@ -247,31 +283,13 @@ export class PictureLayer extends Layer {
     this.picture = picture
   }) public picture: Picture | null = null
 
-  @property<boolean>(function (this, isComplexHint) {
-    return isComplexHint
-  }, function (this, isComplexHint: boolean, key) {
-    if (this.isComplexHint !== isComplexHint) {
-      this[key] = isComplexHint
-      this.markNeedsAddToScene()
-    }
-    
-  }) public isComplexHint: boolean = false
-
-  @property<boolean>(function (this, willChangeHint: boolean) {
-    return willChangeHint
-  }, function (this, willChangeHint: boolean, key) {
-    if (this.isComplexHint !== willChangeHint) {
-      this[key] = willChangeHint
-      this.markNeedsAddToScene()
-    }
-    
-  }) public willChangeHint: boolean = false
+  @scene<boolean>() public isComplexHint: boolean = false
+  @scene<boolean>() public willChangeHint: boolean = false
 
   public canvasBounds: Rect
 
   constructor (canvasBounds: Rect) {
     super()
-
     this.canvasBounds = canvasBounds
   }
 
@@ -291,15 +309,14 @@ export class PictureLayer extends Layer {
     localPosition: Offset,
     onlyFirst: boolean
   ): boolean {
-  return false
-}
+    return false
+  }
 
   dispose() {
     this.picture = null
     super.dispose()
   }
 }
-
 
 export class TextureLayer extends Layer {
   public rect: Rect
@@ -313,13 +330,13 @@ export class TextureLayer extends Layer {
     freeze: boolean = false,
     filterQuality = FilterQuality.Low,
   ) {
-    super()
     invariant(rect !== null)
     invariant(textureId !== null)
+    super()
 
     this.rect = rect
-    this.textureId = textureId
     this.freeze = freeze
+    this.textureId = textureId
     this.filterQuality = filterQuality
   }
   
@@ -362,36 +379,6 @@ export class ContainerLayer extends Layer {
     const scene = builder.build()
     return scene
   }
-
-  debugUltimatePreviousSiblingOf (
-    child: Layer, 
-    equals?: Layer | null
-  ) {
-    invariant(child.attached === this.attached)
-    
-    while (child.previousSibling !== null) {
-      invariant(child.previousSibling !== child)
-      child = child.previousSibling!
-      invariant(child.attached === this.attached)
-    }
-
-    return child === equals
-  }
-
-  debugUltimateNextSiblingOf (
-    child: Layer, 
-    equals?: Layer | null
-  ) {
-    invariant(child.attached === this.attached)
-    while (child.nextSibling !== null) {
-      invariant(child.nextSibling !== child)
-      child = child.nextSibling!
-      invariant(child.attached === this.attached)
-    }
-
-    return child === equals
-  }
-
   
   dispose () {
     this.removeAllChildren()
@@ -410,7 +397,6 @@ export class ContainerLayer extends Layer {
     }
   }
 
-  
   findAnnotations<S>(
     result: AnnotationResult<S> , 
     localPosition: Offset,
@@ -437,7 +423,6 @@ export class ContainerLayer extends Layer {
     return false;
   }
 
-  
   attach (owner) {
     super.attach(owner)
     let child: Layer | null = this.firstChild
@@ -466,14 +451,7 @@ export class ContainerLayer extends Layer {
     invariant(child.nextSibling === null)
     invariant(child.previousSibling === null)
     invariant(child.parentHandle.layer === null)
-    
-    let node: Layer = this as unknown as Layer
-    while (node.parent !== null) {
-      node = node.parent
-    }
-
-    invariant(node !== child)
-    
+      
     this.adoptChild(child)
     child.previousSibling = this.lastChild
     if (this.lastChild !== null) {
@@ -490,8 +468,6 @@ export class ContainerLayer extends Layer {
   removeChild (child: Layer) {
     invariant(child.parent === this as unknown as Layer)
     invariant(child.attached === this.attached)
-    invariant(this.debugUltimatePreviousSiblingOf(child, this.firstChild))
-    invariant(this.debugUltimateNextSiblingOf(child, this.lastChild))
     invariant(child.parentHandle.layer !== null)
     if (child.previousSibling === null) {
       invariant(this.firstChild === child)
@@ -514,14 +490,7 @@ export class ContainerLayer extends Layer {
       this.lastChild === null || 
       this.lastChild.attached === this.attached
     )
-    invariant(
-      this.firstChild === null ||
-      this.debugUltimateNextSiblingOf(this.firstChild, this.lastChild)
-    )
-    invariant(
-      this.lastChild === null ||
-      this.debugUltimatePreviousSiblingOf(this.lastChild, this.firstChild)
-    )
+    
     child.previousSibling = null
     child.nextSibling = null
     this.dropChild(child)
@@ -529,8 +498,7 @@ export class ContainerLayer extends Layer {
     invariant(!child.attached)
   }
 
-  /// Removes all of this layer's children from its child list.
-  removeAllChildren() {
+  removeAllChildren () {
     let child: Layer | null = this.firstChild
     while (child !== null) {
       const next: Layer | null = child.nextSibling
@@ -546,7 +514,6 @@ export class ContainerLayer extends Layer {
     this.lastChild = null
   }
 
-  
   addToScene (builder: LayerSceneBuilder) {
     this.addChildrenToScene(builder)
   }
@@ -640,11 +607,12 @@ export class OffsetLayer extends ContainerLayer {
   }
 
   async toImage (
-    bounds: Rect , 
+    bounds: Rect, 
     pixelRatio = 1.0
   ): Promise<Image> {
     invariant(bounds !== null)
     invariant(pixelRatio !== null)
+
     const builder: LayerSceneBuilder = new LayerSceneBuilder()
     const transform: Matrix4 = Matrix4.translationValues(
       (-bounds.left - this.offset.dx) * pixelRatio,
@@ -668,30 +636,15 @@ export class OffsetLayer extends ContainerLayer {
 }
 
 export class ClipRectLayer extends ContainerLayer {
-  @property<Rect | null>(function get (this, clipRect: Rect | null) {
-    return clipRect
-  }, function set (this, clipRect: Rect | null, key) {
-    if (clipRect !== this.clipRect) {
-      this[key] = clipRect
-      this.markNeedsAddToScene()
-    }
-  }) public clipRect: Rect | null
-
-  @property<Clip>(function get (this, clipBehavior: Clip) {
-    return clipBehavior
-  }, function set (this, clipBehavior: Clip, key) {
-    if (clipBehavior !== this.clipBehavior) {
-      this[key] = clipBehavior
-      this.markNeedsAddToScene()
-    }
-  }) public clipBehavior: Clip
+  @scene<Rect | null>() public clipRect: Rect | null
+  @scene<Clip>() public clipBehavior: Clip
 
   constructor (
-    clipRect: Rect | null,
+    clipRect: Rect | null = null,
     clipBehavior: Clip = Clip.HardEdge,
   ) {
     super()
-    this.clipRect = clipRect,
+    this.clipRect = clipRect ?? null
     this.clipBehavior = clipBehavior
     invariant(clipBehavior !== null)
     invariant(clipBehavior !== Clip.None)
@@ -727,26 +680,8 @@ export class ClipRectLayer extends ContainerLayer {
 }
 
 export class ClipRRectLayer extends ContainerLayer {
-  @property<RRect>(function get (this, clipRRect: RRect) {
-    return clipRRect
-  }, function set (this, clipRRect: RRect, key) {
-    if (clipRRect !== this.clipRRect) {
-      this[key] = clipRRect
-      this.markNeedsAddToScene()
-    }
-  }) public clipRRect: RRect | null
-
-  @property<Clip>(function get (this, clipBehavior: Clip) {
-    return clipBehavior
-  }, function set (this, clipBehavior: Clip, key) {
-    invariant(clipBehavior !== null)
-    invariant(clipBehavior !== Clip.None)
-
-    if (this.clipBehavior !== clipBehavior) {
-      this[key] = clipBehavior
-      this.markNeedsAddToScene()
-    }
-  }) public clipBehavior: Clip
+  @scene<RRect>() public clipRRect: RRect | null
+  @scene<Clip>() public clipBehavior: Clip
 
   constructor(
     clipRRect?: RRect | null,
@@ -780,7 +715,6 @@ export class ClipRRectLayer extends ContainerLayer {
     invariant(this.clipRRect !== null)
     invariant(this.clipBehavior !== null)
     
-    
     this.engineLayer = builder.pushClipRRect(
       this.clipRRect!,
       this.clipBehavior,
@@ -793,26 +727,8 @@ export class ClipRRectLayer extends ContainerLayer {
 }
 
 export class ClipPathLayer extends ContainerLayer {
-  @property<Path>(function get (this, clipPath: Path) {
-    return clipPath
-  }, function set (this, clipPath: Path, key) {
-    if (clipPath !== this.clipPath) {
-      this[key] = clipPath
-      this.markNeedsAddToScene()
-    }
-  }) public clipPath: Path | null
-
-  @property<Clip>(function get (this, clipBehavior: Clip) {
-    return clipBehavior
-  }, function set (this, clipBehavior: Clip, key) {
-    invariant(clipBehavior !== null)
-    invariant(clipBehavior !== Clip.None)
-
-    if (this.clipBehavior !== clipBehavior) {
-      this[key] = clipBehavior
-      this.markNeedsAddToScene()
-    }
-  }) public clipBehavior: Clip
+  @scene<Path>() public clipPath: Path | null
+  @scene<Clip>() public clipBehavior: Clip
 
   constructor (
     clipPath?: Path | null,
@@ -857,18 +773,10 @@ export class ClipPathLayer extends ContainerLayer {
 }
 
 export class ColorFilterLayer extends ContainerLayer {
-  @property<ColorFilter>(function get (this, colorFilter: ColorFilter) {
-    return colorFilter
-  }, function set (this, colorFilter: ColorFilter, key) {
-    if (colorFilter !== this.colorFilter) {
-      this[key] = colorFilter
-      this.markNeedsAddToScene()
-    }
-  }) public colorFilter: ColorFilter | null
+  @scene<ColorFilter>() public colorFilter: ColorFilter | null
 
   constructor (colorFilter?: ColorFilter | null) {
     super()
-
     this.colorFilter = colorFilter ?? null
   }
 
@@ -885,14 +793,7 @@ export class ColorFilterLayer extends ContainerLayer {
 }
 
 export class ImageFilterLayer extends ContainerLayer {
-  @property<ImageFilter>(function get (this, imageFilter: ImageFilter) {
-    return imageFilter
-  }, function set (this, imageFilter: ImageFilter, key) {
-    if (imageFilter !== this.imageFilter) {
-      this[key] = imageFilter
-      this.markNeedsAddToScene()
-    }
-  }) public imageFilter: ImageFilter | null
+  @scene<ImageFilter>() public imageFilter: ImageFilter | null
 
   constructor (imageFilter: ImageFilter | null) {
     super()
@@ -919,7 +820,7 @@ export class TransformLayer extends OffsetLayer {
     if (transform === this.transform) {
       return 
     }
-    this[key] = transform
+    this._transform = transform
     this.inverseDirty = true
     this.markNeedsAddToScene()
   }) public transform: Matrix4 | null = null
@@ -933,11 +834,10 @@ export class TransformLayer extends OffsetLayer {
     offset: Offset = Offset.zero
   ) {
     super(offset)
-
     this.transform = transform ?? null
   }
 
-  addToScene(builder: LayerSceneBuilder) {
+  addToScene (builder: LayerSceneBuilder) {
     invariant(this.transform !== null)
     this.lastEffectiveTransform = this.transform
     if (this.offset.eq(Offset.zero)) {

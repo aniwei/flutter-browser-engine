@@ -1,9 +1,9 @@
 import { invariant } from 'ts-invariant' 
-import { Canvas, Clip, ColorFilter, Offset, Path, PictureRecorder, Rect, RRect } from '@rendering'
-import { Matrix4 } from '@math'
-import { ClipPathLayer, ClipRectLayer, ClipRRectLayer, ColorFilterLayer, ContainerLayer, Layer, OffsetLayer, PictureLayer, TransformLayer } from './Layer'
+import { Matrix4, MatrixUtils } from '@math'
 import { property } from '@helper'
 import { VoidCallback } from '@platform'
+import { Canvas, Clip, ColorFilter, Offset, Path, PictureRecorder, Rect, RRect } from '@rendering'
+import { ClipPathLayer, ClipRectLayer, ClipRRectLayer, ColorFilterLayer, ContainerLayer, Layer, LayerHandle, OffsetLayer, OpacityLayer, PictureLayer, TransformLayer } from './Layer'
 
 export type PaintingContextCallback = { (
   context: PaintingContext,
@@ -471,7 +471,7 @@ export abstract class Constraints {
   abstract isNormalized: boolean
 }
 
-export abstract class AbstractNode {
+abstract class AbstractNode {
   @property<boolean>(function get (this) {
     return this.owner !== null
   }) public attached!: boolean
@@ -601,14 +601,12 @@ export abstract class RenderObject extends AbstractNode {
   abstract performLayout (): void
 
   setupParentData (child: RenderObject) {
-    invariant(this.debugCanPerformMutations)
     if (!(child.parentData instanceof ParentData)) {
       child.parentData = new ParentData()
     }
   }
 
   adoptChild (child: RenderObject) {
-    invariant(this.debugCanPerformMutations)
     invariant(this.child !== null)
     this.setupParentData(child)
     this.markNeedsLayout()
@@ -619,7 +617,6 @@ export abstract class RenderObject extends AbstractNode {
   }
 
   dropChild (child: RenderObject) {
-    invariant(this.debugCanPerformMutations)
     invariant(this.child !== null)
     invariant(child.parentData !== null)
     
@@ -912,7 +909,7 @@ export abstract class RenderObject extends AbstractNode {
     }
   }
 
-  replaceRootLayer (rootLayer: Offsetlayer) {
+  replaceRootLayer (rootLayer: OffsetLayer) {
     invariant(rootLayer.attached)
     invariant(!this.debugDisposed)
     invariant(this.attached)
