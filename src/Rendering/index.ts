@@ -1,18 +1,11 @@
-import { ArgumentError } from '@internal';
-import { Color } from './Painting';
-
-export function validateColorStops (
-  colors: Color[], 
-  colorStops?: number[] | null,
-) {
-  if (colorStops === null) {
-    if (colors.length !== 2)
-      throw new ArgumentError(`"colors" must have length 2 if "colorStops" is omitted.`);
-  } else {
-    if (colors.length !== colorStops?.length)
-      throw new ArgumentError('"colors" and "colorStops" arguments must have equal length.')
-  }
-}
+export const kShadowAmbientAlpha = 0.039
+export const kShadowSpotAlpha = 0.25
+export const kShadowLightRadius = 1.1
+export const kShadowLightHeight = 600.0
+export const kShadowLightXOffset = 0
+export const kShadowLightYOffset = -450
+export const kShadowLightXTangent = kShadowLightXOffset / kShadowLightHeight
+export const kShadowLightYTangent = kShadowLightYOffset / kShadowLightHeight
 
 export * from './Text'
 export * from './Path'
@@ -21,6 +14,7 @@ export * from './Image'
 export * from './Shader'
 export * from './Canvas'
 export * from './Colors'
+export * from './Vertices'
 export * from './MaskFilter'
 export * from './ColorFilter'
 export * from './ImageFilter'

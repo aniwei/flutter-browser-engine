@@ -24,6 +24,9 @@ export type SkiaCubicFilterOption = {
 }
 
 export type {
+  TonalColorsInput as SkiaTonalColorsInput,
+  VertexMode as SkiaVertexMode,
+  PointMode as SkiaPointMode,
   PathOp as SkiaPathOp,
   Canvas as SkiaCanvas,
   FilterMode as SkiaFilterMode,
@@ -37,6 +40,7 @@ export type {
   Path as SkiaPath,
   Shader as SkiaShader,
   Camera as SkiaCamera,
+  Vertices as SkiaVertices,
   DecorationStyle as SkiaDecorationStyle,
   BlurStyle as SkiaBlurStyle,
   PaintStyle as SkiaPaintStyle,
@@ -204,12 +208,20 @@ export class Skia {
     return Skia.s.computeTonalColors
   }
 
+  static get MakeVertices () {
+    return Skia.s.MakeVertices
+  }
+
   static get MakeSurface () {
     return Skia.s.MakeSurface
   }
 
   static get MakeBlend () {
     return Skia.s.ColorFilter.MakeBlend
+  }
+
+  static get Free () {
+    return Skia.s.Free
   }
 
   static get Malloc () {

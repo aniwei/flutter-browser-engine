@@ -1,5 +1,5 @@
 import { invariant } from 'ts-invariant'
-import { lerpDouble } from '@math'
+import { lerpDouble } from '@helper'
 
 const GIANT_SCALAR = 1.0E+9
 
@@ -1367,6 +1367,23 @@ export class RRect extends Float32Array implements IRRect {
     }
 
     return true
+  }
+
+  shift (offset: Offset) {
+    return RRect.raw(
+      this.left + offset.dx,
+      this.top + offset.dy,
+      this.right + offset.dx,
+      this.bottom + offset.dy,
+      this.tlRadiusX,
+      this.tlRadiusY,
+      this.trRadiusX,
+      this.trRadiusY,
+      this.blRadiusX,
+      this.blRadiusY,
+      this.brRadiusX,
+      this.brRadiusY,
+    )
   }
 
   inflate (delta: number) {

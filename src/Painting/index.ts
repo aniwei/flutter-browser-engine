@@ -3,6 +3,7 @@ export enum Axis {
   Vertical
 }
 
+export * from './Clip'
 export * from './Alignment'
 export * from './Gradient'
 export * from './Border'

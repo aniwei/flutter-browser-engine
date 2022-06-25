@@ -1,53 +1,80 @@
+import invariant from 'ts-invariant'
+import { VoidCallback } from '@platform'
+import { Canvas, Clip, Paint, Path, Rect, RRect } from '@rendering'
+import { Skia } from '@skia'
 
 export abstract class ClipContext {
-  /// The canvas on which to paint.
-  Canvas get canvas;
+  abstract canvas: Canvas | null
 
-  void _clipAndPaint(void Function(bool doAntiAlias) canvasClipCall, Clip clipBehavior, Rect bounds, VoidCallback painter) {
-    assert(canvasClipCall != null);
-    canvas.save();
+  clipAndPaint (
+    canvasClipCall: { (doAntiAlias: boolean): void },
+    clipBehavior: Clip, 
+    bounds: Rect, 
+    painter: VoidCallback
+  ) {
+    invariant(canvasClipCall !== null)
+    this.canvas?.save()
     switch (clipBehavior) {
-      case Clip.none:
-        break;
-      case Clip.hardEdge:
-        canvasClipCall(false);
-        break;
-      case Clip.antiAlias:
-        canvasClipCall(true);
-        break;
-      case Clip.antiAliasWithSaveLayer:
-        canvasClipCall(true);
-        canvas.saveLayer(bounds, Paint());
-        break;
+      case Clip.None:
+        break
+      case Clip.HardEdge:
+        canvasClipCall(false)
+        break
+      case Clip.AntiAlias:
+        canvasClipCall(true)
+        break
+      case Clip.AntiAliasWithSaveLayer:
+        canvasClipCall(true)
+        this.canvas?.saveLayer(bounds, Paint.malloc())
+        break
     }
-    painter();
-    if (clipBehavior == Clip.antiAliasWithSaveLayer) {
-      canvas.restore();
+    painter()
+    if (clipBehavior === Clip.AntiAliasWithSaveLayer) {
+      this.canvas?.restore()
     }
-    canvas.restore();
+    this.canvas?.restore()
   }
 
-  /// Clip [canvas] with [Path] according to [Clip] and then paint. [canvas] is
-  /// restored to the pre-clip status afterwards.
-  ///
-  /// `bounds` is the saveLayer bounds used for [Clip.antiAliasWithSaveLayer].
-  void clipPathAndPaint(Path path, Clip clipBehavior, Rect bounds, VoidCallback painter) {
-    _clipAndPaint((bool doAntiAlias) => canvas.clipPath(path, doAntiAlias: doAntiAlias), clipBehavior, bounds, painter);
+  
+  clipPathAndPaint (
+    path: Path, 
+    clipBehavior: Clip, 
+    bounds: Rect, 
+    painter: VoidCallback 
+  ) {
+    this.clipAndPaint(
+      (doAntiAlias: boolean) => this.canvas?.clipPath(path, doAntiAlias), 
+      clipBehavior, 
+      bounds, 
+      painter
+    )
   }
 
-  /// Clip [canvas] with [Path] according to `rrect` and then paint. [canvas] is
-  /// restored to the pre-clip status afterwards.
-  ///
-  /// `bounds` is the saveLayer bounds used for [Clip.antiAliasWithSaveLayer].
-  void clipRRectAndPaint(RRect rrect, Clip clipBehavior, Rect bounds, VoidCallback painter) {
-    _clipAndPaint((bool doAntiAlias) => canvas.clipRRect(rrect, doAntiAlias: doAntiAlias), clipBehavior, bounds, painter);
+  clipRRectAndPaint (
+    rrect: RRect, 
+    clipBehavior: Clip, 
+    bounds: Rect, 
+    painter: VoidCallback
+  ) {
+    this.clipAndPaint(
+      (doAntiAlias: boolean) => this.canvas?.clipRRect(rrect, doAntiAlias), 
+      clipBehavior, 
+      bounds, 
+      painter
+    )
   }
 
-  /// Clip [canvas] with [Path] according to `rect` and then paint. [canvas] is
-  /// restored to the pre-clip status afterwards.
-  ///
-  /// `bounds` is the saveLayer bounds used for [Clip.antiAliasWithSaveLayer].
-  void clipRectAndPaint(Rect rect, Clip clipBehavior, Rect bounds, VoidCallback painter) {
-    _clipAndPaint((bool doAntiAlias) => canvas.clipRect(rect, doAntiAlias: doAntiAlias), clipBehavior, bounds, painter);
+  clipRectAndPaint (
+    rect: Rect, 
+    clipBehavior: Clip, 
+    bounds: Rect, 
+    painter: VoidCallback
+  ) {
+    this.clipAndPaint(
+      (doAntiAlias: boolean) => this.canvas?.clipRect(rect, Skia.ClipOp.Intersect, doAntiAlias), 
+      clipBehavior, 
+      bounds, 
+      painter
+    )
   }
 }

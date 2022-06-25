@@ -1,22 +1,27 @@
-import { Skia, SkiaClipOp, FilterQuality, SkiaPicture, SkiaPictureRecorder } from '@skia'
+import { invariant } from 'ts-invariant'
+import { ArgumentError } from '@internal'
+import { offsetIsValid, rectIsValid, rrectIsValid } from '@helper'
+import { Skia, SkiaClipOp, SkiaPointMode, FilterQuality, SkiaPicture, SkiaPictureRecorder, toMatrix32, toMallocedSkiaPoints, SkiaShadowFlags, makeFreshSkColor } from '@skia'
+import { kShadowAmbientAlpha, kShadowLightHeight, kShadowLightRadius, kShadowLightXOffset, kShadowLightYOffset, kShadowSpotAlpha } from '@rendering'
+import { RRect, Rect, Offset } from './Geometry'
+import type { SkiaBlendMode, SkiaCanvas } from '@skia'
+import type { Picture } from './Picture'
+import type { PictureRecorder } from './PictureRecorder'
 import type { Color } from './Painting'
 import type { Image } from './Image'
 import type { Paint } from './Paint'
 import type { Path } from './Path'
-import type { RRect, Rect, Offset } from './Geometry'
-import type { SkiaBlendMode, SkiaCanvas } from '@skia'
 import type { ImageFilter, ManagedSkImageFilterConvertible } from './ImageFilter'
+import type { Vertices } from './Vertices'
 
-type Functions<T> = { 
+type Methods<T> = { 
   [K in keyof T as (T[K] extends Function ? K : never)]: T[K] 
 }
 
-function command (
-  Command: { new (type, ...rest: unknown[]): PaintCommand } = PaintCommand
-) {
+function command (Command: { new (type, ...rest: unknown[]): PaintCommand } = PaintCommand) {
   return function (
     target: RecordingCanvas,
-    key: keyof Functions<Canvas>,
+    key: keyof Methods<Canvas>,
   ) {
     const func = target[key]
     function command (this, ...rest: any[]) {
@@ -41,11 +46,28 @@ function command (
   }
 }
 
+export enum PointMode {
+  Points,
+  Lines,
+  Polygon
+}
+
+export enum ClipOp {
+  Difference,
+  Intersect
+}
+
+export enum VertexMode {
+  Triangles,
+  TriangleStrip,
+  TriangleFan,
+}
+
 export class PaintCommand {
-  public command: keyof Functions<Canvas>
+  public command: keyof Methods<Canvas>
   public arguments: unknown[]
 
-  constructor (command: keyof Functions<Canvas>, ...rest: unknown[]) {
+  constructor (command: keyof Methods<Canvas>, ...rest: unknown[]) {
     this.command = command
     this.arguments = rest
   }
@@ -58,14 +80,29 @@ export class PaintCommand {
 }
 
 export class Canvas {
-  static kMitchellNetravali_B = 1.0 / 3.0
-  static kMitchellNetravali_C = 1.0 / 3.0
-  static kNone_ShadowFlag = 0x00
-  static kTransparentOccluder_ShadowFlag = 0x01
-  static kDirectionalLight_ShadowFlag = 0x04
+  static kMitchellNetravaliB = 1.0 / 3.0
+  static kMitchellNetravaliC = 1.0 / 3.0
+  static kNoneShadowFlag = 0x00
+  static kTransparentOccluderShadowFlag = 0x01
+  static kDirectionalLightShadowFlag = 0x04
 
   static get clipOpIntersect (): SkiaClipOp {
     return Skia.ClipOp.Intersect
+  }
+
+  static fromPictureRecorder (
+    recorder: PictureRecorder,
+    cullRect?: Rect | null
+  ) {
+    invariant(recorder !== null)
+    if (recorder.isRecording) {
+      throw new ArgumentError(`"recorder" must not already be associated with another Canvas.`)
+    }
+
+    cullRect ??= Rect.largest
+    const canvas = recorder.beginRecording(cullRect)
+  
+    return Canvas.malloc(canvas.skia)
   }
 
   static malloc (skia: SkiaCanvas) {
@@ -98,6 +135,8 @@ export class Canvas {
     path: Path, 
     doAntiAlias: boolean = true
   ) {
+    invariant(path !== null)
+    invariant(doAntiAlias !== null)
     this.skia.clipPath(
       path.skia, 
       Canvas.clipOpIntersect,
@@ -109,6 +148,9 @@ export class Canvas {
     rrect: RRect, 
     doAntiAlias: boolean
   ) {
+    invariant(rrectIsValid(rrect))
+    invariant(doAntiAlias !== null)
+
     this.skia.clipRRect(
       rrect,
       Canvas.clipOpIntersect,
@@ -121,6 +163,9 @@ export class Canvas {
     clipOp: SkiaClipOp = Skia.ClipOp.Intersect, 
     doAntiAlias: boolean = true
   ) {
+    invariant(clipOp !== null)
+    invariant(doAntiAlias !== null)
+
     this.skia.clipRect(
       rect,
       clipOp,
@@ -180,6 +225,8 @@ export class Canvas {
     color: Color, 
     blendMode: SkiaBlendMode
   ) {
+    invariant(color !== null)
+    invariant(blendMode !== null)
     this.skia.drawColorInt(
       color.value,
       blendMode
@@ -191,6 +238,9 @@ export class Canvas {
     inner: RRect, 
     paint: Paint
   ) {
+    invariant(rrectIsValid(outer))
+    invariant(rrectIsValid(inner))
+    invariant(paint !== null)
     this.skia.drawDRRect(
       outer,
       inner,
@@ -203,6 +253,10 @@ export class Canvas {
     offset: Offset, 
     paint: Paint
   ) {
+    invariant(image !== null)
+    invariant(offsetIsValid(offset))
+    invariant(paint !== null)
+
     const filterQuality = paint.filterQuality
     
     if (filterQuality == FilterQuality.High) {
@@ -210,8 +264,8 @@ export class Canvas {
         image.skia,
         offset.dx,
         offset.dy,
-        Canvas.kMitchellNetravali_B,
-        Canvas.kMitchellNetravali_C,
+        Canvas.kMitchellNetravaliB,
+        Canvas.kMitchellNetravaliC,
         paint.skia,
       )
     } else {
@@ -234,14 +288,19 @@ export class Canvas {
     dst: Rect, 
     paint: Paint
   ) {
+    invariant(image !== null)
+    invariant(rectIsValid(src))
+    invariant(rectIsValid(dst))
+    invariant(paint !== null)
+
     const filterQuality = paint.filterQuality
     if (filterQuality == FilterQuality.High) {
       this.skia.drawImageRectCubic(
         image.skia,
         src,
         dst,
-        Canvas.kMitchellNetravali_B,
-        Canvas.kMitchellNetravali_C,
+        Canvas.kMitchellNetravaliB,
+        Canvas.kMitchellNetravaliC,
         paint.skia,
       )
     } else {
@@ -258,18 +317,24 @@ export class Canvas {
     }
   }
 
-  drawImageNine ( // 
+  drawImageNine (
     image: Image, 
     center: Rect, 
     dist: Rect, 
     paint: Paint
   ) {
+    invariant(image !== null)
+    invariant(rectIsValid(center))
+    invariant(rectIsValid(dist))
+    invariant(paint !== null)
+
     this.skia.drawImageNine(
       image.skia,
       center as unknown as Int32Array,
       dist,
-      paint.filterQuality === FilterQuality.None ?
-        Skia.FilterMode.Nearest : Skia.FilterMode.Linear,
+      paint.filterQuality === FilterQuality.None 
+        ? Skia.FilterMode.Nearest 
+        : Skia.FilterMode.Linear,
       paint.skia,
     )
   }
@@ -303,9 +368,11 @@ export class Canvas {
   }
 
   drawParagraph (
-    paragraph, 
-    offset
+    paragraph, // @TODO
+    offset: Offset
   ) {
+    invariant(paragraph !== null)
+    invariant(offsetIsValid(offset))
     this.skia.drawParagraph(
       paragraph.skia,
       offset.dx,
@@ -321,26 +388,55 @@ export class Canvas {
     this.skia.drawPath(path.skia, paint.skia)
   }
 
-  drawPicture (picture) { 
+  drawPicture (picture: Picture) { 
+    invariant(picture !== null)
     this.skia.drawPicture(picture.skia)
   }
 
   drawPoints (
     paint: Paint,
-    pointMode: SkiaBlendMode, 
-    points: Float32Array
+    pointMode: SkiaPointMode, 
+    points: Offset[]
   ) {
+    invariant(pointMode !== null)
+    invariant(points !== null)
+    invariant(paint !== null)
+    const skiaPoints = toMallocedSkiaPoints(points)
+
+    this.skia.drawPoints(
+      pointMode,
+      skiaPoints,
+      paint.skia,
+    )
+
+    Skia.Free(skiaPoints)
+  }
+
+  drawRawPoints(
+    pointMode: SkiaPointMode, 
+    points: Float32Array, 
+    paint: Paint
+  ) {
+    invariant(pointMode !== null)
+    invariant(points !== null)
+    invariant(paint !== null)
+    
+    if (points.length % 2 !== 0) {
+      throw new ArgumentError('"points" must have an even number of values.')
+    }
     this.skia.drawPoints(
       pointMode,
       points,
       paint.skia,
-    )
+    );
   }
 
   drawRRect (
     rrect: RRect, 
     paint: Paint 
   ) {
+    invariant(rrectIsValid(rrect))
+    invariant(paint !== null)
     this.skia.drawRRect(
       rrect,
       paint.skia,
@@ -351,15 +447,21 @@ export class Canvas {
     rect: Rect, 
     paint: Paint 
   ) {
+    invariant(rectIsValid(rect))
+    invariant(paint !== null)
     this.skia.drawRect(rect, paint.skia)
   }
 
-  drawShadow ( // @TODO
+  drawShadow (
     path: Path, 
     color: Color, 
     elevation: number, 
     transparentOccluder: boolean
   ) {
+    invariant(path !== null)
+    invariant(color !== null)
+    invariant(transparentOccluder !== null)
+
     this.drawSkiaShadow(
       this.skia, 
       path, 
@@ -371,7 +473,7 @@ export class Canvas {
   }
 
   drawSkiaShadow (
-    skCanvas: SkiaCanvas,
+    skiaCanvas: SkiaCanvas,
     path: Path,
     color: Color,
     elevation: number,
@@ -379,46 +481,53 @@ export class Canvas {
     devicePixelRatio: number,
   ) {
     const flags = transparentOccluder
-      ? Canvas.kDirectionalLight_ShadowFlag | Canvas.kTransparentOccluder_ShadowFlag
-      : Canvas.kDirectionalLight_ShadowFlag | Canvas.kNone_ShadowFlag
+      ? SkiaShadowFlags.kTransparentOccluderShadowFlag
+      : SkiaShadowFlags.kDefaultShadowFlags
 
-    // const inAmbient =
-    //     color.withAlpha((color.alpha * ckShadowAmbientAlpha).round());
-    // final ui.Color inSpot = color.withAlpha((color.alpha * ckShadowSpotAlpha).round());
+    const inAmbient = color.withAlpha(Math.round((color.alpha * kShadowAmbientAlpha)))
+    const inSpot = color.withAlpha(Math.round((color.alpha * kShadowSpotAlpha)))
 
-    // const inTonalColors = SkTonalColors(
-    //   ambient: makeFreshSkColor(inAmbient),
-    //   spot: makeFreshSkColor(inSpot),
-    // )
+    const inTonalColors = {
+      ambient: makeFreshSkColor(inAmbient),
+      spot: makeFreshSkColor(inSpot),
+    }
 
-    // const tonalColors = Skia.computeTonalColors(inTonalColors)
+    const tonalColors = Skia.computeTonalColors(inTonalColors)
+    const zPlaneParams = new Float32Array(3)
+    zPlaneParams[2] = devicePixelRatio * elevation
 
-    // skCanvas.drawShadow(
-    //   path.skia,
-    //   Float32List(3)..[2] = devicePixelRatio * elevation,
-    //   Float32List(3)
-    //     ..[0] = ckShadowLightXOffset
-    //     ..[1] = ckShadowLightYOffset
-    //     ..[2] = devicePixelRatio * ckShadowLightHeight,
-    //   devicePixelRatio * ckShadowLightRadius,
-    //   tonalColors.ambient,
-    //   tonalColors.spot,
-    //   flags,
-    // )
+    const lightPos = new Float32Array(3)
+    lightPos[0] = kShadowLightXOffset
+    lightPos[1] = kShadowLightYOffset
+    lightPos[2] = devicePixelRatio * kShadowLightHeight,
+
+
+    skiaCanvas.drawShadow(
+      path.skia,
+      zPlaneParams,
+      lightPos,
+      devicePixelRatio * kShadowLightRadius,
+      tonalColors.ambient,
+      tonalColors.spot,
+      flags,
+    )
   }
 
   drawVertices  (
-    vertices, 
+    vertices: Vertices, 
     blendMode: SkiaBlendMode, 
-    paint: Paint // @TODO
+    paint: Paint
   ) {
+    invariant(vertices !== null)
+    invariant(paint !== null)
+    invariant(blendMode !== null)
+
     this.skia.drawVertices(
       vertices.skia,
       blendMode,
       paint.skia,
-    );
+    )
   }
-
 
   restore () {
     this.skia.restore()
@@ -437,18 +546,20 @@ export class Canvas {
   }
 
   saveLayer (
-    bounds: Rect, 
-    paint: Paint // @TODO
+    bounds: Rect | null, 
+    paint: Paint
   ) {
-    this.skia.saveLayer(
-      paint?.skia,
-      bounds,
-      null
-    );
-  }
+    invariant(paint !== null)
 
-  saveLayerWithoutBounds (paint: Paint) { 
-    this.skia.saveLayer(paint?.skia, null, null)
+    if (bounds === null) {
+      this.skia.saveLayer(paint?.skia, null, null)
+    } else {
+      this.skia.saveLayer(
+        paint?.skia,
+        bounds,
+        null
+      )
+    }
   }
 
   saveLayerWithFilter (
@@ -480,8 +591,14 @@ export class Canvas {
     this.skia.skew(sx, sy)
   }
 
-  transform (matrix4: Float32Array) {
-    this.skia.concat(matrix4)
+  transform (matrix4: Float64Array) {
+    invariant(matrix4 !== null)
+
+    if (matrix4.length !== 16) {
+      throw new ArgumentError(`"matrix4" must have 16 entries.`)
+    }
+
+    this.skia.concat(toMatrix32(matrix4))
   }
 
   translate (
@@ -536,7 +653,6 @@ export class RecordingCanvas extends Canvas {
   @command(PaintCommand) rotate
   @command(PaintCommand) save
   @command(PaintCommand) saveLayer
-  @command(PaintCommand) saveLayerWithoutBounds
   @command(PaintCommand) saveLayerWithFilter
   @command(PaintCommand) scale
   @command(PaintCommand) skew

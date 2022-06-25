@@ -12,6 +12,44 @@ const kMatrixIndexToMatrix4Index = [
 
 const kDefaultSkColorStops = [0, 1]
 
+export function makeFreshSkColor (color: Color) {
+  const result = new Float32Array(4)
+  result[0] = color.red / 255.0
+  result[1] = color.green / 255.0
+  result[2] = color.blue / 255.0
+  result[3] = color.alpha / 255.0
+  return result
+}
+
+export function toUint16Array (ints: number[]) {
+  const length = ints.length
+  const result = new Uint16Array(length)
+  for (let i = 0; i < length; i++) {
+    result[i] = ints[i]
+  }
+  return result
+}
+
+export function toFlatSkiaPoints (points: Offset[]) {
+  const length = points.length
+  const result = new Float32Array(length * 2)
+  for (let i = 0; i < length; i++) {
+    result[2 * i] = points[i].dx
+    result[2 * i + 1] = points[i].dy
+  }
+  return result
+}
+
+export function toMallocedSkiaPoints (points: Offset[]) {
+  const skiaPoints = Skia.Malloc(Float32Array, points.length * 2)
+  const list = skiaPoints.toTypedArray()
+  for (let i = 0; i < points.length; i++) {
+    list[2 * i] = points[i].dx
+    list[2 * i + 1] = points[i].dy
+  }
+  return skiaPoints
+}
+
 export function toSkiaM44FromFloat32 (matrix4: Float32Array) {
   const skM44 = new Float32Array(16)
   for (let r = 0; r < 4; r++) {

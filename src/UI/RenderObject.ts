@@ -1,9 +1,10 @@
 import { invariant } from 'ts-invariant' 
-import { Matrix4, MatrixUtils } from '@math'
 import { property } from '@helper'
+import { Matrix4, MatrixUtils } from '@math'
 import { VoidCallback } from '@platform'
 import { Canvas, Clip, ColorFilter, Offset, Path, PictureRecorder, Rect, RRect } from '@rendering'
 import { ClipPathLayer, ClipRectLayer, ClipRRectLayer, ColorFilterLayer, ContainerLayer, Layer, LayerHandle, OffsetLayer, OpacityLayer, PictureLayer, TransformLayer } from './Layer'
+import { ClipContext } from '@painting'
 
 export type PaintingContextCallback = { (
   context: PaintingContext,
@@ -17,7 +18,7 @@ export class ParentData {
   }
 }
 
-export class PaintingContext {
+export class PaintingContext extends ClipContext {
   static repaintCompositedChild(
     child: RenderObject,
     childContext?: PaintingContext | null,
@@ -87,6 +88,7 @@ export class PaintingContext {
   ) {
     invariant(containerLayer !== null)
     invariant(estimatedBounds !== null)
+    super()
 
     this.containerLayer = containerLayer
     this.estimatedBounds = estimatedBounds
@@ -137,7 +139,7 @@ export class PaintingContext {
     invariant(!this.isRecording)
     this.currentLayer = new PictureLayer(this.estimatedBounds)
     this.recorder = new PictureRecorder()
-    this.canvas = Canvas.malloc(this.recorder)
+    this.canvas = Canvas.fromPictureRecorder(this.recorder)
     this.containerLayer.append(this.currentLayer)
   }
 
@@ -219,7 +221,6 @@ export class PaintingContext {
 
       return layer
     } else {
-      // @TODO
       this.clipRectAndPaint(
         offsetClipRect, 
         clipBehavior, 
@@ -256,7 +257,7 @@ export class PaintingContext {
       )
       return layer
     } else {
-      clipRRectAndPaint(
+      this.clipRRectAndPaint(
         offsetClipRRect, 
         clipBehavior, 
         offsetBounds,
@@ -290,7 +291,7 @@ export class PaintingContext {
       )
       return layer
     } else {
-      clipPathAndPaint(
+      this.clipPathAndPaint(
         offsetClipPath, 
         clipBehavior, 
         offsetBounds,
@@ -333,15 +334,15 @@ export class PaintingContext {
         offset,
         MatrixUtils.inverseTransformRect(
           effectiveTransform, 
-          estimatedBounds
+          this.estimatedBounds
         ),
       )
       return layer
     } else {
-      this.canvas.save()
-      this.canvas.transform(effectiveTransform)
+      this.canvas?.save()
+      this.canvas?.transform(effectiveTransform)
       painter(this, offset)
-      this.canvas.restore()
+      this.canvas?.restore()
       return null
     }
   }
