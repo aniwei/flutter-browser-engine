@@ -2,9 +2,9 @@ import { invariant } from 'ts-invariant'
 import { property } from '@helper'
 import { Matrix4, MatrixUtils } from '@math'
 import { VoidCallback } from '@platform'
+import { ClipContext } from '@painting'
 import { Canvas, Clip, ColorFilter, Offset, Path, PictureRecorder, Rect, RRect } from '@rendering'
 import { ClipPathLayer, ClipRectLayer, ClipRRectLayer, ColorFilterLayer, ContainerLayer, Layer, LayerHandle, OffsetLayer, OpacityLayer, PictureLayer, TransformLayer } from './Layer'
-import { ClipContext } from '@painting'
 
 export type PaintingContextCallback = { (
   context: PaintingContext,
@@ -632,7 +632,6 @@ export abstract class RenderObject extends AbstractNode {
   }
 
   attach (owner: unknown) {
-    invariant(!this.debugDisposed)
     super.attach(owner)
     
     if (
@@ -664,8 +663,6 @@ export abstract class RenderObject extends AbstractNode {
 
   visitChildren (visitor) {}
 
-  
-
   layout (
     constraints,
     parentUsesSize: boolean = false
@@ -675,9 +672,6 @@ export abstract class RenderObject extends AbstractNode {
     // @TODO-DEBUG
     invariant(constraints !== null)
     invariant(constraints.debugAssetIsValid)
-
-    invariant(!this.debugDoingThisResize)
-    invariant(!this.debugDoingThisLayout)
 
     let relayoutBoundary: RenderObject | null = null
     if (
