@@ -375,7 +375,7 @@ export class PipelineOwner {
     }
 
     this.rootNode.detach()
-    this[key] = rootNode
+    this._rootNode = rootNode
     this.rootNode.attach(this)
   }) public rootNode: AbstractNode | null = null
 
@@ -422,12 +422,17 @@ export class PipelineOwner {
     }
   }
 
-  enableMutationsToDirtySubtrees (callback: VoidCallback ) {
+  enableMutationsToDirtySubtrees (callback: VoidCallback) {
     // @TODO
+    try {
+      callback()
+    } finally {
+      // @TODO
+    }
   }
   
   flushCompositingBits () {
-    this.nodesNeedingCompositingBitsUpdate.sort((a: RenderObject, b: RenderObject) {
+    this.nodesNeedingCompositingBitsUpdate.sort((a: RenderObject, b: RenderObject) => {
       return  a.depth - b.depth
     })
     for (const node of this.nodesNeedingCompositingBitsUpdate) {
@@ -543,19 +548,19 @@ export abstract class RenderObject extends AbstractNode {
 
   public needsLayout: boolean = true
   public relayoutBoundary: RenderObject | null = null
-  public paintBounds: Rect
-  public parentData: ParentData
-  public layerHandle: LayerHandle<ContainerLayer>
-  public doingThisLayoutWithCallback: boolean = false
+  
+  public parentData: ParentData | null = null
+  public layerHandle: LayerHandle<ContainerLayer> = new LayerHandle<ContainerLayer>()
   public needsPaint: boolean = true
+  public sizedByParent: boolean = false
   public isRepaintBoundary: boolean = false
   public alwaysNeedsCompositing: boolean = false
   public needsCompositingBitsUpdate: boolean = false
-  public cachedSemanticsConfiguration
-  public semantics
-  public needsSemanticsUpdate: boolean = true
+  public doingThisLayoutWithCallback: boolean = false
 
-  @property<ContainerLayer>(function (this, v) {
+  abstract paintBounds: Rect
+  
+  @property<ContainerLayer>(function (this) {
     invariant(
       this.isRepaintBoundary ||
       this.layerHandle.layer === null ||
@@ -563,10 +568,10 @@ export abstract class RenderObject extends AbstractNode {
     )
 
     return this.layerHandle.layer
-  }, function (this, v) {
+  }, function (this, layer: ContainerLayer) {
     invariant(!this.isRepaintBoundary)
-    this.layerHandle.layer = v
-  }) public layer: ContainerLayer = new LayerHandle<ContainerLayer>()
+    this.layerHandle.layer = layer
+  }) public layer!: ContainerLayer
 
   @property<Constraints>(function (this, v) {
     if (v === null) {
@@ -574,22 +579,12 @@ export abstract class RenderObject extends AbstractNode {
     }
 
     return v
-  }) public constraints: Constraints | null = false
-
+  }) public constraints: Constraints | null = null
 
   @property<boolean>(function (this, v) {
     invariant(!this.needsCompositingBitsUpdate)
     return v
   }) public needsCompositing: boolean
-
-  @property<boolean>(function (this, v) {
-    let disposed: boolean
-    invariant((() => {
-      disposed = v
-      return true
-    })())
-    return disposed
-  }) public debugDisposed: boolean = false
 
   constructor () {
     super()
@@ -600,6 +595,7 @@ export abstract class RenderObject extends AbstractNode {
   }
 
   abstract performLayout (): void
+  abstract performResize (): void
 
   setupParentData (child: RenderObject) {
     if (!(child.parentData instanceof ParentData)) {
@@ -608,17 +604,16 @@ export abstract class RenderObject extends AbstractNode {
   }
 
   adoptChild (child: RenderObject) {
-    invariant(this.child !== null)
+    invariant(child !== null)
     this.setupParentData(child)
     this.markNeedsLayout()
     this.markNeedsCompositingBitsUpdate()
-    this.markNeedsSemanticsUpdate()
 
     super.adoptChild(child)
   }
 
   dropChild (child: RenderObject) {
-    invariant(this.child !== null)
+    invariant(child !== null)
     invariant(child.parentData !== null)
     
     child.cleanRelayoutBoundary()
@@ -626,12 +621,12 @@ export abstract class RenderObject extends AbstractNode {
     child.parentData = null
 
     super.dropChild(child)
+
     this.markNeedsLayout()
     this.markNeedsCompositingBitsUpdate()
-    this.markNeedsSemanticsUpdate()
   }
 
-  attach (owner: unknown) {
+  attach (owner: PipelineOwner) {
     super.attach(owner)
     
     if (
@@ -652,26 +647,16 @@ export abstract class RenderObject extends AbstractNode {
       this.needsPaint = false
       this.markNeedsPaint()
     }
-    if (
-      this.needsSemanticsUpdate && 
-      this.semanticsConfiguration.isSemanticBoundary
-    ) {
-      this.needsSemanticsUpdate = false
-      this.markNeedsSemanticsUpdate()
-    }
   }
 
   visitChildren (visitor) {}
 
   layout (
-    constraints,
+    constraints: Constraints,
     parentUsesSize: boolean = false
   ) {
-    invariant(!this.debugDisposed)
-
     // @TODO-DEBUG
     invariant(constraints !== null)
-    invariant(constraints.debugAssetIsValid)
 
     let relayoutBoundary: RenderObject | null = null
     if (
@@ -685,30 +670,12 @@ export abstract class RenderObject extends AbstractNode {
       relayoutBoundary = (this.parent as RenderObject).relayoutBoundary
     }
 
-    invariant((() => {
-      this.debugCanParentUseSize = parentUsesSize
-      return true
-    })())
-
     if (
       this.needsLayout &&
       constraints === constraints &&
       relayoutBoundary === this.relayoutBoundary
     ) {
-      invariant((() => {
-        this.debugDoingThisResize = sizedByParent
-        this.debugDoingThisLayout = !sizedByParent
-
-        const debugPreviousActiveLayout: RenderObject | null = this.debugActiveLayout
-        this.debugActiveLayout = this
-        this.debugResetSize()
-        this.debugActiveLayout = debugPreviousActiveLayout
-        this.debugDoingThisLayout = false
-        this.debugDoingThisResize = false
-        return true
-      })())
-
-      // TODO
+      // @TODO-DEBUG
       return
     }
 
@@ -718,21 +685,13 @@ export abstract class RenderObject extends AbstractNode {
       this.relayoutBoundary !== null && 
       relayoutBoundary !== this.relayoutBoundary
     ) {
-      this.visitChildren(cleanChildRelayoutBoundary)
+      this.visitChildren(RenderObject.cleanChildRelayoutBoundary)
     }
 
     this.relayoutBoundary = relayoutBoundary
-    invariant(!this.debugMutationsLocked)
     invariant(!this.doingThisLayoutWithCallback)
-    invariant((() => {
-      this.debugMutationsLocked = true
-      if (this.debugPrintLayouts) {
-        // @TODO-DEBUG
-        // debugPrint(
-        //     'Laying out (${sizedByParent ? "with separate resize" : "with resize allowed"}) $this');
-      }
-      return true
-    })())
+   
+    // @TODO
 
     if (this.sizedByParent) {
       try {
@@ -742,12 +701,9 @@ export abstract class RenderObject extends AbstractNode {
         // _debugReportException('performResize', e, stack);
       }
     }
-
-    let debugPreviousActiveLayout: RenderObject | null = null
     
     try {
       this.performLayout()
-      this.markNeedsSemanticsUpdate()
     } catch (e: any) {
       // @TODO
       // _debugReportException('performLayout', e, stack);
@@ -764,7 +720,7 @@ export abstract class RenderObject extends AbstractNode {
     invariant(this.layerHandle.layer !== null)
     invariant(!this.layerHandle.layer.attached)
 
-    let node: RenderObject | null = this.parent
+    let node: RenderObject | null = this.parent as RenderObject
     
     while (node instanceof RenderObject) {
       if (node.isRepaintBoundary) {
@@ -779,7 +735,7 @@ export abstract class RenderObject extends AbstractNode {
         node.needsPaint = true
       }
 
-      node = node.parent
+      node = node.parent as RenderObject
     }
   }
 
@@ -787,12 +743,11 @@ export abstract class RenderObject extends AbstractNode {
     invariant(rootLayer.attached)
     invariant(this.attached)
     invariant(!(this.parent instanceof RenderObject))
-    invariant(!this.owner.debugDoingPaint)
     invariant(this.isRepaintBoundary)
     invariant(this.layerHandle.layer === null)
     this.layerHandle.layer = rootLayer
     invariant(this.needsPaint)
-    this.owner.nodesNeedingPaint.push(this)
+    this.owner?.nodesNeedingPaint.push(this)
   }
 
   updateCompositingBits () {
@@ -802,13 +757,14 @@ export abstract class RenderObject extends AbstractNode {
     let oldNeedsCompositing = this.needsCompositing
     this.needsCompositing = false
 
-    for (const child of this.children) {
-      child.updateCompositingBits()
+    // @TODO
+    // for (const child of this.children) {
+    //   child.updateCompositingBits()
 
-      if (child.needsCompositing) {
-        this.needsCompositing = true
-      }
-    }
+    //   if (child.needsCompositing) {
+    //     this.needsCompositing = true
+    //   }
+    // }
 
     if (
       this.isRepaintBoundary || 
@@ -821,36 +777,6 @@ export abstract class RenderObject extends AbstractNode {
     }
 
     this.needsCompositingBitsUpdate = false
-  }
-
-  debugPaint () {}
-
-  debugRegisterRepaintBoundaryPaint (
-    includedParent: boolean = true, 
-    includedChild: boolean = false
-  ) {
-    
-  }
-
-  debugSubtreeRelayoutRootAlreadyMarkedNeedsLayout () {
-    if (this.relayoutBoundary === null) {
-      return true
-    }
-
-    let node: RenderObject = this
-    while (node !== this.relayoutBoundary) {
-      invariant(node.relayoutBoundary === this.relayoutBoundary)
-      invariant(node.parent !== null)
-      node = node.parent as RenderObject
-      if (
-        !node.needsLayout && 
-        !node.debugDoingThisLayout
-      ) {
-        return false
-      }
-    }
-    invariant(node.relayoutBoundary === node)
-    return true
   }
 
   paint (
@@ -869,11 +795,6 @@ export abstract class RenderObject extends AbstractNode {
     context: PaintingContext, 
     offset: Offset
   ) {
-    invariant(this.debugDisposed)
-    if (this.debugDoingThisPaint) {
-      throw new Error(`Tried to paint a RenderObject reentrantly.`)
-    }
-
     if (this.needsLayout) {
       return
     }
@@ -881,12 +802,6 @@ export abstract class RenderObject extends AbstractNode {
     if (this.needsCompositingBitsUpdate) {
 
     }
-
-    let debugLastActivePaint: RenderObject | null
-
-    this.debugDoingThisPaint = true
-    debugLastActivePaint = this.debugActivePaint
-    this.debugActivePaint = this
 
     invariant(
       this.isRepaintBoundary ||
@@ -906,10 +821,8 @@ export abstract class RenderObject extends AbstractNode {
 
   replaceRootLayer (rootLayer: OffsetLayer) {
     invariant(rootLayer.attached)
-    invariant(!this.debugDisposed)
     invariant(this.attached)
     invariant(!(this.parent instanceof RenderObject))
-    invariant(!this.owner!.debugDoingPaint)
     invariant(this.isRepaintBoundary)
     invariant(this.layerHandle.layer !== null)
 
@@ -923,9 +836,7 @@ export abstract class RenderObject extends AbstractNode {
   }
 
   markNeedsLayout () {
-    invariant(this.debugCanPerformMutations)
     if (this.needsLayout) {
-      invariant(this.debugSubtreeRelayoutRootAlreadyMarkedNeedsLayout())
       return
     }
 
@@ -936,14 +847,6 @@ export abstract class RenderObject extends AbstractNode {
     } else {
       this.needsLayout = true
       if (this.owner !== null) {
-        invariant((() => {
-          // @TODO
-          // if (this.debugPrintMarkNeedsLayoutStacks) {
-
-          // }
-          return true
-        })())
-
         this.owner.nodesNeedingLayout.push(this)
         this.owner.requestVisualUpdate()
       }
@@ -958,9 +861,7 @@ export abstract class RenderObject extends AbstractNode {
 
     if (this.doingThisLayoutWithCallback) {
       parent.markNeedsLayout()
-    } else {
-      invariant(parent.debugDoingThisLayout)
-    }
+    } 
 
     invariant(parent === this.parent)
   }
@@ -974,12 +875,11 @@ export abstract class RenderObject extends AbstractNode {
     if (this.relayoutBoundary !== this) {
       this.relayoutBoundary = null
       this.needsLayout = true
-      this.visitChildren(this.cleanChildRelayoutBoundary)
+      this.visitChildren(RenderObject.cleanChildRelayoutBoundary)
     }
   }
 
   markNeedsCompositingBitsUpdate () {
-    invariant(this.debugDisposed)
     if (this.needsCompositingBitsUpdate) {
       return
     }
@@ -1012,18 +912,12 @@ export abstract class RenderObject extends AbstractNode {
   }
 
   scheduleInitialLayout () {
-    invariant(!this.debugDisposed)
     invariant(this.attached)
     invariant(!(parent instanceof RenderObject))
-    invariant(!this.owner!.debugDoingLayout)
     invariant(this.relayoutBoundary === null)
     
     this.relayoutBoundary = this
-    invariant((() => {
-      this.debugCanParentUseSize = false
-      return true;
-    })())
-    this.owner!.nodesNeedingLayout.add(this)
+    this.owner!.nodesNeedingLayout.push(this)
   }
 
   layoutWithoutResize () {
@@ -1031,47 +925,21 @@ export abstract class RenderObject extends AbstractNode {
     
     let debugPreviousActiveLayout: RenderObject | null = null
 
-    invariant(!this.debugMutationsLocked)
     invariant(!this.doingThisLayoutWithCallback)
-    invariant(this.debugCanParentUseSize !== null)
-    invariant((() => {
-      this.debugMutationsLocked = true
-      this.debugDoingThisLayout = true
-      debugPreviousActiveLayout = this.debugActiveLayout
-      this.debugActiveLayout = this
-      // @TODO
-      // if (this.debugPrintLayouts) {
-      //   debugPrint('Laying out (without resize) $this');
-      // }
-      return true;
-    })())
-
+    
     try {
       this.performLayout()
-      this.markNeedsSemanticsUpdate()
     } catch (e: any) {
       // @TODO
       // _debugReportException('performLayout', e, stack)
     }
-    invariant((() => {
-      this.debugActiveLayout = debugPreviousActiveLayout
-      
-      this.debugDoingThisLayout = false
-      this.debugMutationsLocked = false
-      return true;
-    })())
-
     this.needsLayout = false
     this.markNeedsPaint()
   }
 
 
   markNeedsPaint (): void {
-    invariant(!this.debugDisposed)
-    invariant(
-      this.owner === null ||
-      !this.owner.debugDoingPaint
-    )
+    invariant(this.owner === null )
 
     if (this.needsPaint) {
       return
@@ -1082,13 +950,13 @@ export abstract class RenderObject extends AbstractNode {
     if (this.isRepaintBoundary) {
       invariant(this.layerHandle.layer instanceof OffsetLayer)
 
-      if (this.owner !== null) {
+      if (this.owner) {
         this.owner.nodesNeedingPaint.push(this)
         this.owner.requestVisualUpdate()
       }
     } else if (parent instanceof RenderObject) {
-      parent = this.parent
-      this.parent.markNeedsPaint()
+      const parent = this.parent as RenderObject
+      parent?.markNeedsPaint()
       invariant(this.parent === this.parent)
     } else {
       if (this.owner !== null) {
@@ -1097,79 +965,6 @@ export abstract class RenderObject extends AbstractNode {
     }
   }
 
-  markNeedsSemanticsUpdate (): void {
-    invariant(!this.debugDisposed)
-    invariant(!this.attached || !this.owner!.debugDoingSemantics)
-
-    if (
-      !this.attached || 
-      this.owner!._semanticsOwner === null
-    ) {
-      this.cachedSemanticsConfiguration = null
-      return
-    }
-
-    const wasSemanticsBoundary = (
-      this.semantics !== null &&
-      this.cachedSemanticsConfiguration?.isSemanticBoundary === true
-    )
-
-    this.cachedSemanticsConfiguration = null
-    
-    let isEffectiveSemanticsBoundary = (
-      this.semanticsConfiguration.isSemanticBoundary && 
-      wasSemanticsBoundary
-    )
-
-    let node = this
-
-    while (
-      !isEffectiveSemanticsBoundary && 
-      node.parent instanceof RenderObject
-    ) {
-      if (
-        node !== this && 
-        node.needsSemanticsUpdate
-      ) {
-        break
-      }
-      
-      node.needsSemanticsUpdate = true
-      node = node.parent as RenderObject
-
-      isEffectiveSemanticsBoundary = node.semanticsConfiguration.isSemanticBoundary
-      
-      if (
-        isEffectiveSemanticsBoundary && 
-        node.semantics === null
-      ) {
-        return
-      }
-    }
-
-    if (
-      node !== this && 
-      this.semantics !== null && 
-      this.needsSemanticsUpdate
-    ) {
-      this.owner!.nodesNeedingSemantics.remove(this)
-    }
-
-    if (!node.needsSemanticsUpdate) {
-      node.needsSemanticsUpdate = true
-      
-      if (this.owner !== null) {
-        invariant(
-          node.semanticsConfiguration.isSemanticBoundary ||
-          !(node.parent instanceof RenderObject)
-        )
-        this.owner!.nodesNeedingSemantics.add(node)
-        this.owner!.requestVisualUpdate()
-      }
-    }
-  }
-
- 
 
   paintChild (
     child: RenderObject,
@@ -1187,19 +982,6 @@ export abstract class RenderObject extends AbstractNode {
 
   visitChildrenForSemantics(visitor) { // @TODO
     // visitChildren(visitor)
-  }
-
-  assembleSemanticsNode (
-    node, //@TODO
-    config, // @TODO
-    children, // @TODO
-  ) {
-    invariant(node === this.semantics)
-    
-    node.updateWith(
-      config,
-      children
-    )
   }
 
   showOnScreen (
@@ -1220,27 +1002,20 @@ export abstract class RenderObject extends AbstractNode {
     }
   }
 
-  
-
   reassemble () {
     this.markNeedsLayout()
     this.markNeedsCompositingBitsUpdate()
     this.markNeedsPaint()
-    this.markNeedsSemanticsUpdate()
+    // this.markNeedsSemanticsUpdate()
 
     // @TODO
-    for (const child of this.children) {
-      child.reassemble()
-    }
+    // for (const child of this.children) {
+    //   child.reassemble()
+    // }
   }
 
   dispose () {
-    invariant(!this.debugDisposed)
     this.layerHandle.layer = null
-    invariant((() => {
-      this.debugDisposed = true
-      return true
-    })())
   }
 }
 
