@@ -1,9 +1,10 @@
 import { invariant } from 'ts-invariant'
+import { Matrix4, MatrixUtils } from '@math'
 import { property } from '@helper'
-import { Matrix4 } from '@math'
-import { Offset, Rect, Size } from '@rendering'
-import { RenderObject } from './RenderObject'
-import { RenderBox } from './RenderBox'
+import { HitTestEntry, HitTestResult } from '@gestures'
+import { LayerSceneBuilder, Offset, Rect, Size } from '@rendering'
+import { PaintingContext, RenderObject } from './RenderObject'
+import { BoxConstraints, BoxHitTestResult, RenderBox } from './RenderBox'
 import { TransformLayer } from './Layer'
 
 export class ViewConfiguration {
@@ -53,25 +54,18 @@ export class RenderView extends RenderObject {
       return
     }
     
-    this[k] = configuration
+    this._configuration = configuration
     this.replaceRootLayer(this.updateMatricesAndCreateNewRootLayer())
     invariant(this.rootTransform !== null)
 
     this.markNeedsLayout()
   }) public configuration: ViewConfiguration
   
-  @property<Rect>(function (this, paintBounds: Rect) {
+  @property<Rect>(function (this) {
     return Offset.zero.and(
       this.size.multiply(this.configuration.devicePixelRatio)
     )
   }) public paintBounds!: Rect
-
-  @property<Rect>(function (this, semanticBounds: Rect) {
-    invariant(this.rootTransform !== null)
-    return Offset.zero.and(
-      this.size.multiply(this.configuration.devicePixelRatio)
-    )
-  }) public semanticBounds!: Rect
 
   @property<RenderObject>(function (this, child: RenderObject) {
     return child
@@ -80,14 +74,14 @@ export class RenderView extends RenderObject {
       this.dropChild(this.child)
     }
 
-    this[key] = child
+    this._child = child
     if (this.child !== null) {
       this.adoptChild(this.child)
     }
   }) public child!: RenderObject | null
   
   public window
-  public automaticSystemUiAdjustment: boolean = true
+  public automaticSystemUIAdjustment: boolean = true
   public rootTransform: Matrix4 | null = null
   public isRepaintBoundary: boolean = true
 
@@ -189,126 +183,19 @@ export class RenderView extends RenderObject {
     super.applyPaintTransform(child, transform)
   }
 
-  /// Uploads the composited layer tree to the engine.
-  ///
-  /// Actually causes the output of the rendering pipeline to appear on screen.
-  void compositeFrame() {
-    if (!kReleaseMode) {
-      Timeline.startSync('COMPOSITING', arguments: timelineArgumentsIndicatingLandmarkEvent);
-    }
+  compositeFrame () {
     try {
-      final ui.SceneBuilder builder = ui.SceneBuilder();
-      final ui.Scene scene = layer!.buildScene(builder);
-      if (automaticSystemUiAdjustment)
-        _updateSystemChrome();
-      _window.render(scene);
-      scene.dispose();
-      assert(() {
-        if (debugRepaintRainbowEnabled || debugRepaintTextRainbowEnabled)
-          debugCurrentRepaintColor = debugCurrentRepaintColor.withHue((debugCurrentRepaintColor.hue + 2.0) % 360.0);
-        return true;
-      }());
+      const builder = new LayerSceneBuilder()
+      const scene = this.layer!.buildScene(builder)
+      // @TODO-SYSTEM
+     
+      this.window.render(scene)
+      scene.dispose()
     } finally {
-      if (!kReleaseMode) {
-        Timeline.finishSync();
-      }
+      // @TODO-DEBUG
+      // if (!kReleaseMode) {
+      //   Timeline.finishSync();
+      // }
     }
-  }
-
-  void _updateSystemChrome() {
-    // Take overlay style from the place where a system status bar and system
-    // navigation bar are placed to update system style overlay.
-    // The center of the system navigation bar and the center of the status bar
-    // are used to get SystemUiOverlayStyle's to update system overlay appearance.
-    //
-    //         Horizontal center of the screen
-    //                 V
-    //    ++++++++++++++++++++++++++
-    //    |                        |
-    //    |    System status bar   |  <- Vertical center of the status bar
-    //    |                        |
-    //    ++++++++++++++++++++++++++
-    //    |                        |
-    //    |        Content         |
-    //    ~                        ~
-    //    |                        |
-    //    ++++++++++++++++++++++++++
-    //    |                        |
-    //    |  System navigation bar | <- Vertical center of the navigation bar
-    //    |                        |
-    //    ++++++++++++++++++++++++++ <- bounds.bottom
-    final Rect bounds = paintBounds;
-    // Center of the status bar
-    final Offset top = Offset(
-      // Horizontal center of the screen
-      bounds.center.dx,
-      // The vertical center of the system status bar. The system status bar
-      // height is kept as top window padding.
-      _window.padding.top / 2.0,
-    );
-    // Center of the navigation bar
-    final Offset bottom = Offset(
-      // Horizontal center of the screen
-      bounds.center.dx,
-      // Vertical center of the system navigation bar. The system navigation bar
-      // height is kept as bottom window padding. The "1" needs to be subtracted
-      // from the bottom because available pixels are in (0..bottom) range.
-      // I.e. for a device with 1920 height, bound.bottom is 1920, but the most
-      // bottom drawn pixel is at 1919 position.
-      bounds.bottom - 1.0 - _window.padding.bottom / 2.0,
-    );
-    final SystemUiOverlayStyle? upperOverlayStyle = layer!.find<SystemUiOverlayStyle>(top);
-    // Only android has a customizable system navigation bar.
-    SystemUiOverlayStyle? lowerOverlayStyle;
-    switch (defaultTargetPlatform) {
-      case TargetPlatform.android:
-        lowerOverlayStyle = layer!.find<SystemUiOverlayStyle>(bottom);
-        break;
-      case TargetPlatform.fuchsia:
-      case TargetPlatform.iOS:
-      case TargetPlatform.linux:
-      case TargetPlatform.macOS:
-      case TargetPlatform.windows:
-        break;
-    }
-    // If there are no overlay styles in the UI don't bother updating.
-    if (upperOverlayStyle != null || lowerOverlayStyle != null) {
-      final SystemUiOverlayStyle overlayStyle = SystemUiOverlayStyle(
-        statusBarBrightness: upperOverlayStyle?.statusBarBrightness,
-        statusBarIconBrightness: upperOverlayStyle?.statusBarIconBrightness,
-        statusBarColor: upperOverlayStyle?.statusBarColor,
-        systemStatusBarContrastEnforced: upperOverlayStyle?.systemStatusBarContrastEnforced,
-        systemNavigationBarColor: lowerOverlayStyle?.systemNavigationBarColor,
-        systemNavigationBarDividerColor: lowerOverlayStyle?.systemNavigationBarDividerColor,
-        systemNavigationBarIconBrightness: lowerOverlayStyle?.systemNavigationBarIconBrightness,
-        systemNavigationBarContrastEnforced: lowerOverlayStyle?.systemNavigationBarContrastEnforced,
-      );
-      SystemChrome.setSystemUIOverlayStyle(overlayStyle);
-    }
-  }
-
-  @override
-  Rect get paintBounds => Offset.zero & (size * configuration.devicePixelRatio);
-
-  @override
-  Rect get semanticBounds {
-    assert(_rootTransform != null);
-    return MatrixUtils.transformRect(_rootTransform!, Offset.zero & size);
-  }
-
-  @override
-  void debugFillProperties(DiagnosticPropertiesBuilder properties) {
-    // call to ${super.debugFillProperties(description)} is omitted because the
-    // root superclasses don't include any interesting information for this
-    // class
-    assert(() {
-      properties.add(DiagnosticsNode.message('debug mode enabled - ${kIsWeb ? 'Web' :  Platform.operatingSystem}'));
-      return true;
-    }());
-    properties.add(DiagnosticsProperty<Size>('window size', _window.physicalSize, tooltip: 'in physical pixels'));
-    properties.add(DoubleProperty('device pixel ratio', _window.devicePixelRatio, tooltip: 'physical pixels per logical pixel'));
-    properties.add(DiagnosticsProperty<ViewConfiguration>('configuration', configuration, tooltip: 'in logical pixels'));
-    if (_window.platformDispatcher.semanticsEnabled)
-      properties.add(DiagnosticsNode.message('semantics enabled'));
   }
 }

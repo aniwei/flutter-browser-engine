@@ -1,12 +1,11 @@
 import { invariant } from 'ts-invariant'
 import { clamp, lerpDouble, property } from '@helper'
-import { Constraints, ParentData, RenderObject } from './RenderObject'
 import { CacheMap } from '@internal'
 import { Offset, Size, TextBaseline } from '@rendering'
 import { Matrix4, MatrixUtils, Vector3 } from '@math'
-import { EdgeInsets } from '@painting'
 import { HitTestEntry, HitTestResult } from '@gestures'
-import { MatrixUtils } from 'src/Math/MatrixUtils'
+import { Constraints, ParentData, RenderObject } from './RenderObject'
+import type { EdgeInsets } from '@painting'
 
 export enum IntrinsicDimension { 
   minWidth, 
@@ -38,10 +37,11 @@ export class BoxHitTestResult extends HitTestResult {
     invariant(position !== null)
     invariant(hitTest !== null)
     if (transform !== null) {
-      transform = Matrix4.tryInvert(PointerEvent.removePerspectiveTransform(transform))
-      if (transform === null) {
-        return false
-      }
+      // @TODO
+      // transform = Matrix4.tryInvert(PointerEvent.removePerspectiveTransform(transform))
+      // if (transform === null) {
+      //   return false
+      // }
     }
     return this.addWithRawTransform(
       transform,
@@ -110,17 +110,17 @@ export class BoxHitTestResult extends HitTestResult {
     } else if (rawTransform !== null) {
       this.pushTransform(rawTransform)
     } else {
-      invariant(paintTransform !== null)
-      paintTransform = Matrix4.tryInvert(PointerEvent.removePerspectiveTransform(paintTransform!))
-      invariant(paintTransform !== null, 'paintTransform must be invertible.')
-      this.pushTransform(paintTransform!)
+      // @TODO
+      // invariant(paintTransform !== null)
+      // paintTransform = Matrix4.tryInvert(PointerEvent.removePerspectiveTransform(paintTransform!))
+      // invariant(paintTransform !== null, 'paintTransform must be invertible.')
+      // this.pushTransform(paintTransform!)
     }
     const isHit = hitTest(this)
     this.popTransform()
     return isHit
   }
 }
-
 
 export class BoxHitTestEntry extends HitTestEntry {
   public localPosition: Offset 
@@ -147,6 +147,12 @@ export class BoxParentData extends ParentData {
   }
 }
 
+export abstract class ContainerBoxParentData<ChildType extends RenderObject> extends BoxParentData { 
+
+}
+
+
+
 export class IntrinsicDimensionsCacheEntry {
   public dimension: IntrinsicDimension
   public argument: number
@@ -169,6 +175,7 @@ export class IntrinsicDimensionsCacheEntry {
     )
   }
 }
+
 
 
 export abstract class RenderBox extends RenderObject {
@@ -348,7 +355,7 @@ export abstract class RenderBox extends RenderObject {
 
   
   performResize() {
-    this.size = this.computeDryLayout(this.constraints)
+    this.size = this.computeDryLayout(this.constraints as BoxConstraints)
     // @TODO 
     // invariant(this.size.isFinite);
   }
@@ -395,7 +402,38 @@ export abstract class RenderBox extends RenderObject {
     transform.translate(offset.dx, offset.dy)
   }
 
-  
+  getTransformTo (ancestor?: RenderObject | null) {
+    const ancestorSpecified = ancestor !== null
+    invariant(this.attached)
+    if (ancestor === null) {
+      const rootNode = this.owner!.rootNode
+      if (rootNode instanceof RenderObject) {
+        ancestor = rootNode
+      }
+    }
+
+    const renderers: RenderObject[] = []
+    for (
+      let renderer = this as RenderObject;
+      renderer !== ancestor;
+      renderer = renderer.parent! as RenderObject
+    ) {
+      renderers.push(renderer)
+      invariant(renderer.parent !== null)
+    }
+
+    if (ancestorSpecified) {
+      renderers.push(ancestor!)
+    }
+    const transform = Matrix4.identity()
+
+    for (let index = renderers.length - 1; index > 0; index -= 1) {
+      renderers[index].applyPaintTransform(renderers[index - 1], transform)
+    }
+
+    return transform
+  }
+
   globalToLocal (
     point: Offset, 
     ancestor: RenderObject | null 
@@ -408,10 +446,14 @@ export abstract class RenderBox extends RenderObject {
 
     const n = new Vector3([0.0, 0.0, 1.0])
     const i = transform.perspectiveTransform(new Vector3([0.0, 0.0, 0.0]))
-    const d = transform.perspectiveTransform(new Vector3([0.0, 0.0, 1.0])).divide(i)
+    const d = transform.perspectiveTransform(new Vector3([0.0, 0.0, 1.0]))
     const s = transform.perspectiveTransform(new Vector3([point.dx, point.dy, 0.0]))
-    const p = s - d.multiply(n.dot(s) / n.dot(d))
-    return new Offset(p.x, p.y)
+
+    d.divide(i)
+    d.multiply(n.dot(s).divide(n.dot(d)))
+    s.substract(d)
+
+    return new Offset(s.x, s.y)
   }
 
   localToGlobal (
@@ -430,7 +472,7 @@ export abstract class RenderBox extends RenderObject {
     event: PointerEvent, 
     entry: BoxHitTestEntry
   ) {
-    super.handleEvent(event, entry);
+    // super.handleEvent(event, entry);
   }
 }
 

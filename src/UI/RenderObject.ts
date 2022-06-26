@@ -471,7 +471,6 @@ export class PipelineOwner {
   }
 }
 
-
 export abstract class Constraints {
   abstract isTight: boolean
   abstract isNormalized: boolean
@@ -539,7 +538,45 @@ abstract class AbstractNode {
   }
 }
 
-export abstract class RenderObject extends AbstractNode {
+export class RenderChild<ChildType extends RenderObject> extends AbstractNode {
+  @property<ChildType>(function get (this, child: ChildType) {
+    return child
+  }, function set (this, child: ChildType) {
+    if (this.child !== null) {
+      this.dropChild(this.child)
+    }
+    this._child = child
+    if (this.child !== null) {
+      this.adoptChild(this.child)
+    }
+  }) public child: ChildType | null = null
+
+  attach (owner: PipelineOwner) {
+    super.attach(owner)
+    if (this.child !== null) {
+      this.child.attach(owner)
+    }
+  }
+
+  detach () {
+    super.detach()
+    if (this.child !== null) {
+      this.child.detach()
+    }
+  }
+
+  redepthChildren () {
+    if (this.child !== null) {
+      this.redepthChild(this.child)
+    }
+  }
+
+  visitChildren (visitor) {
+
+  }
+}
+
+export abstract class RenderObject extends RenderChild<T> {
   static debugCheckingIntrinsics: boolean = false
 
   static cleanChildRelayoutBoundary (child: RenderObject) {
@@ -649,7 +686,6 @@ export abstract class RenderObject extends AbstractNode {
     }
   }
 
-  visitChildren (visitor) {}
 
   layout (
     constraints: Constraints,
@@ -939,8 +975,6 @@ export abstract class RenderObject extends AbstractNode {
 
 
   markNeedsPaint (): void {
-    invariant(this.owner === null )
-
     if (this.needsPaint) {
       return
     }
