@@ -5,21 +5,17 @@ import { VoidCallback } from '@platform'
 import { ClipContext } from '@painting'
 import { Canvas, Clip, ColorFilter, Offset, Path, PictureRecorder, Rect, RRect } from '@rendering'
 import { ClipPathLayer, ClipRectLayer, ClipRRectLayer, ColorFilterLayer, ContainerLayer, Layer, LayerHandle, OffsetLayer, OpacityLayer, PictureLayer, TransformLayer } from './Layer'
+import { AbstractNode } from '@internal'
 
 export type PaintingContextCallback = { (
   context: PaintingContext,
   offset: Offset
 ): void }
 
-export class ParentData {
-  detach () {}
-  toString () {
-    return '<none>'
-  }
-}
+export type RenderObjectVisitor = { (child: RenderObject): void }
 
 export class PaintingContext extends ClipContext {
-  static repaintCompositedChild(
+  static repaintCompositedChild (
     child: RenderObject,
     childContext?: PaintingContext | null,
   ) {
@@ -202,7 +198,7 @@ export class PaintingContext extends ClipContext {
     needsCompositing: boolean, 
     offset: Offset,
     clipRect: Rect, 
-    painter: PaintingContextCallback ,
+    painter: PaintingContextCallback,
     clipBehavior: Clip = Clip.HardEdge, 
     oldLayer?: ClipRectLayer | null
   ): ClipRectLayer | null {
@@ -476,72 +472,14 @@ export abstract class Constraints {
   abstract isNormalized: boolean
 }
 
-abstract class AbstractNode {
-  @property<boolean>(function get (this) {
-    return this.owner !== null
-  }) public attached!: boolean
-
-  public depth = 0
-  public owner: PipelineOwner | null = null
-  public parent: AbstractNode | null = null
-
-  redepthChild (child: AbstractNode) {
-    invariant(child.owner === this.owner)
-
-    if (child.depth <= this.depth) {
-      child.depth = this.depth + 1
-      child.redepthChildren()
-    }
+export abstract class RenderObject extends AbstractNode {
+  static cleanChildRelayoutBoundary (child: RenderObject) {
+    child.cleanRelayoutBoundary()
   }
 
-  redepthChildren () {}
-
-  attach (owner: PipelineOwner) {
-    invariant(owner !== null)
-    invariant(this.owner === null)
-    this.owner = owner
-  }
-
-  detach () {
-    invariant(this.owner !== null)
-    this.owner = null
-    invariant(parent === null || this.attached === this.parent!.attached)
-  }
-
-  adoptChild (child: AbstractNode) {
-    invariant(child !== null)
-    invariant(child.parent == null)
-    invariant((() => {
-      let node: AbstractNode = this
-      while (node.parent !== null) {
-        node = node.parent!
-      }
-      invariant(node !== child)
-      return true
-    })())
-
-    child.parent = this
-    if (this.attached) {
-      child.attach(this.owner!)
-    }
-    this.redepthChild(child)
-  }
-
-  dropChild (child: AbstractNode) {
-    invariant(child !== null)
-    invariant(child.parent === this)
-    invariant(child.attached === this.attached)
-    child.parent = null
-    if (this.attached) {
-      child.detach()
-    }
-  }
-}
-
-export class RenderChild<ChildType extends RenderObject> extends AbstractNode {
-  @property<ChildType>(function get (this, child: ChildType) {
+  @property<RenderObject>(function get (this, child: RenderObject) {
     return child
-  }, function set (this, child: ChildType) {
+  }, function set (this, child: RenderObject) {
     if (this.child !== null) {
       this.dropChild(this.child)
     }
@@ -549,44 +487,18 @@ export class RenderChild<ChildType extends RenderObject> extends AbstractNode {
     if (this.child !== null) {
       this.adoptChild(this.child)
     }
-  }) public child: ChildType | null = null
+  }) public child: RenderObject | null = null
 
-  attach (owner: PipelineOwner) {
-    super.attach(owner)
-    if (this.child !== null) {
-      this.child.attach(owner)
-    }
-  }
-
-  detach () {
-    super.detach()
-    if (this.child !== null) {
-      this.child.detach()
-    }
-  }
-
-  redepthChildren () {
-    if (this.child !== null) {
-      this.redepthChild(this.child)
-    }
-  }
-
-  visitChildren (visitor) {
-
-  }
-}
-
-export abstract class RenderObject extends RenderChild<T> {
-  static debugCheckingIntrinsics: boolean = false
-
-  static cleanChildRelayoutBoundary (child: RenderObject) {
-    child.cleanRelayoutBoundary()
-  }
+  public childCount: number = 0
+  public firstChild: RenderObject | null = null
+  public lastChild: RenderObject | null = null
+  public previousSibling: RenderObject | null = null
+  public nextSibling: RenderObject | null = null
 
   public needsLayout: boolean = true
   public relayoutBoundary: RenderObject | null = null
   
-  public parentData: ParentData | null = null
+  public owner: PipelineOwner | null = null
   public layerHandle: LayerHandle<ContainerLayer> = new LayerHandle<ContainerLayer>()
   public needsPaint: boolean = true
   public sizedByParent: boolean = false
@@ -633,16 +545,10 @@ export abstract class RenderObject extends RenderChild<T> {
 
   abstract performLayout (): void
   abstract performResize (): void
-
-  setupParentData (child: RenderObject) {
-    if (!(child.parentData instanceof ParentData)) {
-      child.parentData = new ParentData()
-    }
-  }
+  abstract visitChildren (visitor: unknown): void
 
   adoptChild (child: RenderObject) {
     invariant(child !== null)
-    this.setupParentData(child)
     this.markNeedsLayout()
     this.markNeedsCompositingBitsUpdate()
 
@@ -651,41 +557,13 @@ export abstract class RenderObject extends RenderChild<T> {
 
   dropChild (child: RenderObject) {
     invariant(child !== null)
-    invariant(child.parentData !== null)
     
     child.cleanRelayoutBoundary()
-    child.parentData!.detach()
-    child.parentData = null
-
     super.dropChild(child)
 
     this.markNeedsLayout()
     this.markNeedsCompositingBitsUpdate()
   }
-
-  attach (owner: PipelineOwner) {
-    super.attach(owner)
-    
-    if (
-      this.needsLayout && 
-      this.relayoutBoundary !== null
-    ) {
-      this.needsLayout = false
-      this.markNeedsLayout()
-    }
-    if (this.needsCompositingBitsUpdate) {
-      this.needsCompositingBitsUpdate = false
-      this.markNeedsCompositingBitsUpdate()
-    }
-    if (
-      this.needsPaint && 
-      this.layerHandle.layer !== null
-    ) {
-      this.needsPaint = false
-      this.markNeedsPaint()
-    }
-  }
-
 
   layout (
     constraints: Constraints,
@@ -958,9 +836,6 @@ export abstract class RenderObject extends RenderChild<T> {
 
   layoutWithoutResize () {
     invariant(this.relayoutBoundary === this)
-    
-    let debugPreviousActiveLayout: RenderObject | null = null
-
     invariant(!this.doingThisLayoutWithCallback)
     
     try {
@@ -999,25 +874,6 @@ export abstract class RenderObject extends RenderChild<T> {
     }
   }
 
-
-  paintChild (
-    child: RenderObject,
-    offset: Offset
-  ) {
-
-  }
-
-  compositeChild (
-    child: RenderObject,
-    offset: Offset
-  ) {
-
-  }
-
-  visitChildrenForSemantics(visitor) { // @TODO
-    // visitChildren(visitor)
-  }
-
   showOnScreen (
     descendant?: RenderObject | null,
     rect?: Rect | null,
@@ -1033,6 +889,46 @@ export abstract class RenderObject extends RenderChild<T> {
         duration,
         curve,
       );
+    }
+  }
+
+  attach (owner: PipelineOwner) {
+    super.attach(owner)
+    
+    if (
+      this.needsLayout && 
+      this.relayoutBoundary !== null
+    ) {
+      this.needsLayout = false
+      this.markNeedsLayout()
+    }
+    if (this.needsCompositingBitsUpdate) {
+      this.needsCompositingBitsUpdate = false
+      this.markNeedsCompositingBitsUpdate()
+    }
+    if (
+      this.needsPaint && 
+      this.layerHandle.layer !== null
+    ) {
+      this.needsPaint = false
+      this.markNeedsPaint()
+    }
+
+    if (this.child !== null) {
+      this.child.attach(owner)
+    }
+  }
+
+  detach () {
+    super.detach()
+    if (this.child !== null) {
+      this.child.detach()
+    }
+  }
+
+  redepthChildren () {
+    if (this.child !== null) {
+      this.redepthChild(this.child)
     }
   }
 
@@ -1053,3 +949,178 @@ export abstract class RenderObject extends RenderChild<T> {
   }
 }
 
+export abstract class ContainerRenderObject extends RenderObject {
+  
+
+  insertAfter (
+    child: RenderObject,
+    afterChild?: RenderObject | null
+  ) {
+    invariant(child.nextSibling === null)
+    invariant(child.previousSibling === null)
+    this.childCount += 1
+    invariant(this.childCount > 0)
+    if (afterChild === null) {
+      child.nextSibling = this.firstChild
+      if (this.firstChild !== null) {
+        this.firstChild.previousSibling = child
+      }
+      this.firstChild = child
+      this.lastChild ??= child
+    } else {
+      invariant(this.firstChild !== null)
+      invariant(this.lastChild !== null)
+      
+      if (afterChild?.nextSibling === null) {
+        invariant(afterChild === this.lastChild)
+        child.previousSibling = afterChild
+        afterChild.nextSibling = child
+        this.lastChild = child
+      } else {
+        child.nextSibling = afterChild?.nextSibling ?? null
+        child.previousSibling = afterChild ?? null
+        const previousSibling: RenderObject | null = child.previousSibling as RenderObject
+        const nextSibling: RenderObject | null = child.nextSibling as RenderObject
+
+        if (previousSibling) {
+          previousSibling.nextSibling = child;
+        }
+
+        if (nextSibling) {
+          nextSibling.previousSibling = child
+        }
+
+        invariant(afterChild?.nextSibling === child)
+      }
+    }
+  }
+
+  appendChild (
+    child: RenderObject,
+    afterChild?: RenderObject | null
+  ) {
+    invariant(child !== this as unknown as RenderObject, 'A RenderObject cannot be inserted into itself.')
+    invariant(afterChild !== this as unknown as RenderObject, 'A RenderObject cannot simultaneously be both the parent and the sibling of another RenderObject.')
+    invariant(child !== afterChild, 'A RenderObject cannot be inserted after itself.')
+    invariant(child !== this.firstChild)
+    invariant(child !== this.lastChild)
+    this.insertAfter(child, afterChild)
+  }
+
+  append (child: RenderObject) {
+    this.adoptChild(child)
+    this.appendChild(child, this.lastChild)
+  }
+
+  appendAllChildren (children: RenderObject[]) {
+    for (const child of children) {
+      this.append(child)
+    }
+  }
+
+  removeChild (child: RenderObject) {
+    invariant(this.childCount >= 0)
+    if (child.previousSibling === null) {
+      
+      invariant(this.firstChild === child)
+      this.firstChild = child.nextSibling as RenderObject
+    } else {
+      const previousSibling = child.previousSibling
+      previousSibling.nextSibling = child.nextSibling
+    }
+    if (child.nextSibling === null) {
+      invariant(this.lastChild === child)
+      this.lastChild = child.previousSibling as RenderObject
+    } else {
+      const nextSibling = child.nextSibling
+      nextSibling.previousSibling = child.previousSibling
+    }
+    child.previousSibling = null
+    child.nextSibling = null
+    this.childCount -= 1
+  }
+
+  remove (child: RenderObject) {
+    this.removeChild(child)
+    this.dropChild(child)
+  }
+
+  removeAllChildren () {
+    let child = this.firstChild
+    while (child !== null) {
+      const next = child.nextSibling as RenderObject
+      child.previousSibling = null
+      child.nextSibling = null
+      this.dropChild(child)
+      child = next
+    }
+    this.firstChild = null
+    this.lastChild = null
+    this.childCount = 0
+  }
+
+  move (
+    child: RenderObject, 
+    afterChild?: RenderObject | null
+  ) {
+    invariant(child !== this as unknown as RenderObject)
+    invariant(afterChild !== this as unknown as RenderObject)
+    invariant(child !== afterChild)
+    invariant(child.parent === this)
+    if (child.previousSibling === afterChild) {
+      return
+    }
+    this.removeChild(child)
+    this.insertAfter(child, afterChild)
+    this.markNeedsLayout()
+  }
+
+  attach (owner: PipelineOwner) {
+    super.attach(owner)
+    let child = this.firstChild
+    while (child !== null) {
+      child.attach(owner)
+
+      child = child.nextSibling as RenderObject
+    }
+  }
+
+  detach () {
+    super.detach()
+    let child = this.firstChild
+    while (child !== null) {
+      child.detach()
+      child = child.nextSibling as RenderObject
+    }
+  }
+
+  redepthChildren () {
+    let child = this.firstChild
+    while (child !== null) {
+      this.redepthChild(child)
+      child = child.nextSibling as RenderObject
+    }
+  }
+
+  visitChildren (visitor: RenderObjectVisitor) {
+    let child = this.firstChild
+    while (child !== null) {
+      visitor(child)
+      child = child.nextSibling as RenderObject
+    }
+  }
+
+  childBefore (child: RenderObject): RenderObject | null {
+    invariant(child != null)
+    invariant(child.parent == this)
+
+    return child.previousSibling as RenderObject
+  }
+
+  childAfter (child: RenderObject): RenderObject | null {
+    invariant(child !== null)
+    invariant(child.parent === this)
+    
+    return child.nextSibling as RenderObject
+  }
+}

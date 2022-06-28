@@ -1,12 +1,13 @@
-import { property } from '@helper'
+import { invariant } from 'ts-invariant'
+import { property, PropertySetter } from '@helper'
 import { Axis, VerticalDirection } from '@painting'
 import { Clip, Offset, Size } from '@rendering'
 import { SkiaTextDirection } from '@skia'
 import { TextBaseline } from 'canvaskit-wasm'
-import invariant from 'ts-invariant'
-import { BoxConstraints, BoxHitTestResult, RenderBox } from './RenderBox'
+import { BoxConstraints, RenderBox } from './RenderBox'
 import { PaintingContext, RenderObject } from './RenderObject'
 
+export type ChildSizingFunction = { (child: RenderBox, extent: number): number }
 
 export enum MainAxisSize {
   Min,
@@ -30,25 +31,36 @@ export enum CrossAxisAlignment {
   Baseline,
 }
 
-export class FlexParentData extends ContainerBoxParentData<RenderBox> {
-  int? flex;
-  FlexFit? fit;
+export enum FlexFit {
+  Tight,
+  Loose,
+}
 
-  toString () {
-    return '${super.toString()}; flex=$flex; fit=$fit'
-  }
+function layout <T> (setter?: PropertySetter<T>) {
+  return property<T>(function get (this, value: T) {
+    return value
+  }, setter ?? function (this, value: T, k) {
+    invariant(value !== null)
+    if (this[k] !== null) {
+      this[k] = value
+      this.markNeedsLayout()
+    }
+  })
 }
 
 export class RenderFlex extends RenderBox {
-  @property<Axis>(function get (this, direction: Axis) {
-    return direction
-  }, function set (this, direction: Axis) {
-    invariant(direction !== null)
-    if (this.direction !== direction) {
-      this._direction = direction
-      this.markNeedsLayout()
-    }
-  }) public direction: Axis
+  @layout<Axis>() public direction: Axis
+  @layout<MainAxisAlignment>() public mainAxisAlignment: MainAxisAlignment
+  @layout<MainAxisSize>() public mainAxisSize: MainAxisSize
+  @layout<CrossAxisAlignment>() public crossAxisAlignment: CrossAxisAlignment
+  @layout<SkiaTextDirection>() public textDirection: SkiaTextDirection | null
+  @layout<VerticalDirection>() public verticalDirection: VerticalDirection
+  @layout<TextBaseline>() public textBaseline: TextBaseline | null
+  @layout<Clip>() public clipBehavior: Clip
+
+  get canComputeIntrinsics () {
+    return this.crossAxisAlignment !== CrossAxisAlignment.Baseline
+  }
 
   constructor (
     children: RenderBox[] | null,
@@ -73,21 +85,10 @@ export class RenderFlex extends RenderBox {
     this.mainAxisAlignment = mainAxisAlignment
     this.mainAxisSize = mainAxisSize
     this.crossAxisAlignment = crossAxisAlignment
-    this.textDirection = textDirection
+    this.textDirection = textDirection ?? null
     this.verticalDirection = verticalDirection
-    this.textBaseline = textBaseline
+    this.textBaseline = textBaseline ?? null
     this.clipBehavior = clipBehavior
-  }
-
-  setupParentData(child: RenderBox): void {
-    if (child.parentData instanceof FlexParentData) {
-
-    }
-  }
-
-
-  get canComputeIntrinsics () {
-    return this.crossAxisAlignment !== CrossAxisAlignment.Baseline
   }
 
   getIntrinsicSize (
@@ -103,7 +104,7 @@ export class RenderFlex extends RenderBox {
       let totalFlex = 0.0
       let inflexibleSpace = 0.0
       let maxFlexFractionSoFar = 0.0
-      let child: RenderBox | null = this.firstChild
+      let child: RenderBox | null = this.firstChild as RenderBox
       
       while (child !== null) {
         const flex = this.getFlex(child)
@@ -114,8 +115,7 @@ export class RenderFlex extends RenderBox {
         } else {
           inflexibleSpace += childSize(child, extent)
         }
-        const childParentData = child.parentData! as FlexParentData
-        child = childParentData.nextSibling
+        child = child.nextSibling as RenderBox
       }
       return maxFlexFractionSoFar * totalFlex + inflexibleSpace
     } else {
@@ -543,13 +543,6 @@ export class RenderFlex extends RenderBox {
         this.clipRectLayer.layer,
       );
     }
-  }
-
-  hitTestChildren (
-    result: BoxHitTestResult, 
-    position: Offset
-  ) {
-    return this.defaultHitTestChildren(result, position)
   }
 
   dispose () {
