@@ -1,8 +1,8 @@
 import invariant from 'ts-invariant'
 import { Skia, SkiaTileMode, toMatrix32 } from '@skia'
+import { validateColorStops } from '@helper'
 import { Offset } from './Geometry'
 import { Color } from './Painting'
-import { validateColorStops } from '.'
 import { GradientConical, GradientLinear, GradientRadial, GradientSweep } from './Shader'
 
 

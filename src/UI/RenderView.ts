@@ -1,10 +1,9 @@
 import { invariant } from 'ts-invariant'
-import { Matrix4, MatrixUtils } from '@math'
 import { property } from '@helper'
-import { HitTestEntry, HitTestResult } from '@gestures'
+import { Matrix4 } from '@math'
 import { LayerSceneBuilder, Offset, Rect, Size } from '@rendering'
 import { PaintingContext, RenderObject } from './RenderObject'
-import { BoxConstraints, BoxHitTestResult, RenderBox } from './RenderBox'
+import { BoxConstraints, RenderBox } from './RenderBox'
 import { TransformLayer } from './Layer'
 
 export class ViewConfiguration {
@@ -19,11 +18,9 @@ export class ViewConfiguration {
     this.devicePixelRatio = devicePixelRatio
   }
 
-
   toMatrix (): Matrix4 {
     return Matrix4.diagonal3Values(devicePixelRatio, devicePixelRatio, 1.0)
   }
-
   
   eq (other: ViewConfiguration) {
     if (other === this) {
@@ -140,29 +137,6 @@ export class RenderView extends RenderObject {
     time?: number | null
   ) {
     invariant(false)
-  }
-
-  
-  hitTest (
-    result: HitTestResult, 
-    position: Offset 
-  ): boolean {
-    if (this.child !== null) {
-      this.child.hitTest(
-        BoxHitTestResult.wrap(result), 
-        position
-      )
-    }
-
-    result.add(new HitTestEntry(this))
-    return true
-  }
-
-  hitTestMouseTrackers (position: Offset): HitTestResult  {
-    invariant(position !== null)
-    const result = new BoxHitTestResult()
-    this.hitTest(result, position)
-    return result
   }
 
   paint (

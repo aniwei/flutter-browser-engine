@@ -7,14 +7,14 @@ export const kShadowLightYOffset = -450
 export const kShadowLightXTangent = kShadowLightXOffset / kShadowLightHeight
 export const kShadowLightYTangent = kShadowLightYOffset / kShadowLightHeight
 
-export * from './Text'
+// export * from './Text'
 export * from './Path'
 export * from './Paint'
 export * from './Image'
 export * from './Shader'
 export * from './Canvas'
 export * from './Colors'
-export * from './Vertices'
+// export * from './Vertices'
 export * from './MaskFilter'
 export * from './ColorFilter'
 export * from './ImageFilter'

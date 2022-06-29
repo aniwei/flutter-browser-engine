@@ -545,7 +545,8 @@ export abstract class RenderObject extends AbstractNode {
 
   abstract performLayout (): void
   abstract performResize (): void
-  abstract visitChildren (visitor: unknown): void
+  
+  visitChildren (visitor: RenderObjectVisitor): void {}
 
   adoptChild (child: RenderObject) {
     invariant(child !== null)
