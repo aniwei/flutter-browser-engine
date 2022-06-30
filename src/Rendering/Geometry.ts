@@ -1,7 +1,7 @@
 import { invariant } from 'ts-invariant'
 import { lerpDouble } from '@helper'
 
-const GIANT_SCALAR = 1.0E+9
+const kGiantScalar = 1.0E+9
 
 
 export abstract class OffsetBase extends Float32Array {
@@ -554,10 +554,10 @@ export class Radius {
 export class Rect extends Float32Array {
   static zero = new Rect(0, 0, 0, 0)
   static largest = new Rect(
-    -GIANT_SCALAR, 
-    -GIANT_SCALAR, 
-    GIANT_SCALAR, 
-    GIANT_SCALAR
+    -kGiantScalar, 
+    -kGiantScalar, 
+    kGiantScalar, 
+    kGiantScalar
   )
 
   static fromLTRB (

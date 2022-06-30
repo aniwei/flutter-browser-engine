@@ -1,6 +1,6 @@
 import { Matrix4 } from '@math'
 import { Clip, Offset, Size } from '@rendering'
-import { RenderBox } from './RenderBox';
+import { BoxConstraints, RenderBox } from './RenderBox';
 import { PaintingContext } from './RenderObject';
 
 export abstract class FlowPaintingContext {
@@ -11,21 +11,29 @@ export abstract class FlowPaintingContext {
 }
 
 abstract class FlowDelegate {
-  const FlowDelegate({ Listenable? repaint }) : _repaint = repaint;
+  abstract repaint: Listenable | null
 
-  final Listenable? _repaint;
+  abstract paintChildren (context: FlowPaintingContext ): void
+  abstract shouldRepaint (oldDelegate: FlowDelegate): boolean
 
-  Size getSize(BoxConstraints constraints) => constraints.biggest;
+  getSize (constraints: BoxConstraints): Size {
+    return constraints.biggest
+  }
 
-  BoxConstraints getConstraintsForChild(int i, BoxConstraints constraints) => constraints;
+  getConstraintsForChild (
+    i: number, 
+    constraints: BoxConstraints
+  ) {
+    return constraints
+  }
 
-  void paintChildren(FlowPaintingContext context);
+  shouldRelayout (oldDelegate: FlowDelegate): boolean {
+    return false
+  }
 
-  bool shouldRelayout(covariant FlowDelegate oldDelegate) => false;
-
-  bool shouldRepaint(covariant FlowDelegate oldDelegate);
-
-  String toString() => objectRuntimeType(this, 'FlowDelegate');
+  toString () {
+    return ``
+  }
 }
 
 
@@ -91,8 +99,8 @@ export class RenderFlow extends RenderBox implements FlowPaintingContext {
   }
 
   
-  attach(PipelineOwner owner) {
-    super.attach(owner);
+  attach (owner: PipelineOwner ) {
+    super.attach(owner)
     _delegate._repaint?.addListener(markNeedsPaint);
   }
 

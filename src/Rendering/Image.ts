@@ -1,4 +1,4 @@
-import invariant from 'ts-invariant'
+import { invariant } from 'ts-invariant'
 import { SkiaObjectBox, SkiaImage, Skia } from '@skia'
 import { ImageByteFormat } from './Painting'
 

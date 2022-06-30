@@ -1,5 +1,5 @@
-import { property } from '@helper'
-import { listEquals, Matrix4 } from '@math'
+import { Matrix4 } from '@math'
+import { property, listEquals } from '@helper'
 import { Offset, Path, Rect, RRect, Size } from "@rendering"
 
 export enum MutatorType {
