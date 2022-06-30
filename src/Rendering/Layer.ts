@@ -2,7 +2,7 @@ import { invariant } from 'ts-invariant'
 import { property, transformRect, computeSkiaShadowBounds } from '@helper'
 import { Matrix4 } from '@math'
 import { Rect, NWayCanvas } from '@rendering'
-import { Skia, SkiaBlendMode, FilterQuality, SkiaImageFilter } from '@skia'
+import { Skia, SkiaBlendMode, FilterQuality } from '@skia'
 import { MutatorsStack, MutatorType } from './EmbeddedViews'
 import { RasterCache } from './RasterCache'
 import { Canvas } from './Canvas'
@@ -22,16 +22,6 @@ export enum Clip {
   AntiAlias,
   AntiAliasWithSaveLayer,
 }
-
-export abstract class Scene {
-  abstract toImage (
-    width: number, 
-    height: number
-  ): Promise<Image>
-  abstract dispose (): void
-}
-
-
 
 export abstract class EngineLayer {
   dispose () {}
@@ -506,7 +496,7 @@ export class PictureLayer extends Layer {
     prerollContext: PrerollContext, 
     matrix: Matrix4
   ) {
-    this.paintBounds = this.picture.cullRect.shift(this.offset)
+    this.paintBounds = this.picture.cullRect!.shift(this.offset)
   }
 
   paint (paintContext: PaintContext) {

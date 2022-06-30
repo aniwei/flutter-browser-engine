@@ -1,8 +1,9 @@
 import { invariant } from 'ts-invariant'
 import { property, PropertySetter } from '@helper'
-import { LayerSceneBuilder, Picture, Offset, Rect, Image, Scene, Clip, RRect, ImageFilter, Path, ColorFilter, OpacityEngineLayer, OffsetEngineLayer, Shader, Size, Color, ImageFilterEngineLayer, ColorFilterEngineLayer } from '@rendering'
-import { Matrix4, MatrixUtils, Vector4 } from '@math'
+import { LayerSceneBuilder, Picture, Offset, Rect, Image, Clip, RRect, ImageFilter, Path, ColorFilter, OpacityEngineLayer, OffsetEngineLayer, Shader, Size, Color, ImageFilterEngineLayer, ColorFilterEngineLayer, LayerScene } from '@rendering'
+import { Matrix4, Vector4 } from '@math'
 import { Skia, SkiaBlendMode, FilterQuality } from '@skia'
+import { AbstractNode } from '@internal'
 
 function scene <T> (setter?: PropertySetter<T>) {
   return property<T>(function get (this, value: T) {
@@ -50,68 +51,6 @@ export class AnnotationResult<T> extends Array<AnnotationEntry<T>> {
 
 export abstract class EngineLayer {
   dispose () {}
-}
-
-abstract class AbstractNode {
-  @property<boolean>(function get (this) {
-    return this.owner !== null
-  }) public attached!: boolean
-
-  public depth = 0
-  public owner: unknown | null = null
-  public parent: AbstractNode | null = null
-
-  redepthChild (child: AbstractNode) {
-    invariant(child.owner === this.owner)
-
-    if (child.depth <= this.depth) {
-      child.depth = this.depth + 1
-      child.redepthChildren()
-    }
-  }
-
-  redepthChildren () {}
-
-  attach (owner: unknown) {
-    invariant(owner !== null)
-    invariant(this.owner === null)
-    this.owner = owner
-  }
-
-  detach () {
-    invariant(this.owner !== null)
-    this.owner = null
-    invariant(parent === null || this.attached === this.parent!.attached)
-  }
-
-  adoptChild (child: AbstractNode) {
-    invariant(child !== null)
-    invariant(child.parent == null)
-    invariant((() => {
-      let node: AbstractNode = this
-      while (node.parent !== null) {
-        node = node.parent!
-      }
-      invariant(node !== child)
-      return true
-    })())
-
-    child.parent = this
-    if (this.attached) {
-      child.attach(this.owner!)
-    }
-    this.redepthChild(child)
-  }
-
-  dropChild (child: AbstractNode) {
-    invariant(child !== null)
-    invariant(child.parent === this)
-    invariant(child.attached === this.attached)
-    child.parent = null
-    if (this.attached) {
-      child.detach()
-    }
-  }
 }
 
 export abstract class Layer extends AbstractNode {
@@ -567,18 +506,6 @@ export class OffsetLayer extends ContainerLayer {
     super()
     this.offset = offset
   }
-  
-  findAnnotations<S>(
-    result: AnnotationResult<S>,
-    localPosition: Offset,
-    onlyFirst: boolean
-  ): boolean {
-    return super.findAnnotations<S>(
-      result, 
-      localPosition.subtract(this.offset),
-      onlyFirst
-    )
-  }
 
   applyTransform (
     child: Layer | null, 
@@ -606,10 +533,10 @@ export class OffsetLayer extends ContainerLayer {
     builder.pop()
   }
 
-  async toImage (
+  toImage (
     bounds: Rect, 
     pixelRatio = 1.0
-  ): Promise<Image> {
+  ): Image {
     invariant(bounds !== null)
     invariant(pixelRatio !== null)
 
@@ -622,7 +549,7 @@ export class OffsetLayer extends ContainerLayer {
     transform.scale(pixelRatio, pixelRatio)
     builder.pushTransform(transform)
 
-    const scene: Scene = this.buildScene(builder)
+    const scene: LayerScene = this.buildScene(builder)
 
     try {
       return scene.toImage(
@@ -695,21 +622,6 @@ export class ClipRRectLayer extends ContainerLayer {
     this.clipRRect = clipRRect ?? null
     this.clipBehavior = clipBehavior
   }
-  
-  findAnnotations<S>(
-    result: AnnotationResult<S> , 
-    localPosition: Offset,
-    onlyFirst: boolean
-  ): boolean {
-    if (!this.clipRRect!.contains(localPosition)) {
-      return false
-    }
-    return super.findAnnotations<S>(
-      result, 
-      localPosition, 
-      onlyFirst
-    )
-  }
 
   addToScene (builder: LayerSceneBuilder) {
     invariant(this.clipRRect !== null)
@@ -742,22 +654,6 @@ export class ClipPathLayer extends ContainerLayer {
     this.clipBehavior = clipBehavior
   }
 
-  findAnnotations<S>(
-    result: AnnotationResult<S>, 
-    localPosition: Offset,
-    onlyFirst: boolean
-  ) {
-    if (!this.clipPath!.contains(localPosition)) {
-      return false
-    }
-    return super.findAnnotations<S>(
-      result, 
-      localPosition, 
-      onlyFirst
-    )
-  }
-
-  
   addToScene (builder: LayerSceneBuilder) {
     invariant(this.clipPath !== null)
     invariant(this.clipBehavior !== null)
@@ -857,39 +753,6 @@ export class TransformLayer extends OffsetLayer {
     )
     this.addChildrenToScene(builder)
     builder.pop()
-  }
-
-  transformOffset (localPosition: Offset): Offset | null {
-    if (this.inverseDirty) {
-      this.invertedTransform = Matrix4.tryInvert(PointerEvent.removePerspectiveTransform(this.transform))
-      this.inverseDirty = false
-    }
-
-    if (this.invertedTransform === null) {
-      return null
-    }
-
-    // @TODO
-    return MatrixUtils.transformPoint(
-      this.invertedTransform, 
-      localPosition
-    )
-  }
-
-  findAnnotations<S>(
-    result: AnnotationResult<S>, 
-    localPosition: Offset,
-    onlyFirst: boolean
-    ): boolean {
-    const transformedOffset: Offset | null = this.transformOffset(localPosition)
-    if (transformedOffset === null) {
-      return false
-    }
-    return super.findAnnotations<S>(
-      result, 
-      transformedOffset, 
-      onlyFirst
-    )
   }
 
   applyTransform (
@@ -1078,24 +941,7 @@ export class PhysicalModelLayer extends ContainerLayer {
     this.color = color ?? null
     this.shadowColor = shadowColor ?? null
   }
-  
-  findAnnotations<S>(
-    result: AnnotationResult<S>, 
-    localPosition: Offset,
-    onlyFirst: boolean
-  ) {
-    if (!this.clipPath!.contains(localPosition)) {
-      return false
-    }
 
-    return super.findAnnotations<S>(
-      result, 
-      localPosition, 
-      onlyFirst
-    )
-  }
-
-  
   addToScene (builder: LayerSceneBuilder) {
     invariant(this.clipPath !== null)
     invariant(this.clipBehavior !== null)
@@ -1270,8 +1116,8 @@ export class FollowerLayer extends ContainerLayer {
   static pathsToCommonAncestor(
     a: Layer | null = null,
     b: Layer | null = null,
-    ancestorsA: ContainerLayer[],
-    ancestorsB: ContainerLayer[],
+    ancestorsA: (ContainerLayer | null)[],
+    ancestorsB: (ContainerLayer | null)[],
   ): Layer | null {
     if (a === null || b === null) {
       return null

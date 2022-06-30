@@ -61,7 +61,7 @@ export class NWayCanvas extends Array<Canvas> {
     }
   }
 
-  transform (matrix: Float32Array) {
+  transform (matrix: Float64Array) {
     for (let i = 0; i < this.length; i++) {
       this[i].transform(matrix)
     }
