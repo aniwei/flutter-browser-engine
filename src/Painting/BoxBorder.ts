@@ -1,11 +1,14 @@
 import { invariant } from 'ts-invariant'
-import { Rect } from '@internal'
-import { Skia, SkiaTextDirection } from '@skia'
-import { Canvas, Paint, Path, Color } from '@rendering'
+import { Rect } from '@internal/Geometry'
+import { Skia, SkiaTextDirection } from '@skia/Skia'
+import { Canvas } from '@rendering/Canvas'
+import { Path } from '@rendering/Path'
+import { Color } from '@rendering/Painting'
+import { Paint } from '@rendering/Paint'
+import { TextDirection } from 'canvaskit-wasm'
 import { BorderSide, BorderStyle, paintBorder, ShapeBorder } from './Border'
 import { EdgeInsets, EdgeInsetsDirectional, EdgeInsetsGeometry } from './EdgeInsets'
 import { BorderRadius } from './BorderRadius'
-import { TextDirection } from 'canvaskit-wasm'
 
 export enum BoxShape {
   Rectangle,

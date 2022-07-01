@@ -1,6 +1,6 @@
-import { Matrix4 } from '@math/Matrix4'
 import { Rect } from '@internal/Geometry'
 import { transformLTRB } from './transformLTRB'
+import type { Matrix4 } from '@math/Matrix4'
 
 
 export function transformRect (

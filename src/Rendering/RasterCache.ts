@@ -1,5 +1,5 @@
-import { Matrix4 } from '@math'
-import { Canvas } from '@rendering'
+import { Matrix4 } from '@math/Matrix4'
+import { Canvas } from '@rendering/Canvas'
 import { Picture } from './Picture'
 
 export class RasterCacheResult {

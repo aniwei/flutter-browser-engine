@@ -1,4 +1,4 @@
-import { Color } from '@rendering'
+import { Color } from '@rendering/Painting'
 import { Skia, SkiaFilterQuality } from '@skia/Skia'
 import { ManagedSkiaObject } from '@skia/ManagedSkiaObject'
 import { ManagedSkiaColorFilter, ComposeColorFilter, MatrixColorFilter, ColorFilter } from './ColorFilter'

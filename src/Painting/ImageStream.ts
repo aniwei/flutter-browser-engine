@@ -1,6 +1,7 @@
 import { invariant } from 'ts-invariant'
-import { Codec, FrameInfo, Image } from '@rendering'
-import { VoidCallback } from '@platform'
+import { Codec, FrameInfo } from '@rendering/Painting'
+import { Image } from '@rendering/Image'
+import { VoidCallback } from '@platform/Platform'
 
 export type ImageListener = { (image: ImageInfo, synchronousCall: boolean): void } 
 export type ImageChunkListener = { (event: ImageChunkEvent): void }

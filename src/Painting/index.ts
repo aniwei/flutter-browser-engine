@@ -1,8 +1,3 @@
-export enum Axis {
-  Horizontal,
-  Vertical
-}
-
 export * from './Clip'
 export * from './Alignment'
 export * from './Gradient'

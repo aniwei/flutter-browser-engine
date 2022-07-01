@@ -10,19 +10,12 @@ import { MutatorsStack, MutatorType } from './EmbeddedViews'
 import { RasterCache } from './RasterCache'
 import { Canvas } from './Canvas'
 import { Paint } from './Paint'
-import { Color } from './Painting'
+import { Clip, Color } from './Painting'
 import { Path } from './Path'
 import { ImageFilter } from './ImageFilter'
 import { Shader } from './Shader'
 import { ColorFilter } from './ColorFilter'
 import { Picture } from './Picture'
-
-export enum Clip {
-  None,
-  HardEdge,
-  AntiAlias,
-  AntiAliasWithSaveLayer,
-}
 
 export abstract class EngineLayer {
   dispose () {}

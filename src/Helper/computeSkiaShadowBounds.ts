@@ -1,9 +1,10 @@
 import { Matrix4 } from '@math/Matrix4'
 import { Rect } from '@internal/Geometry'
-import { Path } from '@rendering/Path'
 
 import { ambientBlurRadius } from './ambientBlurRadius'
 import { transformRect } from './transformRect'
+
+import type { Path } from '@rendering/Path'
 
 const kSkiaShadowAmbientAlpha = 0.039
 const kSkiaShadowSpotAlpha = 0.25

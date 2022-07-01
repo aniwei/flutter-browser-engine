@@ -1,5 +1,5 @@
 import { invariant } from 'ts-invariant'
-import { URI } from '@internal'
+import { URI } from '@internal/URI'
 import { Codec, webOnlyInstantiateImageCodecFromURL } from '@rendering'
 import { DecoderCallback, ImageConfiguration, ImageProvider } from './ImageProvider'
 import { MultiFrameImageCompleter } from './ImageStream'

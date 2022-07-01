@@ -77,8 +77,3 @@ export const kSupportsFinalizationRegistry = (
   kBrowserSupportsFinalizationRegistry ||
   typeof globalThis.FinalizationRegistry === 'function'
 )
-
-export * from './HTTP'
-export * from './Locale'
-export * from './Encoding'
-export * from './TypedData'

@@ -1,9 +1,10 @@
 import invariant from 'ts-invariant'
-import { Offset, Rect, Size } from '@internal'
-import { clamp, lerpDouble } from '@helper'
+import { Offset, Rect, Size } from '@internal/Geometry'
+import { clamp } from '@helper/clamp'
+import { lerpDouble } from '@helper/lerp'
 import { TextDirection } from 'canvaskit-wasm'
+import { Skia } from '@skia/Skia'
 import { Axis } from '.'
-import { Skia } from '@skia'
 
 
 const POSITIVE_INFINITY = Number.POSITIVE_INFINITY

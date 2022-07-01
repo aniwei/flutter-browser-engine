@@ -1,10 +1,10 @@
 import invariant from 'ts-invariant'
-import { lerpDouble } from '@helper'
-import { Offset } from '@internal'
-import { Skia, SkiaBlurStyle } from '@skia'
-import { Color, MaskFilter, Paint } from '@rendering'
-
-
+import { Offset } from '@internal/Geometry'
+import { Paint } from '@rendering/Paint'
+import { Color } from '@rendering/Painting'
+import { lerpDouble } from '@helper/lerp'
+import { MaskFilter } from '@rendering/MaskFilter'
+import { Skia, SkiaBlurStyle } from '@skia/Skia'
 
 export interface IShadow {
   color: Color

@@ -1,5 +1,5 @@
 import { invariant } from 'ts-invariant'
-import { Skia } from '@skia'
+import { Skia } from '@skia/Skia'
 import { FrameInfo, Image } from '@rendering'
 
 const kAvifSignature = 'ftyp'.split('').map(str => str.charCodeAt(0))

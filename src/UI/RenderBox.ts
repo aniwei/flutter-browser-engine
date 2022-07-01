@@ -1,5 +1,7 @@
 import { invariant } from 'ts-invariant'
-import { clamp, lerpDouble, property } from '@helper'
+import { clamp } from '@helper/clamp'
+import { property } from '@helper/property'
+import { lerpDouble } from '@helper/lerp'
 import { CacheMap } from '@internal/CacheMap'
 import { Offset, Size } from '@internal/Geometry'
 import { TextBaseline } from '@rendering'
@@ -7,7 +9,7 @@ import { Matrix4 } from '@math/Matrix4'
 import { Vector3 } from '@math/Vector3'
 import { MatrixUtils } from '@math/MatrixUtils'
 import { Constraints, ContainerRenderObject, RenderObject } from './RenderObject'
-import type { EdgeInsets } from '@painting'
+import type { EdgeInsets } from '@painting/EdgeInsets'
 
 export enum IntrinsicDimension { 
   minWidth, 

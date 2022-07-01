@@ -1,7 +1,7 @@
-import invariant from 'ts-invariant';
-import { PaintingBinding } from './PaintingBinding';
-import { DecoderCallback, ImageConfiguration, ImageProvider } from './ImageProvider';
-import { ImageErrorListener, ImageStream, ImageStreamCompleter } from './ImageStream';
+import invariant from 'ts-invariant'
+import { PaintingBinding } from './PaintingBinding'
+import { DecoderCallback, ImageConfiguration, ImageProvider } from './ImageProvider'
+import { ImageErrorListener, ImageStream, ImageStreamCompleter } from './ImageStream'
 
 export class ScrollAwareImageProvider<T> extends ImageProvider<T> {
   

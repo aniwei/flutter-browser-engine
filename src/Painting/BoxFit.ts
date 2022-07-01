@@ -1,4 +1,4 @@
-import { Size } from '@internal'
+import { Size } from '@internal/Geometry'
 
 export enum BoxFit {
   Fill,

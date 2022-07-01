@@ -15,6 +15,14 @@ export enum PixelFormat {
   BGRA8888,
 }
 
+export enum Clip {
+  None,
+  HardEdge,
+  AntiAlias,
+  AntiAliasWithSaveLayer,
+}
+
+
 export function scaleAlpha (
   a: Color, 
   factor: number

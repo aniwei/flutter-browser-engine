@@ -1,7 +1,7 @@
 import { invariant } from 'ts-invariant'
-import { ArgumentError } from '@internal'
-import type { Color } from '@rendering'
-import type { Offset, Radius, Rect, RRect } from '@internal'
+import { ArgumentError } from '@internal/ArgumentError'
+import type { Color } from '@rendering/Painting'
+import type { Offset, Radius, Rect, RRect } from '@internal/Geometry'
 
 export function rectIsValid (rect: Rect) {
   invariant(rect !== null, 'Rect argument was null.')

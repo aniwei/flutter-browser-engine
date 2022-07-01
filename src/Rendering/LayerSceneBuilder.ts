@@ -7,11 +7,11 @@ import { Path } from './Path'
 import { Image } from './Image'
 import { Picture } from './Picture'
 import { Shader } from './Shader'
-import { Color } from './Painting'
+import { Color, Clip } from './Painting'
 import { ColorFilter } from './ColorFilter'
 import { LayerTree } from './LayerTree'
 import { ImageFilter } from './ImageFilter'
-import { BackdropFilterEngineLayer, Clip, ClipPathEngineLayer, ClipRectEngineLayer, ClipRRectEngineLayer, ColorFilterEngineLayer, ContainerLayer, EngineLayer, ImageFilterEngineLayer, Layer, OffsetEngineLayer, OpacityEngineLayer, PhysicalShapeEngineLayer, PictureLayer, RootLayer, ShaderMaskEngineLayer, TransformEngineLayer, } from './Layer'
+import { BackdropFilterEngineLayer, ClipPathEngineLayer, ClipRectEngineLayer, ClipRRectEngineLayer, ColorFilterEngineLayer, ContainerLayer, EngineLayer, ImageFilterEngineLayer, Layer, OffsetEngineLayer, OpacityEngineLayer, PhysicalShapeEngineLayer, PictureLayer, RootLayer, ShaderMaskEngineLayer, TransformEngineLayer, } from './Layer'
 
 
 export class LayerScene {

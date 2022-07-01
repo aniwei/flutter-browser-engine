@@ -1,5 +1,5 @@
 import { invariant } from 'ts-invariant'
-import { VoidCallback } from '@platform'
+import { VoidCallback } from '@platform/Platform'
 import { ImageErrorListener, ImageInfo, ImageStreamCompleter, ImageStreamHandle, ImageStreamListener } from './ImageStream'
 
 const kDefaultSize = 1000
