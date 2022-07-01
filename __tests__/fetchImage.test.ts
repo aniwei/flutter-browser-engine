@@ -1,7 +1,7 @@
 import jimp from 'jimp'
 import { resolve } from 'path'
-import { Skia, SkiaCanvas } from '@skia'
-import { URI } from '@platform'
+import { Skia } from '@skia'
+import { URI } from '@internal'
 import { webOnlyInstantiateImageCodecFromURL } from '@rendering'
 
 

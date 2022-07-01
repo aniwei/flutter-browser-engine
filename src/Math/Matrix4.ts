@@ -1,5 +1,6 @@
 import { invariant } from 'ts-invariant'
-import { ArgumentError, UnimplementedError } from '@internal'
+import { UnimplementedError } from '@internal/UnimplementedError'
+import { ArgumentError } from '@internal/ArgumentError'
 import { Matrix2 } from './Matrix2'
 import { Matrix3 } from './Matrix3'
 import { Vector2 } from './Vector2'
@@ -1951,6 +1952,24 @@ export class Matrix4 extends Float64Array{
       this[13] === 0.0 &&
       this[14] === 0.0 &&
       this[15] === 1.0
+    )
+  }
+
+  isIdentityOrTranslation (): boolean {
+    return (
+      this[15] === 1.0 &&
+      this[0] === 1.0 && // col 1
+      this[1] === 0.0 &&
+      this[2] === 0.0 &&
+      this[3] === 0.0 &&
+      this[4] === 0.0 && // col 2
+      this[5] === 1.0 &&
+      this[6] === 0.0 &&
+      this[7] === 0.0 &&
+      this[8] === 0.0 && // col 3
+      this[9] === 0.0 &&
+      this[10] === 1.0 &&
+      this[11] === 0.0
     )
   }
 

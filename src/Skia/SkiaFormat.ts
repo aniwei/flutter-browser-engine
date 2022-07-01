@@ -1,8 +1,8 @@
-import { Color, Offset, Rect, RRect } from '@rendering'
-import { Skia } from '@skia'
-import { CubicResampler, FilterOptions, MallocObj } from 'canvaskit-wasm'
-import { FilterQuality } from './Skia'
-import invariant from 'ts-invariant'
+import { invariant } from 'ts-invariant'
+import { Color } from '@rendering'
+import { Offset } from '@internal/Geometry'
+import { CubicResampler, FilterOptions } from 'canvaskit-wasm'
+import { SkiaFilterQuality, Skia } from './Skia'
 
 const kMatrixIndexToMatrix4Index = [
   0, 4, 12, // Row 1
@@ -97,18 +97,18 @@ export function toSkiaPointFromOffset (offset: Offset) {
   return skPoint
 }
 
-export function toFilterQuality (filterQuality: FilterQuality): CubicResampler | FilterOptions {
-  if (filterQuality === FilterQuality.None) {
+export function toFilterQuality (filterQuality: SkiaFilterQuality): CubicResampler | FilterOptions {
+  if (filterQuality === SkiaFilterQuality.None) {
     return {
       filter: Skia.FilterMode.Nearest,
       mipmap: Skia.MipmapMode.None
     }
-  } else if (filterQuality === FilterQuality.Low) {
+  } else if (filterQuality === SkiaFilterQuality.Low) {
     return {
       filter: Skia.FilterMode.Linear,
       mipmap: Skia.MipmapMode.None
     }
-  } else if (filterQuality === FilterQuality.Medium) {
+  } else if (filterQuality === SkiaFilterQuality.Medium) {
     return {
       filter: Skia.FilterMode.Linear,
       mipmap: Skia.MipmapMode.Linear
@@ -121,16 +121,14 @@ export function toFilterQuality (filterQuality: FilterQuality): CubicResampler |
   } 
 }
 
-export function toSkiaFilterMode (
-  filterQuality: FilterQuality
-) {
-  return filterQuality === FilterQuality.None
+export function toSkiaFilterMode (filterQuality: SkiaFilterQuality) {
+  return filterQuality === SkiaFilterQuality.None
       ? Skia.FilterMode.Nearest
       : Skia.FilterMode.Linear
 }
 
-export function toSkiaMipmapMode (filterQuality: FilterQuality) {
-  return filterQuality === FilterQuality.Medium
+export function toSkiaMipmapMode (filterQuality: SkiaFilterQuality) {
+  return filterQuality === SkiaFilterQuality.Medium
       ? Skia.MipmapMode.Linear
       : Skia.MipmapMode.None
 }

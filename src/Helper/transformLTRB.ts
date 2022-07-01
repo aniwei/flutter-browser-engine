@@ -1,10 +1,10 @@
-import { Matrix4 } from '@math'
+import { Matrix4 } from '@math/Matrix4'
 
 export function transformLTRB (
   transform: Matrix4, 
   ltrb: Float32Array
 ) {
-  const point = new Float32Array(16)
+  const point = new Float64Array(16)
   // Row 0: top-left
   point[0] = ltrb[0]
   point[4] = ltrb[1]
@@ -29,7 +29,7 @@ export function transformLTRB (
   point[11] = 0
   point[15] = 1
 
-  const mat = Matrix4.fromFloat32Array(point)
+  const mat = Matrix4.fromFloat64Array(point)
   mat.multiplyTranspose(transform)
 
   let w = transform[15]

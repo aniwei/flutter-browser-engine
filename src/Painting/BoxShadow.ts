@@ -1,7 +1,8 @@
 import invariant from 'ts-invariant'
 import { lerpDouble } from '@helper'
+import { Offset } from '@internal'
 import { Skia, SkiaBlurStyle } from '@skia'
-import { Color, MaskFilter, Offset, Paint } from '@rendering'
+import { Color, MaskFilter, Paint } from '@rendering'
 
 
 

@@ -1,5 +1,7 @@
-import { Matrix4 } from '@math'
-import { Path, Rect } from '@rendering'
+import { Matrix4 } from '@math/Matrix4'
+import { Rect } from '@internal/Geometry'
+import { Path } from '@rendering/Path'
+
 import { ambientBlurRadius } from './ambientBlurRadius'
 import { transformRect } from './transformRect'
 

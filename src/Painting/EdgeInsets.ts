@@ -1,5 +1,5 @@
 import invariant from 'ts-invariant'
-import { Offset, Rect, Size } from '@rendering'
+import { Offset, Rect, Size } from '@internal'
 import { clamp, lerpDouble } from '@helper'
 import { TextDirection } from 'canvaskit-wasm'
 import { Axis } from '.'

@@ -1,10 +1,11 @@
 import { resolve } from 'path'
-import { Skia, SkiaCanvas, FilterQuality, toFilterQuality } from '@skia'
-import { URI } from '@platform'
+import { Skia, SkiaCanvas, SkiaFilterQuality } from '@skia'
+import { URI } from '@internal'
+import { ImageRepeat, paintImage } from '@painting'
+import { Canvas } from '@rendering'
+import { Rect } from '@internal'
 import { Alignment, ImageConfiguration, ImageStreamListener, NetworkImage } from '@painting'
 import { runApp } from '../src'
-import { ImageRepeat, paintImage } from '@painting'
-import { Canvas, Rect } from '@rendering'
 import Jimp from 'jimp'
 
 test(`paintImage`, async () => {
@@ -34,7 +35,7 @@ test(`paintImage`, async () => {
       ImageRepeat.NoRepeat,
       false,
       false,
-      FilterQuality.Low,
+      SkiaFilterQuality.Low,
       true
     )
     surface?.flush()

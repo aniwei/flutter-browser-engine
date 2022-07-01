@@ -868,28 +868,7 @@ export class Rect extends Float32Array {
   
 }
 
-export interface IRRect {
-  left: number,
-  top: number,
-  right: number,
-  bottom: number,
-  tlRadiusX: number,
-  tlRadiusY: number,
-  tlRadius: Radius,
-  trRadiusX: number,
-  trRadiusY: number,
-  trRadius: Radius,
-  brRadiusX: number,
-  brRadiusY: number,
-  brRadius: Radius,
-  blRadiusX: number,
-  blRadiusY: number,
-  // webOnly
-  webOnlyUniformRadii: boolean,
-  blRadius: Radius
-}
-
-export class RRect extends Float32Array implements IRRect {
+export class RRect extends Float32Array {
   static Zero = RRect.raw()
   static fromLTRBXY (
     left: number, 

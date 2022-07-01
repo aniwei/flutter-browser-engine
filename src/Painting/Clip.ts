@@ -1,6 +1,7 @@
 import invariant from 'ts-invariant'
 import { VoidCallback } from '@platform'
-import { Canvas, Clip, Paint, Path, Rect, RRect } from '@rendering'
+import { Rect, RRect } from '@internal'
+import { Canvas, Clip, Paint, Path } from '@rendering'
 import { Skia } from '@skia'
 
 export abstract class ClipContext {

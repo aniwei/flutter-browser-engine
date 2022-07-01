@@ -1,11 +1,13 @@
 import { invariant } from 'ts-invariant' 
 import { property } from '@helper'
-import { Matrix4, MatrixUtils } from '@math'
+import { Matrix4 } from '@math/Matrix4'
+import { MatrixUtils } from '@math/MatrixUtils'
 import { VoidCallback } from '@platform'
 import { ClipContext } from '@painting'
-import { Canvas, Clip, ColorFilter, Offset, Path, PictureRecorder, Rect, RRect } from '@rendering'
+import { Canvas, Clip, ColorFilter, Path, PictureRecorder } from '@rendering'
+import { AbstractNode } from '@internal/AbstractNode'
+import { Offset, Rect, RRect } from '@internal/Geometry'
 import { ClipPathLayer, ClipRectLayer, ClipRRectLayer, ColorFilterLayer, ContainerLayer, Layer, LayerHandle, OffsetLayer, OpacityLayer, PictureLayer, TransformLayer } from './Layer'
-import { AbstractNode } from '@internal'
 
 export type PaintingContextCallback = { (
   context: PaintingContext,

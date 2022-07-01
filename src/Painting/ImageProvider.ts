@@ -1,10 +1,10 @@
 import invariant from 'ts-invariant'
-import { Codec, Size } from '@rendering'
+import { Codec } from '@rendering'
 import { SkiaTextDirection } from '@skia'
-import { StringBuffer } from '@internal'
+import { StringBuffer, Size } from '@internal'
 import { Locale, TargetPlatform } from '@platform'
 import { AssetBundle } from '@services'
-import { ImageErrorListener, ImageStream, ImageStreamCompleter } from './ImageStream'
+import { ImageErrorListener, ImageStream } from './ImageStream'
 import { PaintingBinding } from './PaintingBinding'
 import { ImageCacheStatus } from './ImageCache'
 

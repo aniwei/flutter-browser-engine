@@ -1,9 +1,10 @@
 import { invariant } from 'ts-invariant'
 import { property, PropertySetter } from '@helper'
-import { LayerSceneBuilder, Picture, Offset, Rect, Image, Clip, RRect, ImageFilter, Path, ColorFilter, OpacityEngineLayer, OffsetEngineLayer, Shader, Size, Color, ImageFilterEngineLayer, ColorFilterEngineLayer, LayerScene } from '@rendering'
+import { LayerSceneBuilder, Picture, Image, Clip, ImageFilter, Path, ColorFilter, OpacityEngineLayer, OffsetEngineLayer, Shader, Color, ImageFilterEngineLayer, ColorFilterEngineLayer, LayerScene } from '@rendering'
+
 import { Matrix4, Vector4 } from '@math'
-import { Skia, SkiaBlendMode, FilterQuality } from '@skia'
-import { AbstractNode } from '@internal'
+import { Skia, SkiaBlendMode, SkiaFilterQuality } from '@skia'
+import { AbstractNode, Offset, Rect, RRect, Size } from '@internal'
 
 function scene <T> (setter?: PropertySetter<T>) {
   return property<T>(function get (this, value: T) {
@@ -261,13 +262,13 @@ export class TextureLayer extends Layer {
   public rect: Rect
   public textureId: number
   public freeze: boolean
-  public filterQuality: FilterQuality
+  public filterQuality: SkiaFilterQuality
 
   constructor(
     rect: Rect,
     textureId: number,
     freeze: boolean = false,
-    filterQuality = FilterQuality.Low,
+    filterQuality = SkiaFilterQuality.Low,
   ) {
     invariant(rect !== null)
     invariant(textureId !== null)

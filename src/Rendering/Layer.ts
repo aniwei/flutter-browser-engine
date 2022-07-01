@@ -1,20 +1,19 @@
 import { invariant } from 'ts-invariant'
-import { property, transformRect, computeSkiaShadowBounds } from '@helper'
 import { Matrix4 } from '@math'
-import { Rect, NWayCanvas } from '@rendering'
-import { Skia, SkiaBlendMode, FilterQuality } from '@skia'
+import { NWayCanvas } from '@rendering'
+import { Offset, RRect, Rect } from '@internal'
+import { Skia, SkiaBlendMode, SkiaFilterQuality } from '@skia'
+import { property, transformRect, computeSkiaShadowBounds } from '@helper'
 import { MutatorsStack, MutatorType } from './EmbeddedViews'
 import { RasterCache } from './RasterCache'
 import { Canvas } from './Canvas'
 import { Paint } from './Paint'
 import { Color } from './Painting'
 import { Path } from './Path'
-import { Offset, RRect } from './Geometry'
 import { ImageFilter } from './ImageFilter'
 import { Shader } from './Shader'
 import { ColorFilter } from './ColorFilter'
 import { Picture } from './Picture'
-import { Image } from './Image'
 
 export enum Clip {
   None,
@@ -434,13 +433,13 @@ export class ShaderMaskEngineLayer extends ContainerLayer {
   public shader: Shader
   public maskRect: Rect
   public blendMode: SkiaBlendMode
-  public filterQuality: FilterQuality
+  public filterQuality: SkiaFilterQuality
 
   constructor (
     shader: Shader,
     maskRect: Rect,
     blendMode: SkiaBlendMode,
-    filterQuality: FilterQuality
+    filterQuality: SkiaFilterQuality
   ) {
     super()
 

@@ -1,10 +1,12 @@
 import { invariant } from 'ts-invariant'
 import { property } from '@helper'
-import { Matrix4 } from '@math'
-import { LayerSceneBuilder, Offset, Rect, Size } from '@rendering'
+import { Matrix4 } from '@math/Matrix4'
+import { Offset, Rect, Size } from '@internal/Geometry'
+import { LayerSceneBuilder } from '@rendering'
 import { PaintingContext, RenderObject } from './RenderObject'
 import { BoxConstraints, RenderBox } from './RenderBox'
 import { TransformLayer } from './Layer'
+import { Window } from './Window'
 
 export class ViewConfiguration {
   public size: Size
@@ -77,7 +79,7 @@ export class RenderView extends RenderObject {
     }
   }) public child!: RenderObject | null
   
-  public window
+  public window: Window
   public automaticSystemUIAdjustment: boolean = true
   public rootTransform: Matrix4 | null = null
   public isRepaintBoundary: boolean = true
@@ -85,7 +87,7 @@ export class RenderView extends RenderObject {
   constructor (
     child: RenderBox | null,
     configuration: ViewConfiguration,
-    window,
+    window: Window,
   ) {
     invariant(configuration !== null)
     super()

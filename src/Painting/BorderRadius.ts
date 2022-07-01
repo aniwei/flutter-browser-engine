@@ -1,6 +1,6 @@
 import { invariant } from 'ts-invariant'
 import { Skia } from '@skia'
-import { Radius, Rect, RRect } from '@rendering'
+import { Radius, Rect, RRect } from '@internal'
 import { TextDirection } from 'canvaskit-wasm'
 
 export abstract class BorderRadiusGeometry {

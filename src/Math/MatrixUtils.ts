@@ -1,8 +1,8 @@
 import { invariant } from 'ts-invariant'
-import { Offset, Rect } from '@rendering'
+// import { Axis } from '@painting'
+import { Offset, Rect } from '@internal/Geometry'
 import { Matrix4 } from './Matrix4'
 import { Vector4 } from './Vector4'
-import { Axis } from '@painting'
 
 export class MatrixUtils {
   static getAsTranslation (transform: Matrix4): Offset | null {
@@ -300,12 +300,11 @@ export class MatrixUtils {
     return this.transformRect(transform, rect)
   }
 
-  
   static createCylindricalProjectionTransform(
     radius: number,
     angle: number,
     perspective = 0.001,
-    orientation: Axis = Axis.Vertical,
+    // orientation: Axis = Axis.Vertical,
   ) {
     invariant(radius !== null)
     invariant(angle !== null)
@@ -317,14 +316,15 @@ export class MatrixUtils {
     result.setEntry(2, 3, -radius)
     result.setEntry(3, 3, perspective * radius + 1.0)
 
-    result = result * ((
-      orientation === Axis.Horizontal
-        ? Matrix4.rotationY(angle)
-        : Matrix4.rotationX(angle)
-    ) * Matrix4.translationValues(0.0, 0.0, radius)
-    ) as Matrix4
+    // @TODO
+    // const m = orientation === Axis.Horizontal
+    //   ? Matrix4.rotationY(angle)
+    //   : Matrix4.rotationX(angle)
+   
+    // m.multiply(Matrix4.translationValues(0.0, 0.0, radius))
+    // result.multiply(m)
 
-    return result;
+    return result
   }
 
   static forceToPoint (offset: Offset) {

@@ -1,8 +1,9 @@
 import { invariant } from 'ts-invariant'
 import { property } from '@helper'
-import { ManagedSkiaObject, Skia, SkiaImage, SkiaPicture, SkiaSurface } from '@skia'
+import { Rect } from '@internal/Geometry'
+import { Skia, SkiaImage, SkiaPicture, SkiaSurface } from '@skia/Skia'
+import { ManagedSkiaObject } from '@skia/ManagedSkiaObject'
 import { kBrowserSupportsFinalizationRegistry } from '@platform'
-import { Rect } from './Geometry'
 import { Image } from './Image'
 import { PictureSnapshot } from './Canvas'
 

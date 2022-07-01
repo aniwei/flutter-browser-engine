@@ -1,5 +1,6 @@
 import { invariant } from 'ts-invariant'
-import { Color, Rect, Canvas, Paint, Path } from '@rendering'
+import { Rect } from '@internal'
+import { Color, Canvas, Paint, Path } from '@rendering'
 import { Skia, SkiaTextDirection } from '@skia'
 import { lerpDouble, listEquals } from '@helper'
 import { EdgeInsets, EdgeInsetsGeometry } from './EdgeInsets'

@@ -1,6 +1,7 @@
 import { invariant } from 'ts-invariant'
 import { Skia, ManagedSkiaObject, SkiaAnimatedImage } from '@skia'
-import { URI, HTTP, kBrowserSupportsImageDecoder } from '@platform'
+import { HTTP, kBrowserSupportsImageDecoder } from '@platform'
+import { URI } from '@internal'
 import { Image } from './Image'
 import { Codec, FrameInfo } from './Painting'
 

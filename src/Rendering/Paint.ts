@@ -1,9 +1,10 @@
 import { Color } from '@rendering'
-import { ManagedSkiaObject, Skia, FilterQuality } from '@skia'
+import { Skia, SkiaFilterQuality } from '@skia/Skia'
+import { ManagedSkiaObject } from '@skia/ManagedSkiaObject'
 import { ManagedSkiaColorFilter, ComposeColorFilter, MatrixColorFilter, ColorFilter } from './ColorFilter'
 import { MaskFilter } from './MaskFilter'
 
-import type { SkiaPaint, SkiaImageFilter, SkiaBlendMode, SkiaPaintStyle, SkiaStrokeCap, SkiaStrokeJoin } from '@skia'
+import type { SkiaPaint, SkiaImageFilter, SkiaBlendMode, SkiaPaintStyle, SkiaStrokeCap, SkiaStrokeJoin } from '@skia/Skia'
 import type { ManagedSkImageFilterConvertible } from './ImageFilter'
 import type { Shader } from './Shader'
 
@@ -157,16 +158,16 @@ export class Paint extends ManagedSkiaObject<SkiaPaint> {
   }) public maskFilter: MaskFilter | null = null
 
   // @TODO
-  @property<FilterQuality>(function (value) {
+  @property<SkiaFilterQuality>(function (value) {
     return value
-  }, function (this, filterQuality: FilterQuality) {
+  }, function (this, filterQuality: SkiaFilterQuality) {
     if (this.filterQuality !== filterQuality) {
       this._filterQuality = filterQuality
       if (this.shader !== null) {
         this.skia.setShader((this.shader as Shader).withQuality(this.filterQuality))
       }
     }
-  }) public filterQuality: FilterQuality = FilterQuality.None
+  }) public filterQuality: SkiaFilterQuality = SkiaFilterQuality.None
 
   @property<ColorFilter>(function (value) {
     return value

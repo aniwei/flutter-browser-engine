@@ -1,6 +1,6 @@
-import { Skia, SkiaPictureRecorder } from '@skia'
+import { Rect } from '@internal/Geometry'
+import { Skia, SkiaPictureRecorder } from '@skia/Skia'
 import { Canvas } from './Canvas'
-import { Rect } from './Geometry'
 import { Picture } from './Picture'
 
 export class PictureRecorder {

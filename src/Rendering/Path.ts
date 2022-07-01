@@ -1,5 +1,6 @@
-import { ManagedSkiaObject, Skia, SkiaPath, SkiaFillType, SkiaPathOp } from '@skia'
-import { Offset, Radius, Rect, RRect } from './Geometry'
+import { ManagedSkiaObject } from '@skia/ManagedSkiaObject'
+import { Offset, Radius, Rect, RRect } from '@internal/Geometry'
+import { Skia, SkiaPath, SkiaFillType, SkiaPathOp } from '@skia/Skia'
 
 function property<T> (
   getter: { (v: T, k?: string): T } = function (v, k) { return v as T },

@@ -1,5 +1,5 @@
 import { UnimplementedError } from '@internal'
-import { ManagedSkiaObject, Skia, FilterQuality, SkiaImageFilter, SkiaTileMode, toFilterQuality, toSkiaMatrixFromFloat64 } from '@skia'
+import { ManagedSkiaObject, Skia, SkiaFilterQuality, SkiaImageFilter, SkiaTileMode, toFilterQuality, toSkiaMatrixFromFloat64 } from '@skia'
 import type { ColorFilter } from './ColorFilter'
 
 export abstract class ManagedSkImageFilterConvertible {
@@ -105,7 +105,7 @@ export class BlurImageFilter extends ImageFilter {
 
 export type MatrixImageFilterOptions = {
   matrix: Float64Array, 
-  filterQuality: FilterQuality
+  filterQuality: SkiaFilterQuality
 }
 
 export class MatrixImageFilter extends ImageFilter {
@@ -123,7 +123,7 @@ export class MatrixImageFilter extends ImageFilter {
   }
 
   public matrix: Float64Array
-  public filterQuality: FilterQuality
+  public filterQuality: SkiaFilterQuality
 
   constructor (
     skia: SkiaImageFilter, 

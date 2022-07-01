@@ -78,7 +78,6 @@ export const kSupportsFinalizationRegistry = (
   typeof globalThis.FinalizationRegistry === 'function'
 )
 
-export * from './URI'
 export * from './HTTP'
 export * from './Locale'
 export * from './Encoding'

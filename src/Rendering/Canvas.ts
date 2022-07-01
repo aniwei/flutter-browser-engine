@@ -1,10 +1,11 @@
 import { invariant } from 'ts-invariant'
-import { ArgumentError } from '@internal'
+import { ArgumentError } from '@internal/ArgumentError'
+import { RRect, Rect, Offset  } from '@internal/Geometry'
 import { offsetIsValid, rectIsValid, rrectIsValid } from '@helper'
-import { Skia, SkiaClipOp, SkiaPointMode, FilterQuality, SkiaPicture, SkiaPictureRecorder, toMatrix32, toMallocedSkiaPoints, SkiaShadowFlags, makeFreshSkColor } from '@skia'
-import { kShadowAmbientAlpha, kShadowLightHeight, kShadowLightRadius, kShadowLightXOffset, kShadowLightYOffset, kShadowSpotAlpha } from '@rendering'
-import { RRect, Rect, Offset } from './Geometry'
-import type { SkiaBlendMode, SkiaCanvas } from '@skia'
+import { Skia, SkiaClipOp, SkiaPointMode, SkiaFilterQuality, SkiaPicture, SkiaPictureRecorder } from '@skia/Skia'
+import { toMatrix32, toMallocedSkiaPoints, makeFreshSkColor } from '@skia/SkiaFormat'
+import { SkiaShadowFlags } from '@skia/SkiaShadowFlags'
+import type { SkiaBlendMode, SkiaCanvas } from '@skia/Skia'
 import type { Picture } from './Picture'
 import type { PictureRecorder } from './PictureRecorder'
 import type { Color } from './Painting'
@@ -45,6 +46,15 @@ function command (Command: { new (type, ...rest: unknown[]): PaintCommand } = Pa
     })
   }
 }
+
+export const kShadowAmbientAlpha = 0.039
+export const kShadowSpotAlpha = 0.25
+export const kShadowLightRadius = 1.1
+export const kShadowLightHeight = 600.0
+export const kShadowLightXOffset = 0
+export const kShadowLightYOffset = -450
+export const kShadowLightXTangent = kShadowLightXOffset / kShadowLightHeight
+export const kShadowLightYTangent = kShadowLightYOffset / kShadowLightHeight
 
 export enum PointMode {
   Points,
@@ -259,7 +269,7 @@ export class Canvas {
 
     const filterQuality = paint.filterQuality
     
-    if (filterQuality == FilterQuality.High) {
+    if (filterQuality == SkiaFilterQuality.High) {
       this.skia.drawImageCubic(
         image.skia,
         offset.dx,
@@ -273,9 +283,9 @@ export class Canvas {
         image.skia,
         offset.dx,
         offset.dy,
-        filterQuality === FilterQuality.None ?
+        filterQuality === SkiaFilterQuality.None ?
           Skia.FilterMode.Nearest : Skia.FilterMode.Linear,
-        filterQuality === FilterQuality.Medium ? 
+        filterQuality === SkiaFilterQuality.Medium ? 
           Skia.MipmapMode.Linear : Skia.MipmapMode.None,
         paint.skia,
       )
@@ -294,7 +304,7 @@ export class Canvas {
     invariant(paint !== null)
 
     const filterQuality = paint.filterQuality
-    if (filterQuality == FilterQuality.High) {
+    if (filterQuality == SkiaFilterQuality.High) {
       this.skia.drawImageRectCubic(
         image.skia,
         src,
@@ -308,9 +318,9 @@ export class Canvas {
         image.skia,
         src,
         dst,
-        filterQuality === FilterQuality.None ?
+        filterQuality === SkiaFilterQuality.None ?
           Skia.FilterMode.Nearest : Skia.FilterMode.Linear,
-        filterQuality === FilterQuality.Medium ? 
+        filterQuality === SkiaFilterQuality.Medium ? 
           Skia.MipmapMode.Linear : Skia.MipmapMode.None,
         paint.skia,
       )
@@ -332,7 +342,7 @@ export class Canvas {
       image.skia,
       center as unknown as Int32Array,
       dist,
-      paint.filterQuality === FilterQuality.None 
+      paint.filterQuality === SkiaFilterQuality.None 
         ? Skia.FilterMode.Nearest 
         : Skia.FilterMode.Linear,
       paint.skia,

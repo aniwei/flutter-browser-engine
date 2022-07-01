@@ -1,5 +1,5 @@
-import { Matrix4 } from '@math'
-import { Rect } from '@rendering'
+import { Matrix4 } from '@math/Matrix4'
+import { Rect } from '@internal/Geometry'
 import { transformLTRB } from './transformLTRB'
 
 

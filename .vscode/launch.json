@@ -13,7 +13,7 @@
         "<node_internals>/**"
       ],
       "type": "pwa-node",
-      "runtimeExecutable": "/Users/anwei/.nvm/versions/node/v16.13.2/bin/node"
+      // "runtimeExecutable": "/Users/anwei/.nvm/versions/node/v16.13.2/bin/node"
     },
   ]
 }

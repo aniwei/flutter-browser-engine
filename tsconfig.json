@@ -26,16 +26,16 @@
     "rootDir": "./",
     "outDir": "dist",
     "paths": {
-      "@ui": ["src/UI/index.ts"],
-      "@skia": ["src/Skia/index.ts"],
-      "@math": ["./src/Math/index.ts"],
-      "@helper": ["./src/Helper/index.ts"],
-      "@internal": ["src/Internal/index.ts"],
-      "@platform": ["src/Platform/index.ts"],
-      "@services": ["src/Services/index.ts"],
-      "@painting": ["src/Painting/index.ts"],
-      "@gestures": ["src/Gestures/index.ts"],
-      "@rendering": ["src/Rendering/index.ts"]
+      "@ui/*": ["src/UI/*.ts"],
+      "@skia/*": ["src/Skia/*.ts"],
+      "@math/*": ["./src/Math/*.ts"],
+      "@helper/*": ["src/Helper/*.ts"],
+      "@internal/*": ["src/Internal/*.ts"],
+      "@platform/*": ["src/Platform/*.ts"],
+      "@services/*": ["src/Services/*.ts"],
+      "@painting/*": ["src/Painting/*.ts"],
+      "@gestures/*": ["src/Gestures/*.ts"],
+      "@rendering/*": ["src/Rendering/*.ts"]
     },
     "plugins": [
       { "transform": "typescript-transform-paths" },

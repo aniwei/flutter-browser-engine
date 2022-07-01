@@ -21,7 +21,6 @@ export * from './ImageFilter'
 export * from './AnimatedImage'
 
 export * from './Painting'
-export * from './Geometry'
 export * from './Gradient'
 
 export * from './Layer'

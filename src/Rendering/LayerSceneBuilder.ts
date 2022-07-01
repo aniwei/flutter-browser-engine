@@ -1,7 +1,8 @@
 import { invariant } from 'ts-invariant'
 import { Matrix4 } from '@math'
 import { UnimplementedError } from '@internal'
-import { Skia, SkiaBlendMode, FilterQuality, toMatrix32 } from '@skia'
+import { Offset, Rect, RRect } from '@internal'
+import { Skia, SkiaBlendMode, SkiaFilterQuality } from '@skia'
 import { Path } from './Path'
 import { Image } from './Image'
 import { Picture } from './Picture'
@@ -10,7 +11,6 @@ import { Color } from './Painting'
 import { ColorFilter } from './ColorFilter'
 import { LayerTree } from './LayerTree'
 import { ImageFilter } from './ImageFilter'
-import { Offset, Rect, RRect } from './Geometry'
 import { BackdropFilterEngineLayer, Clip, ClipPathEngineLayer, ClipRectEngineLayer, ClipRRectEngineLayer, ColorFilterEngineLayer, ContainerLayer, EngineLayer, ImageFilterEngineLayer, Layer, OffsetEngineLayer, OpacityEngineLayer, PhysicalShapeEngineLayer, PictureLayer, RootLayer, ShaderMaskEngineLayer, TransformEngineLayer, } from './Layer'
 
 
@@ -75,7 +75,7 @@ export class LayerSceneBuilder {
     width: number = 0.0,
     height: number = 0.0,
     freeze: boolean = false,
-    filterQuality: FilterQuality = FilterQuality.Low,
+    filterQuality: SkiaFilterQuality = SkiaFilterQuality.Low,
   ) {
     // TODO(hterkelsen): implement addTexture, b/128315641
   }
@@ -206,7 +206,7 @@ export class LayerSceneBuilder {
     maskRect: Rect,
     blendMode: SkiaBlendMode,
     oldLayer?: EngineLayer | null,
-    filterQuality: FilterQuality = FilterQuality.Low,
+    filterQuality: SkiaFilterQuality = SkiaFilterQuality.Low,
   ): ShaderMaskEngineLayer {
     return this.pushLayer<ShaderMaskEngineLayer>(
       new ShaderMaskEngineLayer(shader, maskRect, blendMode, filterQuality)

@@ -2,7 +2,7 @@ import { invariant } from 'ts-invariant'
 import { property, PropertySetter } from '@helper'
 import { Alignment, AlignmentGeometry, BoxFit, ImageRepeat, paintImage } from '@painting'
 import { Color, ColorFilter, Image, Offset, Rect, Size } from '@rendering'
-import { SkiaBlendMode, FilterQuality, SkiaTextDirection, Skia } from '@skia'
+import { SkiaBlendMode, SkiaFilterQuality, SkiaTextDirection, Skia } from '@skia'
 import { BoxConstraints, RenderBox } from './RenderBox'
 import { PaintingContext, PipelineOwner } from './RenderObject'
 
@@ -102,7 +102,7 @@ export type RenderImageInitOptions = {
   textDirection?: SkiaTextDirection | null,
   invertColors: boolean,
   isAntiAlias: boolean,
-  filterQuality: FilterQuality,
+  SkiaFilterQuality: SkiaFilterQuality,
 }
 
 export class RenderImage extends RenderBox {
@@ -129,7 +129,7 @@ export class RenderImage extends RenderBox {
   @layout<number>() public height: number | null = null
   @layout<number>() public scale: number | null = null
 
-  @paint<FilterQuality>() public filterQuality: FilterQuality
+  @paint<FilterQuality>() public SkiaFilterQuality: SkiaFilterQuality
   @paint<BoxFit>() public fit: BoxFit | null = null
   @paint<boolean>() public isAntiAlias: boolean
   @paint<ImageRepeat>() public repeat: ImageRepeat
@@ -164,7 +164,7 @@ export class RenderImage extends RenderBox {
     options.textDirection ??= null
     options.invertColors ??= false
     options.isAntiAlias ??= false
-    options.filterQuality ??= FilterQuality.Low
+    options.filterQuality ??= SkiaFilterQuality.Low
 
     invariant(options.repeat !== null)
     invariant(options.alignment !== null)

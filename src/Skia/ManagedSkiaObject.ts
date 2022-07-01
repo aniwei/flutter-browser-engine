@@ -1,4 +1,4 @@
-import { UnimplementedError } from '@internal'
+import { UnimplementedError } from '@internal/UnimplementedError'
 import { SkiaFinalizationRegistry } from './SkiaFinalizationRegistry'
 import { RawSkia, SkiaObject } from './SkiaObject'
 
