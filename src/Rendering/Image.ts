@@ -1,5 +1,6 @@
 import { invariant } from 'ts-invariant'
-import { SkiaObjectBox, SkiaImage, Skia } from '@skia'
+import { SkiaImage, Skia } from '@skia/Skia'
+import { SkiaObjectBox } from '@skia/SkiaObjectBox'
 import { ImageByteFormat } from './Painting'
 
 export interface IImage {

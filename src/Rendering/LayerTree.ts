@@ -1,5 +1,5 @@
-import { Matrix4 } from '@math'
-import { Rect, Size } from '@internal'
+import { Matrix4 } from '@math/Matrix4'
+import { Rect, Size } from '@internal/Geometry'
 import { Canvas } from './Canvas'
 import { Color } from './Painting'
 import { Picture } from './Picture'

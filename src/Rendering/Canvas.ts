@@ -1,10 +1,11 @@
 import { invariant } from 'ts-invariant'
 import { ArgumentError } from '@internal/ArgumentError'
 import { RRect, Rect, Offset  } from '@internal/Geometry'
-import { offsetIsValid, rectIsValid, rrectIsValid } from '@helper'
+import { offsetIsValid, rectIsValid, rrectIsValid } from '@helper/validators'
 import { Skia, SkiaClipOp, SkiaPointMode, SkiaFilterQuality, SkiaPicture, SkiaPictureRecorder } from '@skia/Skia'
 import { toMatrix32, toMallocedSkiaPoints, makeFreshSkColor } from '@skia/SkiaFormat'
 import { SkiaShadowFlags } from '@skia/SkiaShadowFlags'
+
 import type { SkiaBlendMode, SkiaCanvas } from '@skia/Skia'
 import type { Picture } from './Picture'
 import type { PictureRecorder } from './PictureRecorder'

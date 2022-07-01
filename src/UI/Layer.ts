@@ -1,10 +1,15 @@
 import { invariant } from 'ts-invariant'
-import { property, PropertySetter } from '@helper'
-import { LayerSceneBuilder, Picture, Image, Clip, ImageFilter, Path, ColorFilter, OpacityEngineLayer, OffsetEngineLayer, Shader, Color, ImageFilterEngineLayer, ColorFilterEngineLayer, LayerScene } from '@rendering'
+import { property, PropertySetter } from '@helper/property'
+import { Clip, ImageFilter, Path, ColorFilter, OpacityEngineLayer, OffsetEngineLayer, Shader, Color, ImageFilterEngineLayer, ColorFilterEngineLayer, LayerScene } from '@rendering'
+import { LayerSceneBuilder } from '@rendering/LayerSceneBuilder'
+import { Picture } from '@rendering/Picture'
+import { Image } from '@rendering/Image'
 
-import { Matrix4, Vector4 } from '@math'
-import { Skia, SkiaBlendMode, SkiaFilterQuality } from '@skia'
-import { AbstractNode, Offset, Rect, RRect, Size } from '@internal'
+import { Matrix4 } from '@math/Matrix4'
+import { Vector4 } from '@math/Vector4'
+import { AbstractNode } from '@internal/AbstractNode'
+import { Offset, Rect, RRect, Size } from '@internal/Geometry'
+import { Skia, SkiaBlendMode, SkiaFilterQuality } from '@skia/Skia'
 
 function scene <T> (setter?: PropertySetter<T>) {
   return property<T>(function get (this, value: T) {

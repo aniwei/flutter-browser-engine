@@ -1,5 +1,6 @@
 import { invariant } from 'ts-invariant'
-import { lerpInt, clampInt, clamp } from '@helper'
+import { clampInt, clamp } from '@helper/clamp'
+import { lerpInt } from '@helper/lerp'
 import { Image } from './Image'
 
 export enum ImageByteFormat {

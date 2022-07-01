@@ -1,6 +1,9 @@
 import { invariant } from 'ts-invariant'
-import { Offset, ArgumentError } from '@internal'
-import { ManagedSkiaObject, Skia, SkiaVertexMode, SkiaVertices, toFlatColors, toFlatSkiaPoints, toUint16Array } from '@skia'
+import { Offset } from '@internal/Geometry'
+import { ArgumentError } from '@internal/ArgumentError'
+import { ManagedSkiaObject, } from '@skia/ManagedSkiaObject'
+import { Skia, SkiaVertexMode, SkiaVertices } from '@skia/Skia'
+import { toFlatColors, toFlatSkiaPoints, toUint16Array } from '@skia/SkiaFormat'
 import { Color } from './Painting'
 
 

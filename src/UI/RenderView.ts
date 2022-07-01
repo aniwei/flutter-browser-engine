@@ -1,8 +1,9 @@
 import { invariant } from 'ts-invariant'
-import { property } from '@helper'
+import { property } from '@helper/property'
 import { Matrix4 } from '@math/Matrix4'
 import { Offset, Rect, Size } from '@internal/Geometry'
-import { LayerSceneBuilder } from '@rendering'
+import { LayerSceneBuilder } from '@rendering/LayerSceneBuilder'
+
 import { PaintingContext, RenderObject } from './RenderObject'
 import { BoxConstraints, RenderBox } from './RenderBox'
 import { TransformLayer } from './Layer'

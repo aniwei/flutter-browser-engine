@@ -1,7 +1,8 @@
-import { Matrix4 } from '@math'
-import { Path } from "@rendering"
-import { property, listEquals } from '@helper'
-import { Offset, Rect, RRect, Size } from "@internal"
+import { Matrix4 } from '@math/Matrix4'
+import { Path } from '@rendering/Path'
+import { property } from '@helper/property'
+import { listEquals } from '@helper/listEquals'
+import { Offset, Rect, RRect, Size } from '@internal/Geometry'
 
 export enum MutatorType {
   ClipRect,

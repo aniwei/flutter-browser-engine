@@ -1,4 +1,4 @@
-import { LayerScene } from '@rendering'
+import { LayerScene } from '@rendering/LayerSceneBuilder'
 
 export class Window {
   render (scene: LayerScene) {

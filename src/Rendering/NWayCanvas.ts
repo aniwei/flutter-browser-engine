@@ -1,5 +1,5 @@
-import { SkiaClipOp } from '@skia'
-import { Rect, RRect } from '@internal'
+import { SkiaClipOp } from '@skia/Skia'
+import { Rect, RRect } from '@internal/Geometry'
 import { Path } from './Path'
 import { Paint } from './Paint'
 import { Canvas } from './Canvas'
