@@ -1,5 +1,6 @@
 import invariant from 'ts-invariant'
-import { isWindow, kCurrentURI, Encoding, utf8 } from '@platform'
+import { isWindow, kCurrentURI } from '@platform/Platform'
+import { Encoding, utf8 } from '@internal/Encoding'
 import { ArgumentError } from './ArgumentError'
 import { StringBuffer } from './StringBuffer'
 import { UnsupportedError } from './UnsupportedError'
@@ -300,7 +301,7 @@ function skipPackageNameChars (
   start: number, 
   end: number
 ) {
-  let dots = 0;
+  let dots = 0
   for (let i = start; i < end; i++) {
     var char = source.charCodeAt(i)
     if (char === kSlash) {
@@ -602,18 +603,25 @@ export class URI {
     return 0
   }
 
+  /**
+   * @description: 比较 scheme
+   * @param {string} scheme
+   * @param {string} uri
+   * @return {boolean}
+   */
   static compareScheme (
     scheme: string, 
     uri: string
   ): boolean {
     for (let i = 0; i < scheme.length; i++) {
       const schemeChar = scheme.charCodeAt(i)
-      let uriChar = uri.charCodeAt(i)
-      let delta = schemeChar ^ uriChar;
+      const uriChar = uri.charCodeAt(i)
+      const delta = schemeChar ^ uriChar
+      
       if (delta !== 0) {
         if (delta === 0x20) {
           // Might be a case difference.
-          let lowerChar = uriChar | delta
+          const lowerChar = uriChar | delta
           if (0x61 /*a*/ <= lowerChar && lowerChar <= 0x7a /*z*/) {
             continue
           }
@@ -621,6 +629,7 @@ export class URI {
         return false
       }
     }
+    
     return true
   }
 
@@ -691,26 +700,31 @@ export class URI {
     return result
   }
 
+  /* 
+   * 解析 URI query 参数
+   * key1=value1&key2=value2 
+   * URI.splitQueryString(query, utf8)
+   */
   static splitQueryString (
     query: string,
     encoding: Encoding = utf8
   ): Map<string, string>  {
-  return query.split('&').reduce((map, element) => {
-    let index = element.indexOf('=')
+  return query.split('&').reduce((q, element) => {
+    const index = element.indexOf('=')
     if (index === -1) {
       if (element !== '') {
-        map.set(URI.decodeQueryComponent(element, encoding), '')
+        q.set(URI.decodeQueryComponent(element, encoding), '')
       }
     } else if (index !== 0) {
       const key = element.substring(0, index)
       const value = element.substring(index + 1)
-      map.set(
+      q.set(
         URI.decodeQueryComponent(key, encoding), 
         URI.decodeQueryComponent(value, encoding)
       )
     }
 
-    return map
+    return q
   }, new Map())
 }
 
@@ -827,6 +841,10 @@ export class URI {
       : Array.from(pathToSplit.split('/').map(URI.decodeComponent))
   }
 
+  /*
+   * 解码 URI query
+   * 
+   */
   static decodeQueryComponent (
     encodedComponent: string,
     encoding: Encoding = utf8
@@ -867,13 +885,22 @@ export class URI {
     return byte
   }
 
+  /**
+   * @description: URI 解码
+   * @param {string} text URI 文本
+   * @param {number} start 解码开始索引
+   * @param {number} end 解码结束索引
+   * @param {Encoding} encoding 解码器，默认UTF8
+   * @param {boolean} plusToSpace
+   * @return {string}
+   */
   static URIDecode ( 
     text: string, 
     start: number, 
     end: number, 
     encoding: Encoding, 
     plusToSpace: boolean
-  ) {
+  ): string {
     invariant(0 <= start)
     invariant(start <= end)
     invariant(end <= text.length)
@@ -928,6 +955,14 @@ export class URI {
     return encoding.decode(new Uint8Array(bytes))
   }
 
+  /**
+   * @description: URI 编码
+   * @param {number} canonicalTable
+   * @param {string} text 编码文本
+   * @param {Encoding} encoding 编码器，默认UTF8
+   * @param {boolean} spaceToPlus
+   * @return {string}
+   */
   static URIEncode (
     canonicalTable: number[], 
     text: string,
@@ -2766,10 +2801,15 @@ export class URI {
     })
   }
 
+  /**
+   * @description: 判断是不是 scheme
+   * @param {string} scheme
+   * @return {boolean}
+   */
   isScheme (scheme: string): boolean {
     const thisScheme = this.scheme as string
     if (scheme === null) {
-      return thisScheme.length === 0
+      return false
     }
 
     if (scheme.length !== thisScheme.length) {
@@ -2779,37 +2819,43 @@ export class URI {
     return URI.compareScheme(scheme, thisScheme)
   }
 
+  /**
+   * @description: 合并路径
+   * @param {string} base 
+   * @param {string} reference
+   * @param {*} reference
+   * @param {*} stop
+   * @return {*}
+   */
   mergePaths (
     base: string, 
     reference: string
   ): string {
-    // Optimize for the case: absolute base, reference beginning with "../".
     let backCount = 0
     let refStart = 0
-    // Count number of "../" at beginning of reference.
+    
+    // 处理相对路径
     while (reference.startsWith('../', refStart)) {
       refStart += 3
       backCount++
     }
 
-    // Drop last segment - everything after last '/' of base.
     let baseEnd = base.lastIndexOf('/')
-    // Drop extra segments for each leading "../" of reference.
     while (
       baseEnd > 0 && 
       backCount > 0
     ) {
-      let newEnd = base.lastIndexOf('/', baseEnd - 1)
+      const newEnd = base.lastIndexOf('/', baseEnd - 1)
       if (newEnd < 0) {
         break
       }
-      let delta = baseEnd - newEnd
+      const delta = baseEnd - newEnd
       // If we see a "." or ".." segment in base, stop here and let
       // _removeDotSegments handle it.
       if (
-        (delta == 2 || delta == 3) &&
+        (delta === 2 || delta === 3) &&
         base.charCodeAt(newEnd + 1) === kDot &&
-        (delta == 2 || base.charCodeAt(newEnd + 2) === kDot)
+        (delta === 2 || base.charCodeAt(newEnd + 2) === kDot)
       ) {
         break
       }

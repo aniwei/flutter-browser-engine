@@ -1,5 +1,5 @@
 import { invariant } from 'ts-invariant'
-import { Color } from '@rendering'
+import { Color } from '@rendering/Painting'
 import { Offset } from '@internal/Geometry'
 import { CubicResampler, FilterOptions } from 'canvaskit-wasm'
 import { SkiaFilterQuality, Skia } from './Skia'

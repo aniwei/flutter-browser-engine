@@ -1,5 +1,5 @@
 import { invariant } from 'ts-invariant'
-import { lerpDouble } from '@helper'
+import { lerpDouble } from '@helper/lerp'
 
 const kGiantScalar = 1.0E+9
 

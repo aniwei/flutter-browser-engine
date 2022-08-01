@@ -1,5 +1,5 @@
 import invariant from 'ts-invariant'
-import { kSupportsFinalizationRegistry } from '@platform'
+import { kSupportsFinalizationRegistry } from '@platform/Platform'
 import { SkiaFinalizationRegistry } from './SkiaFinalizationRegistry'
 import { RawSkia, SkiaObject } from './SkiaObject'
 
