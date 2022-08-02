@@ -1,4 +1,4 @@
-import { clamp } from '@helper'
+import { clamp } from '@helper/clamp'
 import { Matrix2 } from './Matrix2'
 import { Vector3 } from './Vector3'
 import { Vector4 } from './Vector4'
