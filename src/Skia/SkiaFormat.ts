@@ -1,5 +1,5 @@
 import { invariant } from 'ts-invariant'
-import { Color } from '@rendering/Painting'
+import { Color } from '@internal/Color'
 import { Offset } from '@internal/Geometry'
 import { CubicResampler, FilterOptions } from 'canvaskit-wasm'
 import { SkiaFilterQuality, Skia } from './Skia'
@@ -12,7 +12,12 @@ const kMatrixIndexToMatrix4Index = [
 
 const kDefaultSkColorStops = [0, 1]
 
-export function makeFreshSkColor (color: Color) {
+/**
+ * 
+ * @param color 
+ * @returns 
+ */
+export function makeFreshSkColor (color: Color): Float32Array {
   const result = new Float32Array(4)
   result[0] = color.red / 255.0
   result[1] = color.green / 255.0

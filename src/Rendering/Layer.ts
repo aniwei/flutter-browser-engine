@@ -1,22 +1,24 @@
 import { invariant } from 'ts-invariant'
 import { Matrix4 } from '@math/Matrix4'
-import { NWayCanvas } from '@rendering/NWayCanvas'
-import { Offset, RRect, Rect } from '@internal/Geometry'
-import { Skia, SkiaBlendMode, SkiaFilterQuality } from '@skia/Skia'
+
+import { Color } from '@internal/Color'
+import { Clip } from '@basic/Painting'
 import { property } from '@helper/property'
 import { transformRect } from '@helper/transformRect'
 import { computeSkiaShadowBounds } from '@helper/computeSkiaShadowBounds'
-
+import { Offset, RRect, Rect } from '@internal/Geometry'
+import { Skia, SkiaBlendMode, SkiaFilterQuality } from '@skia/Skia'
 import { MutatorsStack, MutatorType } from './EmbeddedViews'
 import { RasterCache } from './RasterCache'
-import { Canvas } from './Canvas'
 import { Paint } from './Paint'
-import { Clip, Color } from './Painting'
-import { Path } from './Path'
-import { ImageFilter } from './ImageFilter'
-import { Shader } from './Shader'
-import { ColorFilter } from './ColorFilter'
-import { Picture } from './Picture'
+
+import type { Path } from './Path'
+import type { ImageFilter } from './ImageFilter'
+import type { ColorFilter } from './ColorFilter'
+import type { Picture } from './Picture'
+import type { Shader } from './Shader'
+import type { Canvas } from './Canvas'
+import type { NWayCanvas } from '@rendering/NWayCanvas'
 
 export abstract class EngineLayer {
   dispose () {}

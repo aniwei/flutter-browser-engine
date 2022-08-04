@@ -1,8 +1,11 @@
-import jimp from 'jimp'
+/*
+ * @Author: Aniwei
+ * @Date: 2022-06-13 09:47:07
+ */
 import { resolve } from 'path'
-import { Skia } from '@skia'
-import { URI } from '@internal'
-import { webOnlyInstantiateImageCodecFromURL } from '@rendering'
+import { Skia } from '@skia/Skia'
+import { URI } from '@internal/URI'
+import { webOnlyInstantiateImageCodecFromURL } from '@rendering/ImageCodec'
 
 
 test(`fetchImage`, async () => {

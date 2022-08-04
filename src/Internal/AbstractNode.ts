@@ -1,5 +1,9 @@
-import invariant from 'ts-invariant'
-import { property } from '@helper'
+/*
+ * @Author: Aniwei
+ * @Date: 2022-06-29 10:55:05
+ */
+import { invariant } from 'ts-invariant'
+import { property } from '@helper/property'
 
 export abstract class AbstractNode {
   @property<boolean>(function get (this) {

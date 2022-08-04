@@ -1,17 +1,18 @@
 import { invariant } from 'ts-invariant'
+import { Color } from '@internal/Color'
+import { Paint } from '@rendering/Paint'
 import { Skia, SkiaFilterQuality } from '@skia/Skia'
 import { Offset, Rect, Size } from '@internal/Geometry'
-import { VoidCallback } from '@platform/Platform'
-import { Path } from '@rendering/Path'
-import { Color } from '@rendering/Painting'
-import { Paint } from '@rendering/Paint'
-import { Image } from '@rendering/Image'
-import { ColorFilter } from '@rendering/ColorFilter'
 import { Alignment, AlignmentGeometry } from './Alignment'
 import { applyBoxFit, BoxFit } from './BoxFit'
 import { ImageConfiguration, ImageProvider } from './ImageProvider'
 import { ImageErrorListener, ImageInfo, ImageStream, ImageStreamListener } from './ImageStream'
+
+import type { Path } from '@rendering/Path'
+import type { Image } from '@rendering/Image'
 import type { Canvas } from '@rendering/Canvas'
+import type { ColorFilter } from '@rendering/ColorFilter'
+import type { VoidCallback } from '@basic/Platform'
 
 export enum ImageRepeat {
   Repeat,

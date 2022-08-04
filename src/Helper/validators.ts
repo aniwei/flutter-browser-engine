@@ -1,6 +1,6 @@
 import { invariant } from 'ts-invariant'
 import { ArgumentError } from '@internal/ArgumentError'
-import type { Color } from '@rendering/Painting'
+import type { Color } from '@internal/Color'
 import type { Offset, Radius, Rect, RRect } from '@internal/Geometry'
 
 export function rectIsValid (rect: Rect) {

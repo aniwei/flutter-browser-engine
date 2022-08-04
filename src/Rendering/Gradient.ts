@@ -1,9 +1,14 @@
+/*
+ * @Author: Aniwei
+ * @Date: 2022-06-30 10:13:59
+ */
 import { invariant } from 'ts-invariant'
 import { validateColorStops } from '@helper/validators'
 import { Skia, SkiaTileMode } from '@skia/Skia'
 import { toMatrix32 } from '@skia/SkiaFormat'
 import { Offset } from '@internal/Geometry'
-import { Color } from './Painting'
+import { Color } from '@internal/Color'
+
 import { GradientConical, GradientLinear, GradientRadial, GradientSweep } from './Shader'
 
 

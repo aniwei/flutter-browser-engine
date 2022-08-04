@@ -9,12 +9,12 @@ import { SkiaShadowFlags } from '@skia/SkiaShadowFlags'
 import type { SkiaBlendMode, SkiaCanvas } from '@skia/Skia'
 import type { Picture } from './Picture'
 import type { PictureRecorder } from './PictureRecorder'
-import type { Color } from './Painting'
 import type { Image } from './Image'
 import type { Paint } from './Paint'
 import type { Path } from './Path'
 import type { ImageFilter, ManagedSkImageFilterConvertible } from './ImageFilter'
 import type { Vertices } from './Vertices'
+import type { Color } from '@internal/Color'
 
 type Methods<T> = { 
   [K in keyof T as (T[K] extends Function ? K : never)]: T[K] 

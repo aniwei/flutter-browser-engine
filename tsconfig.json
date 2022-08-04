@@ -30,6 +30,7 @@
       "@skia/*": ["src/Skia/*.ts"],
       "@math/*": ["./src/Math/*.ts"],
       "@helper/*": ["src/Helper/*.ts"],
+      "@basic/*": ["src/Basic/*.ts"],
       "@internal/*": ["src/Internal/*.ts"],
       "@platform/*": ["src/Platform/*.ts"],
       "@services/*": ["src/Services/*.ts"],

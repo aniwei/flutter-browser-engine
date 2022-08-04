@@ -1,9 +1,16 @@
+/*
+ * @Author: Aniwei
+ * @Date: 2022-06-13 09:47:07
+ */
 import jimp from 'jimp'
 import { resolve } from 'path'
-import { Skia, SkiaCanvas, SkiaTextDirection } from '@skia'
-import { Border, BorderStyle, BoxShape, BorderRadius } from '@painting'
-import { Canvas, Color } from '@rendering'
-import { Radius, Rect } from '@internal'
+import { Skia, SkiaCanvas, SkiaTextDirection } from '@skia/Skia'
+import { Border, BoxShape } from '@painting/BoxBorder'
+import { BorderStyle } from '@painting/BoxBorder'
+import { BorderRadius } from '@painting/BorderRadius'
+import { Canvas } from '@rendering/Canvas'
+import { Radius, Rect } from '@internal/Geometry'
+import { Color } from '@internal/Color'
 
 
 test(`Skia`, async () => {

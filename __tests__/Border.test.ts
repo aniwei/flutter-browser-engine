@@ -1,10 +1,17 @@
+/*
+ * @Author: Aniwei
+ * @Date: 2022-06-13 09:47:07
+ */
 import jimp from 'jimp'
 import { resolve } from 'path'
-import { Skia, SkiaCanvas } from '@skia'
-import { Border, BorderStyle, BoxShape, BorderRadius } from '@painting'
-import { Canvas, Color } from '@rendering'
-import { Radius, Rect } from '@internal'
-
+import { Skia, SkiaCanvas } from '@skia/Skia'
+import { Border } from '@painting/BoxBorder'
+import { BorderStyle } from '@painting/BoxBorder'
+import { BoxShape } from '@painting/BoxBorder'
+import { BorderRadius } from '@painting/BorderRadius'
+import { Canvas } from '@rendering/Canvas'
+import { Color } from '@internal/Color'
+import { Radius, Rect } from '@internal/Geometry'
 
 test(`Skia`, async () => {
   await Skia.malloc(resolve(__dirname, 'canvaskit.wasm'))

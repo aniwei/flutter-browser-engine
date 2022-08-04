@@ -1,14 +1,15 @@
 import invariant from 'ts-invariant'
-import { Codec } from '@rendering/Painting'
-import { SkiaTextDirection } from '@skia/Skia'
 import { StringBuffer } from '@internal/StringBuffer'
 import { Size } from '@internal/Geometry'
-import { TargetPlatform } from '@platform/Platform'
 import { Locale } from '@platform/Locale'
 import { AssetBundle } from '@services/AssetBoundle'
 import { ImageErrorListener, ImageStream } from './ImageStream'
 import { PaintingBinding } from './PaintingBinding'
 import { ImageCacheStatus } from './ImageCache'
+
+import type { Codec } from '@basic/Painting'
+import type { SkiaTextDirection } from '@skia/Skia'
+import type { TargetPlatform } from '@basic/Platform'
 
 export type KeyAndErrorHandlerCallback<T> = { (key: T, handleError: ImageErrorListener): void }
 export type AsyncKeyErrorHandler<T> = { (key: T, exception): Promise<void> }

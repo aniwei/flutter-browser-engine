@@ -1,14 +1,13 @@
-import { invariant } from 'ts-invariant'
 import { SkiaImage, Skia } from '@skia/Skia'
 import { SkiaObjectBox } from '@skia/SkiaObjectBox'
-import { ImageByteFormat } from './Painting'
+
+import { ImageByteFormat } from '@basic/Painting'
 
 export interface IImage {
   width: number
   height: number
   toByteData (format: ImageByteFormat): Promise<any>
   dispose ()
-   
   clone (): Image
   isCloneOf (other: Image ): boolean
 }
@@ -45,18 +44,17 @@ export class Image implements IImage {
   }
 
   public get width (): number {
-    invariant(!this.debugCheckIsDisposed())
     return this.skia!.width()
   }
 
   public get height (): number {
-    invariant(!this.debugCheckIsDisposed())
     return this.skia!.height()
   }
 
   public box: SkiaObjectBox<Image, SkiaImage>
   public disposed: boolean
   public videoFrame: VideoFrame | null = null
+  
   public get skiaImage () {
     return this.box.skia
   }
@@ -66,15 +64,8 @@ export class Image implements IImage {
     this.disposed = false
     this.videoFrame = frame
   }
-
-  debugCheckIsDisposed () {
-    invariant(!this.disposed, `This image has been disposed.`)
-    return false
-  }
   
   async toByteData (format: ImageByteFormat = ImageByteFormat.RawRGBA) {
-    invariant(!this.debugCheckIsDisposed())
-
     if (this.videoFrame !== null) {
       // return this.readPixelsFromVideoFrame()
     } else {
@@ -82,13 +73,17 @@ export class Image implements IImage {
     }
   }
 
+  /**
+   * @description: 
+   * @param {ImageByteFormat} format
+   * @return {ArrayBuffer | Buffer}
+   */
   readPixelsFromSkiaImage (format: ImageByteFormat) {
-    const alphaType = ImageByteFormat.RawStraightRGBA ? 
-      Skia.AlphaType.Unpremul : 
-      Skia.AlphaType.Premul
+    const alphaType = ImageByteFormat.RawStraightRGBA 
+      ? Skia.AlphaType.Unpremul 
+      : Skia.AlphaType.Premul
 
     let bytes: Uint8Array
-
     if (
       format === ImageByteFormat.RawRGBA ||
       format === ImageByteFormat.RawStraightRGBA
@@ -113,12 +108,10 @@ export class Image implements IImage {
   }
 
   clone (): Image  {
-    invariant(!this.debugCheckIsDisposed())
     return Image.cloneOf(this.box)
   }
 
   isCloneOf (other: Image) {
-    invariant(!this.debugCheckIsDisposed())
     return (
       other instanceof Image && 
       other.skia!.isAliasOf(this.skia)

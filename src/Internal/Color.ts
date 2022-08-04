@@ -1,27 +1,6 @@
 import { invariant } from 'ts-invariant'
 import { clampInt, clamp } from '@helper/clamp'
 import { lerpInt } from '@helper/lerp'
-import { Image } from './Image'
-
-export enum ImageByteFormat {
-  RawRGBA,
-  RawStraightRGBA,
-  RawUnmodified,
-  PNG,
-}
-
-export enum PixelFormat {
-  RGBA8888,
-  BGRA8888,
-}
-
-export enum Clip {
-  None,
-  HardEdge,
-  AntiAlias,
-  AntiAliasWithSaveLayer,
-}
-
 
 export function scaleAlpha (
   a: Color, 
@@ -41,8 +20,8 @@ export class Color extends Float32Array {
       ((a & 0xff) << 24) |
       ((r & 0xff) << 16) |
       ((g & 0xff) << 8) |
-        ((b & 0xff) << 0)
-      ) & 0xFFFFFFFF
+      ((b & 0xff) << 0)
+    ) & 0xFFFFFFFF
 
     return new Color(value)
   }
@@ -218,17 +197,4 @@ export class Color extends Float32Array {
   toString () {
     return `Color(${this.value})`
   }
-}
-
-export abstract class FrameInfo {
-  abstract get duration (): number
-  abstract get image (): Image
-}
-
-export abstract class Codec {
-  abstract frameCount: number
-  abstract repetitionCount: number
-
-  abstract getNextFrame (): Promise<FrameInfo>
-  abstract dispose (): void
 }

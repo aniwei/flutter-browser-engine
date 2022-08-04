@@ -70,7 +70,10 @@ export class RenderView extends RenderObject {
   @property<RenderObject>(function (this, child: RenderObject) {
     return child
   }, function (this, child: RenderObject, key: string) {
-    if (this.child !== null) {
+    if (
+      this.child !== null && 
+      this.child !== undefined
+    ) {
       this.dropChild(this.child)
     }
 

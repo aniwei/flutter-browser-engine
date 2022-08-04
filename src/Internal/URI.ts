@@ -303,7 +303,7 @@ function skipPackageNameChars (
 ) {
   let dots = 0
   for (let i = start; i < end; i++) {
-    var char = source.charCodeAt(i)
+    const char = source.charCodeAt(i)
     if (char === kSlash) {
       return (dots !== 0) ? i : -1
     }
@@ -629,10 +629,16 @@ export class URI {
         return false
       }
     }
-    
+
     return true
   }
 
+  /**
+   * @description: 获取 package scheme 索引位置
+   * @param {URI} uri
+   * @param {string} path
+   * @return {number}
+   */
   static packageNameEnd (
     uri: URI, 
     path: string
@@ -647,6 +653,13 @@ export class URI {
     return -1
   }
 
+  
+  /**
+   * @description: 
+   * @param {*} utf8
+   * @param {*} string
+   * @return {*}
+   */
   static splitQueryStringAll (
     query: string,
     encoding: Encoding = utf8
@@ -700,33 +713,34 @@ export class URI {
     return result
   }
 
-  /* 
-   * 解析 URI query 参数
-   * key1=value1&key2=value2 
-   * URI.splitQueryString(query, utf8)
+  /**
+   * @description: 解析 URI query 
+   * @param {string} query
+   * @param {Encoding} encoding
+   * @return {Map<string, string>}
    */
   static splitQueryString (
     query: string,
     encoding: Encoding = utf8
   ): Map<string, string>  {
-  return query.split('&').reduce((q, element) => {
-    const index = element.indexOf('=')
-    if (index === -1) {
-      if (element !== '') {
-        q.set(URI.decodeQueryComponent(element, encoding), '')
+    return query.split('&').reduce((q, element) => {
+      const index = element.indexOf('=')
+      if (index === -1) {
+        if (element !== '') {
+          q.set(URI.decodeQueryComponent(element, encoding), '')
+        }
+      } else if (index !== 0) {
+        const key = element.substring(0, index)
+        const value = element.substring(index + 1)
+        q.set(
+          URI.decodeQueryComponent(key, encoding), 
+          URI.decodeQueryComponent(value, encoding)
+        )
       }
-    } else if (index !== 0) {
-      const key = element.substring(0, index)
-      const value = element.substring(index + 1)
-      q.set(
-        URI.decodeQueryComponent(key, encoding), 
-        URI.decodeQueryComponent(value, encoding)
-      )
-    }
 
-    return q
-  }, new Map())
-}
+      return q
+    }, new Map())
+  }
 
   static computeQueryParametersAll (query: string | null): Map<string, string[]>  {
     if (query === null || query.length === 0)  {
@@ -742,6 +756,12 @@ export class URI {
     return queryParameterLists
   }
 
+  /**
+   * @description: 
+   * @param {number} charCode
+   * @param {boolean} argumentError
+   * @return {void}
+   */
   static checkWindowsDriveLetter (
     charCode: number, 
     argumentError: boolean
@@ -779,20 +799,26 @@ export class URI {
     }
   }
 
+  /**
+   * @description: 
+   * @param {string} segments
+   * @param {boolean} argumentError
+   * @return {void}
+   */
   static checkNonWindowsPathReservedCharacters (
     segments: string[], 
     argumentError: boolean
-  ) {
-  for (const segment in segments) {
-    if (segment.includes('/')) {
-      if (argumentError) {
-        throw new ArgumentError(`Illegal path character ${segment}`)
-      } else {
-        throw new UnsupportedError(`Illegal path character ${segment}`)
+  ): void {
+    for (const segment in segments) {
+      if (segment.includes('/')) {
+        if (argumentError) {
+          throw new ArgumentError(`Illegal path character ${segment}`)
+        } else {
+          throw new UnsupportedError(`Illegal path character ${segment}`)
+        }
       }
     }
   }
-}
 
   static toWindowsFilePath (uri: URI): string {
     let hasDriveLetter = false
@@ -831,19 +857,27 @@ export class URI {
     return result.toString()
   }
 
+  /**
+   * @description: 
+   * @param {string} pathToSplit
+   * @return {string[]}
+   */
   static computePathSegments (pathToSplit: string): string[] {
     if (pathToSplit.length > 0 && pathToSplit.charCodeAt(0) === kSlash) {
       pathToSplit = pathToSplit.substring(1)
     }
 
-    return pathToSplit.length === 0 ? 
-      []
+    return pathToSplit.length === 0 
+      ? []
       : Array.from(pathToSplit.split('/').map(URI.decodeComponent))
   }
 
-  /*
-   * 解码 URI query
-   * 
+  
+  /**
+   * @description: 
+   * @param {string} encodedComponent
+   * @param {Encoding} encoding
+   * @return {string}
    */
   static decodeQueryComponent (
     encodedComponent: string,
@@ -852,6 +886,11 @@ export class URI {
     return URI.URIDecode(encodedComponent, 0, encodedComponent.length, encoding, true)
   }
 
+  /**
+   * @description: 
+   * @param {string} encodedComponent
+   * @return {string}
+   */
   static decodeComponent (encodedComponent: string): string {
     return URI.URIDecode(
       encodedComponent, 
@@ -862,20 +901,27 @@ export class URI {
     )
   }
 
+  
+  /**
+   * @description: 
+   * @param {string} s
+   * @param {number} position
+   * @return {number}
+   */
   static hexCharPairToByte (
     s: string, 
-    pos: number
+    position: number
   ) {
     let byte = 0
     for (let i = 0; i < 2; i++) {
-      let charCode = s.charCodeAt(pos + i)
+      let charCode = s.charCodeAt(position + i)
       if (0x30 <= charCode && charCode <= 0x39) {
         byte = byte * 16 + charCode - 0x30
       } else {
         // Check ranges A-F (0x41-0x46) and a-f (0x61-0x66).
         charCode |= 0x20
         if (0x61 <= charCode && charCode <= 0x66) {
-          byte = byte * 16 + charCode - 0x57;
+          byte = byte * 16 + charCode - 0x57
         } else {
           throw new ArgumentError('Invalid URL encoding')
         }
@@ -999,6 +1045,13 @@ export class URI {
     return result.toString()
   }
 
+  /**
+   * @description: 
+   * @param {string} uri
+   * @param {number} start
+   * @param {number} end
+   * @return {*}
+   */
   static parse (
     uri: string, 
     start: number = 0, 
@@ -1389,6 +1442,13 @@ export class URI {
   }
 
 
+  /**
+   * @description: 
+   * @param {string} uri
+   * @param {number} index
+   * @param {string} message
+   * @return {never}
+   */
   static fail (
     uri: string,
     index: number,
@@ -1397,6 +1457,11 @@ export class URI {
     throw new URIFormatError(message, uri, index)
   }
 
+  /**
+   * @description: 创建 URI 对象
+   * @param {URIInitOptions} param
+   * @return {URI}
+   */
   static internal ({
     scheme, 
     userInfo, 
@@ -1417,6 +1482,20 @@ export class URI {
     })
   }
 
+  /**
+   * @description: 
+   * @param {*} uri
+   * @param {*} start
+   * @param {*} end
+   * @param {*} schemeEnd
+   * @param {*} hostStart
+   * @param {*} portStart
+   * @param {*} pathStart
+   * @param {*} queryStart
+   * @param {*} fragmentStart
+   * @param {*} scheme
+   * @return {URI}
+   */
   static notSimple(
     uri,
     start,
@@ -1498,6 +1577,13 @@ export class URI {
     })
   }
 
+  /**
+   * @description: 
+   * @param {string} host
+   * @param {number} start
+   * @param {number} end
+   * @return {number}
+   */
   static checkZoneID (
     host: string, 
     start: number, 
@@ -1540,6 +1626,11 @@ export class URI {
     )
   }
 
+  /**
+   * @description: 
+   * @param {number} char
+   * @return {boolean}
+   */
   static isRegNameChar (char: number) {
     return (
       char < 127 && 
@@ -1547,6 +1638,12 @@ export class URI {
     )
   }
 
+  /**
+   * @description: 
+   * @param {string} component
+   * @param {Encoding} encoding
+   * @return {string}
+   */
   static encodeQueryComponent(
     component: string,
     encoding: Encoding = utf8
@@ -1806,6 +1903,15 @@ export class URI {
     return null
   }
 
+  /**
+   * @description: 
+   * @param {string} component
+   * @param {number} start
+   * @param {number} end
+   * @param {number} charTable
+   * @param {boolean} escapeDelimiters
+   * @return {string}
+   */
   static normalizeOrSubstring(
     component: string, 
     start: number, 
@@ -1912,20 +2018,38 @@ export class URI {
     return buffer.toString()
   }
 
+  /**
+   * @description: 
+   * @param {string} path
+   * @param {string} scheme
+   * @param {boolean} hasAuthority
+   * @return {string}
+   */
   static normalizePath (
     path: string, 
     scheme: string, 
     hasAuthority: boolean
   ): string {
-    if (scheme.length === 0 && !hasAuthority && !path.startsWith('/')) {
+    if (
+      scheme.length === 0 && 
+      !hasAuthority && 
+      !path.startsWith('/')
+    ) {
       return URI.normalizeRelativePath(
         path, 
         scheme.length > 0 || hasAuthority
       )
     }
+
     return URI.removeDotSegments(path)
   }
 
+  /**
+   * @description: 
+   * @param {string} path
+   * @param {boolean} allowScheme
+   * @return {string}
+   */
   static normalizeRelativePath (
     path: string, 
     allowScheme: boolean
@@ -1978,8 +2102,15 @@ export class URI {
     return output.join('/')
   }
 
-
-
+  /**
+   * @description: 
+   * @param {string} component
+   * @param {number} start
+   * @param {number} end
+   * @param {number} charTable
+   * @param {boolean} escapeDelimiters
+   * @return {string | null}
+   */
   static normalize(
     component: string, 
     start: number, 
@@ -1990,7 +2121,7 @@ export class URI {
     let buffer: StringBuffer | null = null
     let sectionStart = start
     let index = start
-    // Loop while characters are valid and escapes correct and upper-case.
+    
     while (index < end) {
       let char = component.charCodeAt(index)
       if (
@@ -2020,20 +2151,18 @@ export class URI {
           URI.isGeneralDelimiter(char)
         ) {
           URI.fail(component, index, 'Invalid character')
-          throw new Error('unreachable') // TODO(lrn): Remove when Never-returning functions are recognized as throwing.
         } else {
           sourceLength = 1
           if ((char & 0xFC00) === 0xD800) {
             if (index + 1 < end) {
               const tail = component.charCodeAt(index + 1)
               if ((tail & 0xFC00) == 0xDC00) {
-                // Tail surrogate.
-                sourceLength = 2;
-                char = 0x10000 | ((char & 0x3ff) << 10) | (tail & 0x3ff);
+                sourceLength = 2
+                char = 0x10000 | ((char & 0x3ff) << 10) | (tail & 0x3ff)
               }
             }
           }
-          replacement = URI.escapeChar(char);
+          replacement = URI.escapeChar(char)
         }
         buffer ??= new StringBuffer()
         buffer.write(component.substring(sectionStart, index))
@@ -2046,6 +2175,7 @@ export class URI {
     if (buffer === null) {
       return null
     }
+
     if (sectionStart < end) {
       buffer.write(component.substring(sectionStart, end))
     }
@@ -2053,11 +2183,18 @@ export class URI {
     return buffer.toString()
   }
 
+  /**
+   * @description: 
+   * @param {string} scheme
+   * @param {number} start
+   * @param {number} end
+   * @return {string}
+   */
   static makeScheme(
     scheme: string, 
     start: number, 
     end: number
-  ) {
+  ): string {
     if (start === end) {
       return ''
     }
@@ -2067,7 +2204,7 @@ export class URI {
       URI.fail(scheme, start, 'Scheme not starting with alphabetic character')
     }
 
-    let containsUpperCase = false;
+    let containsUpperCase = false
     for (let i = start; i < end; i++) {
       const codeUnit = scheme.charCodeAt(i)
       if (!URI.isSchemeCharacter(codeUnit)) {
@@ -2089,11 +2226,18 @@ export class URI {
     return URI.canonicalizeScheme(scheme)
   }
 
+  /**
+   * @description: 
+   * @param {string} userInfo
+   * @param {number} start
+   * @param {number} end
+   * @return {string}
+   */
   static makeUserInfo (
     userInfo: string | null, 
     start: number, 
     end: number
-  ) {
+  ): string {
     if (userInfo === null) {
       return ''
     }
@@ -2106,13 +2250,20 @@ export class URI {
     )
   }
 
+  /**
+   * @description: 
+   * @param {string} host
+   * @param {number} start
+   * @param {number} end
+   * @param {boolean} strictIPv6
+   * @return {string | null}
+   */
   static makeHost (
     host: string | null, 
     start: number, 
     end: number, 
     strictIPv6: boolean
   ): string | null {
-    // TODO(lrn): Should we normalize IPv6 addresses according to RFC 5952?
     if (host === null) {
       return null
     }
@@ -2129,13 +2280,16 @@ export class URI {
       let zoneID = ''
       const index = URI.checkZoneID(host, start + 1, end - 1)
       if (index < end - 1) {
-        const zoneIDstart = (host.startsWith('25', index + 1)) ? index + 3 : index + 1
+        const zoneIDstart = (host.startsWith('25', index + 1)) 
+        ? index + 3 
+        : index + 1
+
         zoneID = URI.normalizeZoneID(host, zoneIDstart, end - 1, '%25')
       }
       URI.parseIPv6Address(host, start + 1, index)
-      // RFC 5952 requires hex digits to be lower case.
       return host.substring(start, index).toLowerCase() + zoneID + ']'
     }
+
     if (!strictIPv6) {
       // TODO(lrn): skip if too short to be a valid IPv6 address?
       for (let i = start; i < end; i++) {
@@ -2143,18 +2297,26 @@ export class URI {
           let zoneID = ''
           const index = URI.checkZoneID(host, start, end)
           if (index < end) {
-            const zoneIDstart = (host.startsWith('25', index + 1)) ? index + 3 : index + 1
+            const zoneIDstart = (host.startsWith('25', index + 1)) 
+              ? index + 3 
+              : index + 1
             zoneID = URI.normalizeZoneID(host, zoneIDstart, end, '%25')
           }
 
           URI.parseIPv6Address(host, start, index)
-          return '[${host.substring(start, index)}' + zoneID + ']'
+          return `[${host.substring(start, index)}` + zoneID + `]`
         }
       }
     }
     return URI.normalizeRegName(host, start, end)
   }
 
+  /**
+   * @description: 
+   * @param {number} port
+   * @param {string} scheme
+   * @return {number | null}
+   */
   static makePort(
     port: number | null, 
     scheme: string
@@ -2169,6 +2331,16 @@ export class URI {
     return port
   }
 
+  /**
+   * @description: 
+   * @param {string} path
+   * @param {number} start
+   * @param {number} end
+   * @param {Map} pathSegments
+   * @param {string} scheme
+   * @param {boolean} hasAuthority
+   * @return {string}
+   */
   static makePath (
     path: string | null,
     start: number, 
@@ -2186,7 +2358,7 @@ export class URI {
         return isFile ? '/' : ''
       }
 
-      result = pathSegments.map((s) => URI.URIEncode(kPathCharTable, s, utf8, false)).join('/');
+      result = pathSegments.map((s) => URI.URIEncode(kPathCharTable, s, utf8, false)).join('/')
     } else if (pathSegments !== null) {
       throw new ArgumentError('Both path and pathSegments specified')
     } else {
@@ -2210,6 +2382,15 @@ export class URI {
     return result
   }
 
+  
+  /**
+   * @description: 
+   * @param {string} query
+   * @param {number} start
+   * @param {number} end
+   * @param {Map} queryParameters
+   * @return {string | null}
+   */
   static makeQuery(
     query: string | null, 
     start: number, 
@@ -2218,7 +2399,7 @@ export class URI {
   ): string | null {
     if (query !== null) {
       if (queryParameters !== null) {
-        throw new ArgumentError('Both query and queryParameters specified');
+        throw new ArgumentError('Both query and queryParameters specified')
       }
       return URI.normalizeOrSubstring(
         query, 
@@ -2234,33 +2415,41 @@ export class URI {
     }
 
     const result = new StringBuffer()
-    let separator = ''
-
-    const writeParameter = (key: string, value: string | null) => {
-      result.write(separator)
-      separator = '&'
+    const writeParameter = (
+      key: string, 
+      value: string | null
+    ) => {
+      result.write('&')
       result.write(URI.encodeQueryComponent(key))
-      if (value !== null && value.length > 0) {
+      if (
+        value !== null && 
+        value.length > 0
+      ) {
         result.write('=')
         result.write(URI.encodeQueryComponent(value))
       }
     }
 
-    queryParameters.forEach((value, key) => {
+    for (const [key, value] of queryParameters) {
       if (value === null || typeof value === 'string') {
         writeParameter(key, value)
-      } else {
-        if (Array.isArray(value)) {
-          for (const v in value) {
-            writeParameter(key, v)
-          }
+      } else if (Array.isArray(value)) {
+        for (const v in value) {
+          writeParameter(key, v)
         }
       }
-    })
+    }
 
     return result.toString()
   }
 
+  /**
+   * @description: 
+   * @param {string} fragment
+   * @param {number} start
+   * @param {number} end
+   * @return {string | null}
+   */
   static makeFragment (
     fragment: string | null, 
     start: number, 
@@ -2381,6 +2570,12 @@ export class URI {
     }
   }
 
+  /**
+   * @description: 
+   * @param {string} path
+   * @param {boolean} slashTerminated
+   * @return {*}
+   */
   static makeFileURI (
     path: string, 
     slashTerminated: boolean
@@ -2406,6 +2601,14 @@ export class URI {
     }
   }
 
+  /**
+   * @description: 
+   * @param {string} scheme
+   * @param {string} authority
+   * @param {string} unencodedPath
+   * @param {Map} queryParameters
+   * @return {URI}
+   */
   static makeHTTPURI (
     scheme: string, 
     authority: string | null,
@@ -2423,7 +2626,7 @@ export class URI {
       let hostStart = 0
       // Split off the user info.
       for (let i = 0; i < authority.length; i++) {
-        const atSign = 0x40;
+        const atSign = 0x40
         if (authority.charCodeAt(i) === atSign) {
           userInfo = authority.substring(0, i)
           hostStart = i + 1
@@ -2438,7 +2641,7 @@ export class URI {
         // IPv6 host.
         let escapeForZoneID = -1
         for (; hostEnd < authority.length; hostEnd++) {
-          let char = authority.charCodeAt(hostEnd);
+          let char = authority.charCodeAt(hostEnd)
           if (
             char === kPercent && 
             escapeForZoneID < 0
@@ -2500,8 +2703,8 @@ export class URI {
     path: string, 
     windows?: boolean | null
   ) {
-    return (windows ?? URI.isWindows) ? 
-      URI.makeWindowsFileURL(path, true)
+    return (windows ?? URI.isWindows) 
+      ? URI.makeWindowsFileURL(path, true)
       : URI.makeFileURI(path, true);
   }
 
@@ -2552,13 +2755,12 @@ export class URI {
       throw new Error(`Origin is only applicable schemes http and https: ${this}`)
     }
 
-    let host = this.host
+    const host = this.host
     if (host === null || host === '') {
-      throw new Error(
-          `A ${this.scheme}: URI should have a non-empty host name: ${this}`);
+      throw new Error(`A ${this.scheme}: URI should have a non-empty host name: ${this}`)
     }
 
-    let port = this.port
+    const port = this.port
     if (port === null) {
       return `${this.scheme}://${this.host}`
     }
@@ -2566,7 +2768,6 @@ export class URI {
   }) public origin!: string
 
   @property() public scheme: string | null
-
   @property() public userInfo: string | null
 
   @property<string>(function (host: string | null) {

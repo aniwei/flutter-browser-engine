@@ -1,10 +1,11 @@
 import { SkiaClipOp } from '@skia/Skia'
+import { Color } from '@internal/Color'
 import { Rect, RRect } from '@internal/Geometry'
-import { Path } from './Path'
-import { Paint } from './Paint'
-import { Canvas } from './Canvas'
-import { Color } from './Painting'
-import { ImageFilter } from './ImageFilter'
+
+import type { Path } from './Path'
+import type { Paint } from './Paint'
+import type { Canvas } from './Canvas'
+import type { ImageFilter } from './ImageFilter'
 
 export class NWayCanvas extends Array<Canvas> {
 

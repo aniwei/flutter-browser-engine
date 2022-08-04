@@ -1,11 +1,16 @@
+/*
+ * @Author: Aniwei
+ * @Date: 2022-07-04 12:10:21
+ */
 import invariant from 'ts-invariant'
-import { VoidCallback } from '@platform/Platform'
 import { Rect, RRect } from '@internal/Geometry'
 import { Canvas } from '@rendering/Canvas'
 import { Paint } from '@rendering/Paint'
 import { Path } from '@rendering/Path'
-import { Clip } from '@rendering/Painting'
 import { Skia } from '@skia/Skia'
+import { Clip } from '@basic/Painting'
+
+import type { VoidCallback } from '@basic/Platform'
 
 export abstract class ClipContext {
   abstract canvas: Canvas | null

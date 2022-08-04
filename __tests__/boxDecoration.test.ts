@@ -1,12 +1,21 @@
+/*
+ * @Author: Aniwei
+ * @Date: 2022-06-13 09:47:07
+ */
 import jimp from 'jimp'
 import { resolve } from 'path'
-import { Skia, SkiaCanvas } from '@skia'
-import { Canvas, Color } from '@rendering'
-import { Offset, Radius, Size } from '@internal'
-import { Border, BorderStyle, BorderRadius, BoxDecoration, LinearGradient } from '@painting'
-import { ImageConfiguration } from '@painting'
-import { TargetPlatform } from '@platform'
-import { Colors } from '@rendering'
+import { Skia, SkiaCanvas } from '@skia/Skia'
+import { Canvas } from '@rendering/Canvas'
+import { Offset, Radius, Size } from '@internal/Geometry'
+import { Border } from '@painting/BoxBorder'
+import { BorderStyle } from '@painting/BoxBorder'
+import { BorderRadius } from '@painting/BorderRadius'
+import { BoxDecoration } from '@painting/BoxDecoration'
+import { LinearGradient } from '@painting/Gradient'
+import { ImageConfiguration } from '@painting/ImageProvider'
+import { TargetPlatform } from '@basic/Platform'
+import { Colors } from '@internal/Colors'
+import { Color } from '@internal/Color'
 
 
 test(`Skia`, async () => {

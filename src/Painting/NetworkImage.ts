@@ -1,8 +1,14 @@
+/*
+ * @Author: Aniwei
+ * @Date: 2022-07-04 12:10:21
+ */
 import { invariant } from 'ts-invariant'
 import { URI } from '@internal/URI'
-import { Codec, webOnlyInstantiateImageCodecFromURL } from '@rendering'
+import { webOnlyInstantiateImageCodecFromURL } from '@rendering/ImageCodec'
 import { DecoderCallback, ImageConfiguration, ImageProvider } from './ImageProvider'
 import { MultiFrameImageCompleter } from './ImageStream'
+
+import type { Codec } from '@basic/Painting'
 
 export class NetworkImage extends ImageProvider<NetworkImage> {
   public url: string

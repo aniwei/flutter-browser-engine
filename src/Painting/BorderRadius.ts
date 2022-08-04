@@ -1,7 +1,6 @@
 import { invariant } from 'ts-invariant'
-import { Skia } from '@skia/Skia'
+import { Skia, SkiaTextDirection } from '@skia/Skia'
 import { Radius, Rect, RRect } from '@internal/Geometry'
-import { TextDirection } from 'canvaskit-wasm'
 
 export abstract class BorderRadiusGeometry {
   static lerp (
@@ -80,7 +79,7 @@ export abstract class BorderRadiusGeometry {
   abstract multiply (other: number): BorderRadiusGeometry
   abstract divide (other: number): BorderRadiusGeometry
   abstract modulo (other: number): BorderRadiusGeometry
-  abstract resolve (direction: TextDirection | null): BorderRadius
+  abstract resolve (direction: SkiaTextDirection | null): BorderRadius
 
   eq (other: BorderRadiusGeometry | null) {
     if (other === null) {
@@ -288,7 +287,7 @@ export class BorderRadius extends BorderRadiusGeometry {
     )
   }
   
-  resolve (direction: TextDirection | null) {
+  resolve (direction: SkiaTextDirection | null) {
     return this
   }
 }
@@ -436,7 +435,7 @@ export class BorderRadiusDirectional extends BorderRadiusGeometry {
     )
   }
   
-  resolve (direction: TextDirection | null): BorderRadius {
+  resolve (direction: SkiaTextDirection | null): BorderRadius {
     invariant(direction !== null)
 
     if (direction === Skia.TextDirection.RTL) {
@@ -558,7 +557,7 @@ export class MixedBorderRadius extends BorderRadiusGeometry {
     )
   }
   
-  resolve (direction: TextDirection | null): BorderRadius {
+  resolve (direction: SkiaTextDirection | null): BorderRadius {
     invariant(direction !== null)
 
     if (direction === Skia.TextDirection.RTL) {

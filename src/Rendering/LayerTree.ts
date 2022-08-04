@@ -1,12 +1,13 @@
 import { Matrix4 } from '@math/Matrix4'
+import { Color } from '@internal/Color'
 import { Rect, Size } from '@internal/Geometry'
-import { Canvas } from './Canvas'
-import { Color } from './Painting'
-import { Picture } from './Picture'
 import { NWayCanvas } from './NWayCanvas'
 import { RasterCache } from './RasterCache'
 import { PaintContext, PrerollContext, RootLayer } from './Layer'
 import { PictureRecorder } from './PictureRecorder'
+
+import type { Picture } from './Picture'
+import type { Canvas } from './Canvas'
 
 export class LayerTree {
   public rootLayer: RootLayer

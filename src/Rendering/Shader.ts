@@ -2,8 +2,8 @@ import { invariant } from 'ts-invariant'
 import { Offset } from '@internal/Geometry'
 import { Skia, SkiaFilterQuality, SkiaShader, SkiaTileMode } from '@skia/Skia'
 import { ManagedSkiaObject } from '@skia/ManagedSkiaObject'
+import { Color } from '@internal/Color'
 import { toFlatColors, toSkiaColorStops, toSkiaMatrixFromFloat32, matrix4IsValid, toSkiaPoint, offsetIsValid, toSkiaMatrixFromFloat64, toSkiaMipmapMode, toSkiaFilterMode } from '@skia/SkiaFormat'
-import { Color } from './Painting'
 import { Image } from './Image'
 
 

@@ -2,9 +2,9 @@ import invariant from 'ts-invariant'
 import { Offset, Rect, Size } from '@internal/Geometry'
 import { clamp } from '@helper/clamp'
 import { lerpDouble } from '@helper/lerp'
-import { TextDirection } from 'canvaskit-wasm'
+import { SkiaTextDirection } from '@skia/Skia'
 import { Skia } from '@skia/Skia'
-import { Axis } from '.'
+import { Axis } from '@basic/Axis'
 
 
 const POSITIVE_INFINITY = Number.POSITIVE_INFINITY
@@ -128,7 +128,7 @@ export abstract class EdgeInsetsGeometry {
   abstract multiply (other: number): EdgeInsetsGeometry
   abstract divide (other: number): EdgeInsetsGeometry
   abstract modulo (other: number): EdgeInsetsGeometry
-  abstract resolve (direction: TextDirection): EdgeInsets
+  abstract resolve (direction: SkiaTextDirection): EdgeInsets
 
   along (axis: Axis) {
     invariant(axis !== null)
@@ -411,7 +411,7 @@ export class EdgeInsets extends EdgeInsetsGeometry {
     )
   }
 
-  resolve (direction: TextDirection | null) {
+  resolve (direction: SkiaTextDirection | null) {
     return this
   }
 
@@ -591,7 +591,7 @@ export class EdgeInsetsDirectional extends EdgeInsetsGeometry {
     )
   }
 
-  resolve (direction: TextDirection | null): EdgeInsets {
+  resolve (direction: SkiaTextDirection | null): EdgeInsets {
     invariant(direction !== null)
 
     if (direction === Skia.TextDirection.RTL) {
@@ -709,7 +709,7 @@ export class MixedEdgeInsets extends EdgeInsetsGeometry {
   }
 
   resolve (
-    direction: TextDirection | null
+    direction: SkiaTextDirection | null
   ): EdgeInsets {
     invariant(direction !== null)
 

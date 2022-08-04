@@ -1,12 +1,15 @@
-import { resolve } from 'path'
-import { Skia, SkiaCanvas, SkiaFilterQuality } from '@skia'
-import { URI } from '@internal'
-import { ImageRepeat, paintImage } from '@painting'
-import { Canvas } from '@rendering'
-import { Rect } from '@internal'
-import { Alignment, ImageConfiguration, ImageStreamListener, NetworkImage } from '@painting'
-import { runApp } from '../src'
 import Jimp from 'jimp'
+import { resolve } from 'path'
+import { Skia, SkiaCanvas, SkiaFilterQuality } from '@skia/Skia'
+import { URI } from '@internal/URI'
+import { Rect } from '@internal/Geometry'
+import { Canvas } from '@rendering/Canvas'
+import { ImageConfiguration } from '@painting/ImageProvider'
+import { ImageStreamListener } from '@painting/ImageStream'
+import { Alignment } from '@painting/Alignment'
+import { NetworkImage } from '@painting/NetworkImage'
+import { runApp } from '../src'
+import { ImageRepeat, paintImage } from '@painting/DecorationImage'
 
 test(`paintImage`, async () => {
   await Skia.malloc(resolve(__dirname, 'canvaskit.wasm'))

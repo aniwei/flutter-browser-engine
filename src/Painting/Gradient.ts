@@ -1,13 +1,15 @@
 import { invariant } from 'ts-invariant'
 import { Matrix4 } from '@math/Matrix4'
+import { Color } from '@internal/Color'
 import { Offset, Rect } from '@internal/Geometry'
-import { Color } from '@rendering/Painting'
-import { Shader } from '@rendering/Shader'
 import { listEquals } from '@helper/listEquals'
 import { lerpDouble, } from '@helper/lerp'
 import { SkiaTextDirection, SkiaTileMode } from '@skia/Skia'
-import * as UI from '@rendering'
+import * as UIGradient from '@rendering/Gradient'
+
 import { Alignment, AlignmentGeometry } from './Alignment'
+
+import type { Shader } from '@rendering/Shader'
 
 function sample (
   colors: Color[], 
@@ -131,6 +133,9 @@ export class GradientRotation extends GradientTransform {
   }
 }
 
+/**
+ * @description: 渐变抽象类
+ */
 export abstract class Gradient {
   static lerp (
     a: Gradient | null, 
@@ -155,9 +160,9 @@ export abstract class Gradient {
     
     invariant(a !== null && b !== null)
 
-    return t < 0.5 ? 
-      a!.scale(1.0 - (t * 2.0)) : 
-      b!.scale((t - 0.5) * 2.0)
+    return t < 0.5 
+      ? a!.scale(1.0 - (t * 2.0)) 
+      : b!.scale((t - 0.5) * 2.0)
   }
 
   public colors: Color[]
@@ -201,7 +206,10 @@ export abstract class Gradient {
   abstract scale (factor: number): Gradient
 
   
-  lerpFrom (a: Gradient | null, t: number): Gradient | null {
+  lerpFrom (
+    a: Gradient | null, 
+    t: number
+  ): Gradient | null {
     if (a === null) {
       return this.scale(t)
     }
@@ -268,7 +276,7 @@ export class LinearGradient extends Gradient {
     rect: Rect, 
     textDirection: SkiaTextDirection | null
   ): Shader {
-    return UI.Gradient.linear(
+    return UIGradient.Gradient.linear(
       this.begin.resolve(textDirection).withinRect(rect),
       this.end.resolve(textDirection).withinRect(rect),
       this.colors, 
@@ -437,7 +445,7 @@ export class RadialGradient extends Gradient {
     rect: Rect, 
     textDirection: SkiaTextDirection
   ) {
-    return UI.Gradient.radial(
+    return UIGradient.Gradient.radial(
       this.center.resolve(textDirection).withinRect(rect),
       this.radius * rect.shortestSide,
       this.colors, 
@@ -573,7 +581,7 @@ export class SweepGradient extends Gradient {
     rect: Rect, 
     textDirection: SkiaTextDirection
   ): Shader {
-    return UI.Gradient.sweep(
+    return UIGradient.Gradient.sweep(
       this.center.resolve(textDirection).withinRect(rect),
       this.colors, 
       this.impliedStops(), 

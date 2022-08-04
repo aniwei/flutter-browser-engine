@@ -1,10 +1,13 @@
 import { invariant } from 'ts-invariant'
-import { Skia } from '@skia/Skia'
 import { lerpDouble } from '@helper/lerp'
+import { Skia, SkiaTextDirection } from '@skia/Skia'
 import { Offset, Rect, Size } from '@internal/Geometry'
-import { TextDirection } from 'canvaskit-wasm'
 
 export abstract class AlignmentGeometry {
+  /**
+   * @description: 
+   * @return {AlignmentGeometry | null}
+   */  
   static lerp(
     a: AlignmentGeometry | null, 
     b: AlignmentGeometry | null, 
@@ -43,18 +46,19 @@ export abstract class AlignmentGeometry {
     )
   }
 
-  public x: number
+  
   public start: number
+  public x: number
   public y: number
 
   constructor (
     x: number,
-    start: number,
     y: number,
+    start: number,
   ) {
     this.x = x
-    this.start = start
     this.y = y
+    this.start = start
   }
   
   abstract add (other: AlignmentGeometry)
@@ -64,7 +68,7 @@ export abstract class AlignmentGeometry {
   abstract modulo (other: number)  
   abstract negate () 
 
-  abstract resolve (direction: TextDirection | null): Alignment 
+  abstract resolve (direction: SkiaTextDirection | null): Alignment 
 
   eq (other: AlignmentGeometry) {
     return (
@@ -127,8 +131,8 @@ export class Alignment extends AlignmentGeometry {
   ) {
     super(
       x,
+      y,
       0.0,
-      y
     )
   }
 
@@ -218,7 +222,7 @@ export class Alignment extends AlignmentGeometry {
     )
   }
 
-  resolve (direction: TextDirection | null): Alignment {
+  resolve (direction: SkiaTextDirection | null): Alignment {
     return this
   } 
 
@@ -270,16 +274,16 @@ export class AlignmentDirectional extends AlignmentGeometry {
   }
 
   constructor (
+    y,
     start, 
-    y
   ) {
-    invariant(start !== null)
     invariant(y !== null)
+    invariant(start !== null)
 
     super(
       0.0,
+      y,
       start,
-      y
     )
   }
 
@@ -325,8 +329,8 @@ export class AlignmentDirectional extends AlignmentGeometry {
     )
   }
   
-  resolve (direction: TextDirection | null): Alignment {
-    invariant(direction !== null, 'Cannot resolve $runtimeType without a TextDirection.')
+  resolve (direction: SkiaTextDirection | null): Alignment {
+    invariant(direction !== null, 'Cannot resolve $runtimeType without a SkiaTextDirection.')
 
     if (direction === Skia.TextDirection.RTL) {
       return new Alignment(
@@ -350,18 +354,18 @@ export class MixedAlignment extends AlignmentGeometry {
   
   constructor (
     x: number,
+    y: number,
     start: number,
-    y: number
   ) {
     super(
       x,
+      y,
       start,
-      y
     )
 
     this.x = x
-    this.start = start
     this.y = y
+    this.start = start
   }
 
   negate (): MixedAlignment {
@@ -375,32 +379,32 @@ export class MixedAlignment extends AlignmentGeometry {
   add(other: MixedAlignment) {
     return new MixedAlignment(
       this.x + other.x,
-      this.start + other.start,
       this.y + other.y,
+      this.start + other.start,
     )
   }
 
   substract (other: MixedAlignment): MixedAlignment {
     return new MixedAlignment(
       this.x - other.x,
-      this.start - other.start,
       this.y - other.y,
+      this.start - other.start,
     )
   }
 
   multiply (other: number): MixedAlignment {
     return new MixedAlignment(
       this.x * other,
-      this.start * other,
       this.y * other,
+      this.start * other,
     )
   }
   
   divide (other: number): MixedAlignment {
     return new MixedAlignment(
       this.x / other,
-      this.start / other,
       this.y / other,
+      this.start / other,
     )
   }
 
@@ -408,13 +412,13 @@ export class MixedAlignment extends AlignmentGeometry {
   modulo (other: number): MixedAlignment  {
     return new MixedAlignment(
       this.x % other,
-      this.start % other,
       this.y % other,
+      this.start % other,
     );
   }
 
-  resolve (direction: TextDirection | null): Alignment {
-    invariant(direction !== null, 'Cannot resolve $runtimeType without a TextDirection.')
+  resolve (direction: SkiaTextDirection | null): Alignment {
+    invariant(direction !== null, 'Cannot resolve $runtimeType without a SkiaTextDirection.')
 
     if (direction === Skia.TextDirection.RTL) {
       return new Alignment(

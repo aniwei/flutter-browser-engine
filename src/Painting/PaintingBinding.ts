@@ -1,6 +1,12 @@
+/*
+ * @Author: Aniwei
+ * @Date: 2022-06-13 09:47:07
+ */
+import { instantiateImageCodec } from '@rendering/ImageCodec'
 import { invariant } from 'ts-invariant'
-import { Codec, instantiateImageCodec } from '@rendering'
 import { ImageCache } from './ImageCache'
+
+import type { Codec } from '@basic/Painting'
 
 
 export class PaintingBinding {

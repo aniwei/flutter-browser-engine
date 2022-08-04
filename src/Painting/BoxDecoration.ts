@@ -1,11 +1,13 @@
+/*
+ * @Author: Aniwei
+ * @Date: 2022-07-04 12:10:21
+ */
 import { invariant } from 'ts-invariant'
 import { listEquals } from '@helper/listEquals'
-import { VoidCallback } from '@platform/Platform'
 import { SkiaBlendMode, SkiaTextDirection } from '@skia/Skia'
 import { Offset, Rect, Size } from '@internal/Geometry'
-import { Canvas } from '@rendering/Canvas'
+import { Color } from '@internal/Color'
 import { Path } from '@rendering/Path'
-import { Color } from '@rendering/Painting'
 import { Paint } from '@rendering/Paint'
 import { BorderRadiusGeometry } from './BorderRadius'
 import { BoxBorder, BoxShape } from './BoxBorder'
@@ -15,6 +17,9 @@ import { ImageConfiguration } from './ImageProvider'
 import { BoxPainter, Decoration } from './Decoration'
 import { Gradient } from './Gradient'
 import { DecorationImage, DecorationImagePainter } from './DecorationImage'
+
+import type { Canvas } from '@rendering/Canvas'
+import type { VoidCallback } from '@basic/Platform'
 
 export type BoxDecorationInitOptions = {
   color?: Color | null,

@@ -1,17 +1,19 @@
 import { invariant } from 'ts-invariant'
 import { Matrix4 } from '@math/Matrix4'
-import { UnimplementedError } from '@internal/UnimplementedError'
+import { Clip } from '@basic/Painting'
 import { Offset, Rect, RRect } from '@internal/Geometry'
+import { UnimplementedError } from '@internal/UnimplementedError'
 import { Skia, SkiaBlendMode, SkiaFilterQuality } from '@skia/Skia'
-import { Path } from './Path'
-import { Image } from './Image'
-import { Picture } from './Picture'
-import { Shader } from './Shader'
-import { Color, Clip } from './Painting'
-import { ColorFilter } from './ColorFilter'
 import { LayerTree } from './LayerTree'
-import { ImageFilter } from './ImageFilter'
 import { BackdropFilterEngineLayer, ClipPathEngineLayer, ClipRectEngineLayer, ClipRRectEngineLayer, ColorFilterEngineLayer, ContainerLayer, EngineLayer, ImageFilterEngineLayer, Layer, OffsetEngineLayer, OpacityEngineLayer, PhysicalShapeEngineLayer, PictureLayer, RootLayer, ShaderMaskEngineLayer, TransformEngineLayer, } from './Layer'
+
+import type { Color } from '@internal/Color'
+import type { Picture } from './Picture'
+import type { Image } from './Image'
+import type { Shader } from './Shader'
+import type { ColorFilter } from './ColorFilter'
+import type { ImageFilter } from './ImageFilter'
+import type { Path } from './Path'
 
 
 export class LayerScene {
@@ -130,7 +132,7 @@ export class LayerSceneBuilder {
 
   
   pushClipRect (
-    rect: Rect ,
+    rect: Rect,
     clipBehavior: Clip = Clip.AntiAlias,
     oldLayer?: EngineLayer | null,
   ): ClipRectEngineLayer {
