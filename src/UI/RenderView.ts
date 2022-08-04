@@ -27,7 +27,7 @@ export class ViewConfiguration {
   }
 
   toMatrix (): Matrix4 {
-    return Matrix4.diagonal3Values(devicePixelRatio, devicePixelRatio, 1.0)
+    return Matrix4.diagonal3Values(this.devicePixelRatio, this.devicePixelRatio, 1.0)
   }
   
   eq (other: ViewConfiguration) {
@@ -100,7 +100,7 @@ export class RenderView extends RenderObject {
     options.child ??= null
     invariant(options.configuration !== null)
     super()
-    
+
     this.configuration = options.configuration
     this.window = options.window 
     this.child = options.child

@@ -8,7 +8,7 @@ import { Vector4 } from './Vector4'
 import { Vector3 } from './Vector3'
 import { Quaternion } from './Quaternion'
 
-export class Matrix4 extends Float64Array{
+export class Matrix4 extends Float64Array {
   static decomposeV: Vector3 | null = null
   static decomposeM: Matrix4 | null = null
   static decomposeR: Matrix3 | null =null
@@ -402,6 +402,10 @@ export class Matrix4 extends Float64Array{
     const vec = new Vector3()
     vec.setValues(x, y, z)
     return vec
+  }
+
+  constructor () {
+    super(16)
   }
 
   index (

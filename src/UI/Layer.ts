@@ -73,7 +73,7 @@ export abstract class Layer extends AbstractNode {
   @property<EngineLayer>(function get (this, engineLayer: EngineLayer) {
     return engineLayer
   }, function set (this, engineLayer: EngineLayer, key: string) {
-    this.engineLayer.dispose()
+    this.engineLayer?.dispose()
     this._engineLayer = engineLayer
 
     if (!this.alwaysNeedsAddToScene) {
@@ -723,8 +723,6 @@ export class TransformLayer extends OffsetLayer {
   @property<Matrix4 | null>(function (this, transform: Matrix4 | null) {
     return transform
   }, function (this, transform: Matrix4 | null, key) {
-    invariant(transform !== null)
-    invariant(transform!.every((component) => Number.isFinite(component)))
     if (transform === this.transform) {
       return 
     }
