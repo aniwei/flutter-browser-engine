@@ -216,7 +216,7 @@ export class LayerHandle<T extends Layer> {
       return
     }
 
-    this.layer.unref()
+    this.layer?.unref()
     this._layer = layer
     if (this.layer !== null) {
       this.layer.refCount += 1

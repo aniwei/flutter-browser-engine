@@ -9,16 +9,21 @@ import { BoxConstraints, RenderBox } from './RenderBox'
 import { TransformLayer } from './Layer'
 import { Window } from './Window'
 
+export type ViewConfigurationOptions = {
+  size?: Size,
+  devicePixelRatio?: number
+}
+
 export class ViewConfiguration {
   public size: Size
   public devicePixelRatio: number
 
-  constructor(
-    size = Size.zero,
-    devicePixelRatio = 1.0,
-  ) {
-    this.size = size
-    this.devicePixelRatio = devicePixelRatio
+  constructor (options: ViewConfigurationOptions) {
+    options.size = options.size ?? Size.zero
+    options.devicePixelRatio = options.devicePixelRatio ?? 1.0
+
+    this.size = options.size
+    this.devicePixelRatio = options.devicePixelRatio
   }
 
   toMatrix (): Matrix4 {
@@ -42,6 +47,11 @@ export class ViewConfiguration {
   }
 }
 
+export type RenderViewOptions = {
+  child?: RenderBox | null,
+  configuration: ViewConfiguration,
+  window: Window
+}
 
 export class RenderView extends RenderObject {
   @property<Size>() public size: Size = Size.zero
@@ -62,9 +72,7 @@ export class RenderView extends RenderObject {
   }) public configuration: ViewConfiguration
   
   @property<Rect>(function (this) {
-    return Offset.zero.and(
-      this.size.multiply(this.configuration.devicePixelRatio)
-    )
+    return Offset.zero.and(this.size.multiply(this.configuration.devicePixelRatio))
   }) public paintBounds!: Rect
 
   @property<RenderObject>(function (this, child: RenderObject) {
@@ -88,16 +96,14 @@ export class RenderView extends RenderObject {
   public rootTransform: Matrix4 | null = null
   public isRepaintBoundary: boolean = true
 
-  constructor (
-    child: RenderBox | null,
-    configuration: ViewConfiguration,
-    window: Window,
-  ) {
-    invariant(configuration !== null)
+  constructor (options: RenderViewOptions) {
+    options.child ??= null
+    invariant(options.configuration !== null)
     super()
-    this.configuration = configuration,
-    this.window = window 
-    this.child = child
+    
+    this.configuration = options.configuration
+    this.window = options.window 
+    this.child = options.child
   }
 
   prepareInitialFrame () {

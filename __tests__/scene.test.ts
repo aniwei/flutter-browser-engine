@@ -12,16 +12,15 @@ import { window } from '@ui/Window'
 test(`Skia`, async () => {
   await Skia.malloc(resolve(__dirname, 'canvaskit.wasm'))
 
-  const config = new ViewConfiguration(
-    new Size(480, 640),
-    2
-  )
+  const config = new ViewConfiguration({
+    size: new Size(480, 640),
+    devicePixelRatio: 2
+  })
   
-  const view = new RenderView(
-    null,
-    config,
+  const view = new RenderView({
+    configuration: config,
     window
-  )
+  })
 
   view.compositeFrame()
   
