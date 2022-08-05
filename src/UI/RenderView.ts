@@ -59,16 +59,17 @@ export class RenderView extends RenderObject {
   @property<ViewConfiguration>(function (this, configuration: ViewConfiguration) {
     return configuration
   }, function (this, configuration: ViewConfiguration, k) {
-    invariant(configuration != null);
-    if (this.configuration == configuration) {
-      return
+    invariant(configuration !== null)
+    if (this.configuration !== configuration) {
+      this._configuration = configuration
+      
+      if (this.attached) {
+        this.replaceRootLayer(this.updateMatricesAndCreateNewRootLayer())
+        invariant(this.rootTransform !== null)
+        this.markNeedsLayout()
+      }
     }
     
-    this._configuration = configuration
-    this.replaceRootLayer(this.updateMatricesAndCreateNewRootLayer())
-    invariant(this.rootTransform !== null)
-
-    this.markNeedsLayout()
   }) public configuration: ViewConfiguration
   
   @property<Rect>(function (this) {

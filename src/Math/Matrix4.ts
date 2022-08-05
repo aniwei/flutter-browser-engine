@@ -14,7 +14,7 @@ export class Matrix4 extends Float64Array {
   static decomposeR: Matrix3 | null =null
 
   static zero () {
-    return new Matrix4() // 16
+    return new Matrix4(16) // 16
   }
 
   get storage () {
@@ -402,10 +402,6 @@ export class Matrix4 extends Float64Array {
     const vec = new Vector3()
     vec.setValues(x, y, z)
     return vec
-  }
-
-  constructor () {
-    super(16)
   }
 
   index (

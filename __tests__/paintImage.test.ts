@@ -1,3 +1,7 @@
+/*
+ * @Author: Aniwei
+ * @Date: 2022-06-13 09:47:07
+ */
 import Jimp from 'jimp'
 import { resolve } from 'path'
 import { Skia, SkiaCanvas, SkiaFilterQuality } from '@skia/Skia'
@@ -51,6 +55,6 @@ test(`paintImage`, async () => {
 
   stream.addListener(listener)
 
-  await new Promise(() => {})
+  // await new Promise(() => {})
 
 })

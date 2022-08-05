@@ -1,4 +1,9 @@
+/*
+ * @Author: Aniwei
+ * @Date: 2022-05-09 16:03:54
+ */
 import { invariant } from 'ts-invariant'
+import { performance } from '@platform/Performance'
 import { RawSkia, SkiaObject } from './SkiaObject'
 
 export class SkiaFinalizationRegistry<T extends RawSkia<T>> {

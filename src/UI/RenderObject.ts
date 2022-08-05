@@ -377,9 +377,9 @@ export class PipelineOwner {
       return
     }
 
-    this.rootNode.detach()
+    this.rootNode?.detach()
     this._rootNode = rootNode
-    this.rootNode.attach(this)
+    this.rootNode?.attach(this)
   }) public rootNode: AbstractNode | null = null
 
   public onNeedVisualUpdate: VoidCallback | null = null
