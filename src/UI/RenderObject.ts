@@ -835,7 +835,7 @@ export abstract class RenderObject extends AbstractNode {
 
   scheduleInitialLayout () {
     invariant(this.attached)
-    invariant(!(parent instanceof RenderObject))
+    invariant(!(this.parent instanceof RenderObject))
     invariant(this.relayoutBoundary === null)
     
     this.relayoutBoundary = this

@@ -1,33 +1,31 @@
+import type { LayerTree } from './LayerTree'
+import { SurfaceFactory } from './SurfaceFactory';
 
 export class Rasterizer {
   final CompositorContext context = CompositorContext();
   final List<ui.VoidCallback> _postFrameCallbacks = <ui.VoidCallback>[];
 
-  void setSkiaResourceCacheMaxBytes(int bytes) =>
-      SurfaceFactory.instance.baseSurface.setSkiaResourceCacheMaxBytes(bytes);
+  setSkiaResourceCacheMaxBytes (bytes: number) {
+    SurfaceFactory.instance.baseSurface.setSkiaResourceCacheMaxBytes(bytes)
+  }
 
-  /// Creates a new frame from this rasterizer's surface, draws the given
-  /// [LayerTree] into it, and then submits the frame.
-  void draw(LayerTree layerTree) {
+  draw (layerTree: LayerTree) {
     try {
       if (layerTree.frameSize.isEmpty) {
-        // Available drawing area is empty. Skip drawing.
-        return;
+        return
       }
 
-      final SurfaceFrame frame =
-          SurfaceFactory.instance.baseSurface.acquireFrame(layerTree.frameSize);
-      HtmlViewEmbedder.instance.frameSize = layerTree.frameSize;
-      final CkCanvas canvas = frame.skiaCanvas;
-      final Frame compositorFrame =
-          context.acquireFrame(canvas, HtmlViewEmbedder.instance);
+      const frame = SurfaceFactory.instance.baseSurface.acquireFrame(layerTree.frameSize)
+      HtmlViewEmbedder.instance.frameSize = layerTree.frameSize
+      const canvas = frame.skiaCanvas
+      const compositorFrame = context.acquireFrame(canvas, HtmlViewEmbedder.instance)
 
-      compositorFrame.raster(layerTree, ignoreRasterCache: true);
-      SurfaceFactory.instance.baseSurface.addToScene();
-      frame.submit();
-      HtmlViewEmbedder.instance.submitFrame();
+      compositorFrame.raster(layerTree, ignoreRasterCache: true)
+      SurfaceFactory.instance.baseSurface.addToScene()
+      frame.submit()
+      HtmlViewEmbedder.instance.submitFrame()
     } finally {
-      _runPostFrameCallbacks();
+      _runPostFrameCallbacks()
     }
   }
 
@@ -35,20 +33,15 @@ export class Rasterizer {
     _postFrameCallbacks.add(callback);
   }
 
-  void _runPostFrameCallbacks() {
-    for (int i = 0; i < _postFrameCallbacks.length; i++) {
+  runPostFrameCallbacks () {
+    for (let i = 0; i < _postFrameCallbacks.length; i++) {
       final ui.VoidCallback callback = _postFrameCallbacks[i];
       callback();
     }
-    for (int i = 0; i < frameReferences.length; i++) {
+    for (let i = 0; i < frameReferences.length; i++) {
       frameReferences[i].value = null;
     }
-    frameReferences.clear();
-  }
 
-  /// Forces the post-frame callbacks to run. Useful in tests.
-  
-  void debugRunPostFrameCallbacks() {
-    _runPostFrameCallbacks();
+    frameReferences.clear()
   }
 }

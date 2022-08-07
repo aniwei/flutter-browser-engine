@@ -5,6 +5,7 @@ const moduleNameMapper = tsconfigPathsJest(tsconfig)
 
 
 export default {
+  verbose: true,
   testRegex: '__tests__(.+)\\.test\\.ts$',
   transform: {
     '^.+\\.tsx?$': 'ts-jest'
