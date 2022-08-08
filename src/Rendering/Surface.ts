@@ -7,7 +7,7 @@ import { CanvasKitError } from '@internal/CanvasKitError'
 import { Skia, SkiaCanvas, SkiaGrDirectContext, SkiaSurface } from '@skia/Skia'
 import type { Size } from '@internal/Geometry'
 
-export type SubmitCallback = { (frame: SurfaceFrame, canvas: SkiaCanvas): boolean } 
+export type SubmitCallback = { (frame: SurfaceFrame, canvas: Canvas): boolean } 
 
 export class SurfaceFrame {
   public skia: SkiaSurface
@@ -15,7 +15,7 @@ export class SurfaceFrame {
   public submitted: boolean
   
   public get canvas () {
-    return this.skia.getCanvas()
+    return Canvas.malloc(this.skia.getCanvas())
   }
 
   constructor (
@@ -81,7 +81,7 @@ export class Surface {
 
     const submitCallback: SubmitCallback = (
       surfaceFrame: SurfaceFrame, 
-      canvas: SkiaCanvas
+      canvas: Canvas
     ) => {
       return this.presentSurface()
     }
@@ -305,12 +305,12 @@ export class Surface {
     );
   }
 
-  bool _presentSurface() {
-    _surface!.flush();
-    return true;
+  presentSurface () {
+    this.surface!.flush()
+    return true
   }
 
-  void dispose() {
+  dispose () {
     htmlCanvas?.removeEventListener(
         'webglcontextlost', _cachedContextLostListener, false);
     htmlCanvas?.removeEventListener(
@@ -318,7 +318,7 @@ export class Surface {
     _cachedContextLostListener = null;
     _cachedContextRestoredListener = null;
     htmlElement.remove();
-    _surface?.dispose();
+    this.surface?.dispose()
   }
 }
 

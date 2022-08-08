@@ -2,7 +2,6 @@ import invariant from 'ts-invariant'
 import { Surface } from './Surface'
 
 
-
 class SurfaceManager extends Array<Surface> {
   remove (surface: Surface) {
     const index = this.indexOf(surface)

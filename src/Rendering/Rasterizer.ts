@@ -1,9 +1,11 @@
-import type { LayerTree } from './LayerTree'
+import { List } from '@internal/List';
+import { CompositorContext, LayerTree } from './LayerTree'
 import { SurfaceFactory } from './SurfaceFactory';
+import type { VoidCallback } from '@basic/Platform';
 
 export class Rasterizer {
-  final CompositorContext context = CompositorContext();
-  final List<ui.VoidCallback> _postFrameCallbacks = <ui.VoidCallback>[];
+  public context: CompositorContext = new CompositorContext()
+  public postFrameCallbacks: List<VoidCallback> = new List()
 
   setSkiaResourceCacheMaxBytes (bytes: number) {
     SurfaceFactory.instance.baseSurface.setSkiaResourceCacheMaxBytes(bytes)
@@ -16,32 +18,30 @@ export class Rasterizer {
       }
 
       const frame = SurfaceFactory.instance.baseSurface.acquireFrame(layerTree.frameSize)
-      HtmlViewEmbedder.instance.frameSize = layerTree.frameSize
-      const canvas = frame.skiaCanvas
-      const compositorFrame = context.acquireFrame(canvas, HtmlViewEmbedder.instance)
-
-      compositorFrame.raster(layerTree, ignoreRasterCache: true)
+      const canvas = frame.canvas
+      const compositorFrame = this.context.acquireFrame(canvas)
+      compositorFrame.raster(layerTree, true)
       SurfaceFactory.instance.baseSurface.addToScene()
       frame.submit()
-      HtmlViewEmbedder.instance.submitFrame()
     } finally {
-      _runPostFrameCallbacks()
+      this.runPostFrameCallbacks()
     }
   }
 
-  void addPostFrameCallback(ui.VoidCallback callback) {
-    _postFrameCallbacks.add(callback);
+  addPostFrameCallback (callback: VoidCallback) {
+    this.postFrameCallbacks.add(callback)
   }
 
   runPostFrameCallbacks () {
-    for (let i = 0; i < _postFrameCallbacks.length; i++) {
-      final ui.VoidCallback callback = _postFrameCallbacks[i];
-      callback();
-    }
-    for (let i = 0; i < frameReferences.length; i++) {
-      frameReferences[i].value = null;
+    for (let i = 0; i < this.postFrameCallbacks.length; i++) {
+      const callback = this.postFrameCallbacks[i]
+      callback()
     }
 
-    frameReferences.clear()
+    for (let i = 0; i < this.frameReferences.length; i++) {
+      this.frameReferences[i].value = null
+    }
+
+    this.frameReferences.clear()
   }
 }
