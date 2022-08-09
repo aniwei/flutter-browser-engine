@@ -3,8 +3,7 @@
  * @Date: 2022-08-09 10:14:37
  */
 import { invariant } from 'ts-invariant'
-import { AbstractSurface, BrowserSurface, Surface } from './Surface'
-import { isWindow } from './Platform'
+import { AbstractSurface, Surface } from './Surface'
 import { configuration } from './configuration'
 
 
@@ -81,20 +80,8 @@ export abstract class AbstractSurfaceFactory<T> extends Array<T> {
   abstract remove ()
 }
 
-export class BrowserSurfaceFactory extends AbstractSurfaceFactory<AbstractSurface<HTMLCanvasElement>> {
-  static instance: BrowserSurfaceFactory = new BrowserSurfaceFactory(configuration.maximumSurfaces)
-
-  public baseSurface: AbstractSurface<HTMLCanvasElement> = new Surface() as BrowserSurface
-  public backupSurface: AbstractSurface<HTMLCanvasElement> = new Surface() as BrowserSurface
-
-  remove() {
-    throw new Error('Method not implemented.')
-  }
-  
-}
-
-export class ServerSurfaceFactory extends AbstractSurfaceFactory<AbstractSurface> {
-  static instance: ServerSurfaceFactory = new ServerSurfaceFactory(configuration.maximumSurfaces)
+export class SurfaceFactory extends AbstractSurfaceFactory<AbstractSurface> {
+  static instance: SurfaceFactory= new SurfaceFactory(configuration.maximumSurfaces)
 
   public baseSurface: AbstractSurface = new Surface()
   public backupSurface: AbstractSurface = new Surface()
@@ -104,7 +91,5 @@ export class ServerSurfaceFactory extends AbstractSurfaceFactory<AbstractSurface
   }
 }
 
-export const SurfaceFactory = isWindow 
-  ? BrowserSurfaceFactory
-  : ServerSurfaceFactory
+
 

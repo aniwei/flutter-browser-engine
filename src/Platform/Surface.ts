@@ -3,18 +3,16 @@
  * @Date: 2022-08-09 10:24:51
  */
 import { invariant } from 'ts-invariant'
-import { Canvas } from '@rendering/Canvas'
-
 import { Size } from '@internal/Geometry'
 import { Surface as RSurface } from '@rendering/Surface'
-import { Skia, SkiaGrDirectContext, SkiaSurface } from '@skia/Skia'
 import { CanvasKitError } from '@internal/CanvasKitError'
 import { PlatformDispatcher } from '@platform/PlatformDispatcher'
-import { configuration, WebGLVersion } from './configuration'
-import { SurfaceFactory } from './SurfaceFactory'
+import { Skia, SkiaCanvas, SkiaGrDirectContext, SkiaSurface } from '@skia/Skia'
 import { isWindow } from './Platform'
+import { SurfaceFactory } from './SurfaceFactory'
+import { configuration, WebGLVersion } from './configuration'
 
-export type SubmitCallback = { (frame: SurfaceFrame, canvas: Canvas): boolean } 
+export type SubmitCallback = { (): boolean } 
 
 export class SurfaceFrame {
   public skia: RSurface
@@ -42,11 +40,11 @@ export class SurfaceFrame {
       return false
     }
 
-    return this.submitCallback(this, this.canvas)
+    return this.submitCallback()
   }
 }
 
-export abstract class AbstractSurface<T> {
+export abstract class AbstractSurface {
   static didWarnAboutWebGlInitializationFailure = false
 
   public surface: RSurface | null = null
@@ -58,8 +56,6 @@ export abstract class AbstractSurface<T> {
   public grContext: SkiaGrDirectContext | null = null
   public glContext: number | null = null
 
-  public cachedContextLostListener: { (event): void } | null = null
-  public cachedContextRestoredListener: { (event): void } | null = null
   public pixelWidth: number = -1
   public pixelHeight: number = -1
 
@@ -67,8 +63,6 @@ export abstract class AbstractSurface<T> {
   public currentCanvasPhysicalSize: Size | null = null
   public currentSurfaceSize: Size | null = null
   public currentDevicePixelRatio: number = -1
-
-  abstract canvas: T | null
 
   setSkiaResourceCacheMaxBytes (bytes: number) {
     this.skiaCacheBytes = bytes
@@ -84,19 +78,37 @@ export abstract class AbstractSurface<T> {
   acquireFrame (size: Size): SurfaceFrame {
     const surface: RSurface = this.createOrUpdateSurface(size)
 
-    const submitCallback: SubmitCallback = (
-      surfaceFrame: SurfaceFrame, 
-      canvas: Canvas
-    ) => {
+    const submitCallback: SubmitCallback = () => {
       return this.presentSurface()
     }
 
     return new SurfaceFrame(surface, submitCallback)
   }
 
-  abstract addToScene () 
-  abstract translateCanvas ()
+  addToScene () {}
   abstract createOrUpdateSurface (size: Size): RSurface 
+  abstract createNewSurface (size: Size): RSurface 
+
+  presentSurface () {
+    this.surface!.flush()
+    return true
+  }
+
+  abstract dispose ()
+}
+
+export class BrowserSurface extends AbstractSurface {
+  public cachedContextLostListener: { (event): void } | null = null
+  public cachedContextRestoredListener: { (event): void } | null = null
+
+  public canvas: HTMLCanvasElement | null = null
+  public root: HTMLElement
+
+  constructor () {
+    super()
+
+    this.root = window.document.createElement('flt-canvas-container')
+  }
 
   contextRestoredListener (event: Event) {
     invariant(
@@ -122,31 +134,8 @@ export abstract class AbstractSurface<T> {
     }
   }
 
-  abstract createNewCanvas (physicalSize: Size)
-  abstract createNewSurface (size: Size): RSurface 
-  abstract makeSoftwareCanvasSurface(canvas: T, reason?: string | null): RSurface
-
-  presentSurface () {
-    this.surface!.flush()
-    return true
-  }
-
-  abstract dispose ()
-}
-
-export class BrowserSurface extends AbstractSurface<HTMLCanvasElement> {
-  
-  public canvas: HTMLCanvasElement | null = null
-  public rootElement: HTMLElement
-
-  constructor () {
-    super()
-
-    this.rootElement = window.document.createElement('flt-canvas-container')
-  }
-
   addToScene () {
-    throw new Error('Method not implemented.')
+    window.document.body.appendChild(this.root)
   }
 
   makeSoftwareCanvasSurface (
@@ -163,7 +152,7 @@ export class BrowserSurface extends AbstractSurface<HTMLCanvasElement> {
     const surfaceHeight = Math.ceil(this.currentSurfaceSize!.height)
     const offset = (this.pixelHeight - surfaceHeight) / window.devicePixelRatio
     
-    this.canvas!.style.transform = 'translate(0, -${offset}px)'
+    this.canvas!.style.transform = `translate(0, -${offset}px)`
   }
 
   createOrUpdateSurface (size: Size): RSurface {
@@ -179,7 +168,7 @@ export class BrowserSurface extends AbstractSurface<HTMLCanvasElement> {
       size.height == previousSurfaceSize.height
     ) {
       if (window.devicePixelRatio !== this.currentDevicePixelRatio) {
-        // this.updateLogicalHtmlCanvasSize()
+        this.updateLogicalHTMLCanvasSize()
       }
 
       return this.surface!
@@ -228,7 +217,7 @@ export class BrowserSurface extends AbstractSurface<HTMLCanvasElement> {
         false
       )
 
-      this.canvas!.remove()
+      this.root.removeChild(this.canvas)
       this.cachedContextRestoredListener = null
       this.cachedContextLostListener = null
     }
@@ -285,7 +274,7 @@ export class BrowserSurface extends AbstractSurface<HTMLCanvasElement> {
       }
     }
 
-    document.body.append(canvas)
+    this.root.appendChild(this.canvas)
   }
 
   createNewSurface (size: Size): RSurface {
@@ -312,7 +301,7 @@ export class BrowserSurface extends AbstractSurface<HTMLCanvasElement> {
         Math.ceil(size.width),
         Math.ceil(size.height),
         Skia.ColorSpace.SRGB,
-      );
+      )
 
       if (surface === null) {
         return this.makeSoftwareCanvasSurface(
@@ -328,8 +317,8 @@ export class BrowserSurface extends AbstractSurface<HTMLCanvasElement> {
   updateLogicalHTMLCanvasSize () {
     const logicalWidth = this.pixelWidth / window.devicePixelRatio
     const logicalHeight = this.pixelHeight / window.devicePixelRatio
-    this.canvas!.style.width = '${logicalWidth}px'
-    this.canvas!.style.height = '${logicalHeight}px'
+    this.canvas!.style.width = `${logicalWidth}px`
+    this.canvas!.style.height = `${logicalHeight}px`
   }
 
   dispose (): void {
@@ -347,37 +336,78 @@ export class BrowserSurface extends AbstractSurface<HTMLCanvasElement> {
     this.cachedContextLostListener = null
     this.cachedContextRestoredListener = null
 
-    this.rootElement.removeChild(this.canvas!)
+    this.root.removeChild(this.canvas!)
     this.surface?.dispose()
   }
 }
 
-export class ServerSurface extends AbstractSurface<any> {
-  canvas: any
-  addToScene() {
-    throw new Error('Method not implemented.')
-  }
-  translateCanvas() {
-    throw new Error('Method not implemented.')
-  }
+export class ServerSurface extends AbstractSurface {
+
+
   createOrUpdateSurface(size: Size): RSurface {
-    throw new Error('Method not implemented.')
-  }
-  createNewCanvas(physicalSize: Size) {
-    throw new Error('Method not implemented.')
-  }
-  createNewSurface(size: Size): RSurface {
-    throw new Error('Method not implemented.')
+    if (size.isEmpty) {
+      throw new CanvasKitError('Cannot create surfaces of empty size.')
+    }
+
+    const previousSurfaceSize = this.currentSurfaceSize
+    if (
+      !this.forceNewContext &&
+      previousSurfaceSize !== null &&
+      size.width == previousSurfaceSize.width &&
+      size.height == previousSurfaceSize.height
+    ) {
+      return this.surface!
+    }
+
+    this.currentDevicePixelRatio = window.devicePixelRatio
+    const previousCanvasSize = this.currentCanvasPhysicalSize
+
+    if (
+      this.forceNewContext ||
+      previousCanvasSize === null ||
+      size.width > previousCanvasSize.width ||
+      size.height > previousCanvasSize.height
+    ) {
+      const newSize = previousCanvasSize === null 
+        ? size 
+        : size.multiply(1.5)
+
+      this.surface?.dispose()
+      this.surface = null
+      this.addedToScene = false
+      this.grContext?.releaseResourcesAndAbandonContext()
+      this.grContext?.delete()
+      this.grContext = null
+
+      this.currentCanvasPhysicalSize = newSize
+    }
+
+    this.currentSurfaceSize = size
+
+    return this.surface = this.createNewSurface(size)
   }
 
-  makeSoftwareCanvasSurface(canvas: any, reason?: string | null | undefined): RSurface {
-    throw new Error('Method not implemented.')
+  createNewSurface(size: Size): RSurface {
+    return this.makeSoftwareCanvasSurface(size, 'Run in node')
+  }
+
+  makeSoftwareCanvasSurface(
+    size: Size, 
+    reason?: string | null
+  ): RSurface {
+    
+    return RSurface.malloc(
+      Skia.MakeSurface(
+        Math.ceil(size.width),
+        Math.ceil(size.height)
+      )!,
+      null
+    )
   }
 
   dispose() {
-    throw new Error('Method not implemented.')
+    this.surface?.dispose()
   }
-  
 }
 
 export const Surface = isWindow

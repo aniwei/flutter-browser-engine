@@ -43,10 +43,10 @@ export class Rasterizer {
       callback()
     }
 
-    for (let i = 0; i < this.frameReferences.length; i++) {
-      this.frameReferences[i].value = null
-    }
-
-    this.frameReferences.clear()
+    // TODO
+    // for (let i = 0; i < this.frameReferences.length; i++) {
+    //   this.frameReferences[i].value = null
+    // }
+    // this.frameReferences.clear()
   }
 }
