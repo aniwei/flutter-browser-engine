@@ -218,14 +218,14 @@ export class BrowserSurface extends AbstractSurface<HTMLCanvasElement> {
   createNewCanvas (physicalSize: Size) {
     if (this.canvas !== null) {
       this.canvas!.removeEventListener(
-        'webglcontextrestored',
-        this.cachedContextRestoredListener,
-        false,
+        'webglcontextrestored', 
+        this.cachedContextRestoredListener!, 
+        false
       )
       this.canvas!.removeEventListener(
-        'webglcontextlost',
-        this.cachedContextLostListener,
-        false,
+        'webglcontextlost', 
+        this.cachedContextLostListener!, 
+        false
       )
 
       this.canvas!.remove()
@@ -236,7 +236,7 @@ export class BrowserSurface extends AbstractSurface<HTMLCanvasElement> {
     
     this.pixelWidth = Math.ceil(physicalSize.width)
     this.pixelHeight = Math.ceil(physicalSize.height)
-    // TODO
+
     const canvas = document.createElement('canvas')
     
     canvas.width = this.pixelWidth
@@ -248,17 +248,17 @@ export class BrowserSurface extends AbstractSurface<HTMLCanvasElement> {
 
     this.cachedContextRestoredListener = this.contextRestoredListener
     this.cachedContextLostListener = this.contextLostListener
-    // TODO
-    // htmlCanvas.addEventListener(
-    //   'webglcontextlost',
-    //   this.cachedContextLostListener,
-    //   false,
-    // )
-    // htmlCanvas.addEventListener(
-    //   'webglcontextrestored',
-    //   _cachedContextRestoredListener,
-    //   false,
-    // )
+    
+    this.canvas.addEventListener(
+      'webglcontextlost',
+      this.cachedContextLostListener,
+      false,
+    )
+    this.canvas.addEventListener(
+      'webglcontextrestored',
+      this.cachedContextRestoredListener,
+      false,
+    )
     this.forceNewContext = false
     this.contextLost = false
 
@@ -333,13 +333,21 @@ export class BrowserSurface extends AbstractSurface<HTMLCanvasElement> {
   }
 
   dispose (): void {
-    this.canvas?.removeEventListener('webglcontextlost', this.cachedContextLostListener, false)
-    this.canvas?.removeEventListener('webglcontextrestored', this.cachedContextRestoredListener, false)
+    this.canvas?.removeEventListener(
+      'webglcontextlost', 
+      this.cachedContextLostListener!, 
+      false
+    )
+    this.canvas?.removeEventListener(
+      'webglcontextrestored', 
+      this.cachedContextRestoredListener!, 
+      false
+    )
 
     this.cachedContextLostListener = null
     this.cachedContextRestoredListener = null
 
-    this.canvas.remove()
+    this.rootElement.removeChild(this.canvas!)
     this.surface?.dispose()
   }
 }
@@ -361,9 +369,11 @@ export class ServerSurface extends AbstractSurface<any> {
   createNewSurface(size: Size): RSurface {
     throw new Error('Method not implemented.')
   }
-  makeSoftwareCanvasSurface() {
+
+  makeSoftwareCanvasSurface(canvas: any, reason?: string | null | undefined): RSurface {
     throw new Error('Method not implemented.')
   }
+
   dispose() {
     throw new Error('Method not implemented.')
   }
