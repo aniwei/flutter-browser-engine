@@ -1,7 +1,12 @@
+/*
+ * @Author: Aniwei
+ * @Date: 2022-08-09 10:04:53
+ */
 import { List } from '@internal/List';
 import { CompositorContext, LayerTree } from './LayerTree'
-import { SurfaceFactory } from './SurfaceFactory';
-import type { VoidCallback } from '@basic/Platform';
+import { SurfaceFactory } from '@platform/SurfaceFactory'
+
+import type { VoidCallback } from '@basic/Platform'
 
 export class Rasterizer {
   public context: CompositorContext = new CompositorContext()

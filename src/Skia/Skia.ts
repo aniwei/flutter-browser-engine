@@ -56,6 +56,7 @@ export type {
   Surface as SkiaSurface,
   PictureRecorder as SkiaPictureRecorder,
   GrDirectContext as SkiaGrDirectContext,
+  WebGLOptions as SkiaWebGLOptions
 } from 'canvaskit-wasm'
 
 export class SkiaFilterOptions extends Map<SkiaFilterQuality, SkiaCubicFilterOption | SkiaTransformFilterOption> {
@@ -246,6 +247,10 @@ export class Skia {
 
   static get GetWebGLContext () {
     return Skia.s.GetWebGLContext
+  }
+
+  static get MakeSWCanvasSurface () {
+    return Skia.s.MakeSWCanvasSurface
   }
 
   public skia: CanvasKit
