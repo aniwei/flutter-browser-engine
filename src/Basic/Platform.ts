@@ -28,3 +28,9 @@ export enum OperatingSystem {
   MacOS,
   Unknown
 }
+
+
+export type Viewpoint = {
+  width: number
+  height: number
+}

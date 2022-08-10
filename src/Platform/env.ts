@@ -10,6 +10,9 @@ export type Env = {
   FORCE_CPU_ONLY?: boolean,
   MAXIMUM_SURFACES?: number,
   DEFAULT_MAXIMUM_SURFACES: number,
+  INNER_WIDTH?: number,
+  INNER_HEIGHT?: number,
+  VIEWPOINT?: number,
 } & NodeJS.ProcessEnv
 
 export const env = process.env as Env
