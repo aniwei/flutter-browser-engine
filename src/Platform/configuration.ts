@@ -3,7 +3,9 @@
  * @Date: 2022-08-09 10:54:10
  */
 
+import { OperatingSystem, Viewpoint } from '@basic/Platform'
 import { property } from '@helper/property'
+import { Size } from '@internal/Geometry'
 import { env } from './env'
 import { isWindow } from './Platform'
 
@@ -29,6 +31,65 @@ class Configuration {
   @property(function (this, devicePixelRatio: number) {
     return devicePixelRatio
   }) public devicePixelRatio: number = env.DEVICE_PIXEL_RATIO ?? env.DEFAULT_DEVICE_PIXEL_RATIO
+
+  @property<Viewpoint | null>(function (this, viewpoint: Viewpoint | null) {
+    if (env.VIEWPOINT) {
+      return env.VIEWPOINT
+    }
+
+    if (isWindow) {
+      return window.visualViewport
+    }
+
+    return null
+  }) public viewpoint!: Viewpoint | null
+
+  @property(function (this, width: number) {
+    return this.size.width
+  }) public width!: number
+
+  @property(function (this, height: number) {
+    return this.size.height
+  }) public height!: number
+
+
+  @property(function (this, size: Size | null) {
+    if (size === null) {
+      if (env.INNER_HEIGHT && env.INNER_WIDTH) {
+        this.size = new Size(
+          Math.ceil(env.INNER_WIDTH), 
+          Math.ceil(env.INNER_HEIGHT)
+        )
+      } else {
+        const viewpoint = this.viewpoint as Viewpoint
+        const devicePixelRatio = this.devicePixelRatio
+
+        if (viewpoint !== null) {
+          if (this.system === OperatingSystem.iOS) {
+            const clientWidth = window.document.documentElement.clientWidth
+            const clientHeight = window.document.documentElement.clientHeight
+    
+            this.size = new Size(
+              Math.ceil(clientWidth * devicePixelRatio),
+              Math.ceil(clientHeight * devicePixelRatio),
+            )
+          } else {
+            this.size = new Size(
+              Math.ceil(window.innerWidth * devicePixelRatio),
+              Math.ceil(window.innerHeight * devicePixelRatio),
+            )
+          }
+        } else {
+          this.size = new Size(
+            Math.ceil(window.innerWidth * devicePixelRatio),
+            Math.ceil(window.innerHeight * devicePixelRatio),
+          )
+        }
+      }
+    }
+
+    return this.size
+  }) public size: Size | null = null
 
   get WebGLVersion () {
     const canvas = document.createElement('canvas')
