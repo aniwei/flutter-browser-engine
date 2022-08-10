@@ -1,9 +1,9 @@
 import { LayerScene } from '@rendering/LayerSceneBuilder'
-import { PlatformDispatcher } from '@rendering/PlatformDispatcher'
+import { PlatformDispatcher } from '@platform/PlatformDispatcher'
 
 export class Window {
   get devicePixelRatio () {
-    return PlatformDispatcher.browserDevicePixelRatio
+    return PlatformDispatcher.devicePixelRatio
   }
 
   public platformDispatcher: PlatformDispatcher
