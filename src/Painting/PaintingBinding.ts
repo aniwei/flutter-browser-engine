@@ -8,16 +8,17 @@ import { ImageCache } from './ImageCache'
 
 import type { Codec } from '@basic/Painting'
 
+export type PaintingBindingOptions = {}
 
 export class PaintingBinding {
   static instance: PaintingBinding | null = null
-  static initInstances () {
-    new PaintingBinding()
+  static initInstances (options: PaintingBindingOptions) {
+    new PaintingBinding(options)
   }
 
   public imageCache: ImageCache
 
-  constructor () {
+  constructor (options: PaintingBindingOptions) {
     PaintingBinding.instance = this
 
     this.imageCache = this.createImageCache()

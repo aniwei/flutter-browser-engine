@@ -4,7 +4,7 @@
  */
 import { invariant } from 'ts-invariant'
 import { AbstractSurface, Surface } from './Surface'
-import { configuration } from './configuration'
+import { PlatformBinding } from './PlatformBinding'
 
 
 export abstract class AbstractSurfaceFactory<T> extends Array<T> {
@@ -81,7 +81,11 @@ export abstract class AbstractSurfaceFactory<T> extends Array<T> {
 }
 
 export class SurfaceFactory extends AbstractSurfaceFactory<AbstractSurface> {
-  static instance: SurfaceFactory= new SurfaceFactory(configuration.maximumSurfaces)
+  static _instance: SurfaceFactory | null = null
+
+  static get instance (): SurfaceFactory {
+    return SurfaceFactory._instance ?? (SurfaceFactory._instance = new SurfaceFactory(PlatformBinding.instance?.configuration.maximumSurfaces as number))
+  }
 
   public baseSurface: AbstractSurface = new Surface()
   public backupSurface: AbstractSurface = new Surface()

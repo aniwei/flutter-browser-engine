@@ -1,9 +1,10 @@
 import invariant from 'ts-invariant'
-import { isWindow, kCurrentURI } from '@platform/Platform'
+import { kCurrentURI } from '@platform/Platform'
 import { Encoding, utf8 } from '@internal/Encoding'
 import { ArgumentError } from './ArgumentError'
 import { StringBuffer } from './StringBuffer'
 import { UnsupportedError } from './UnsupportedError'
+import { isWindow } from '@helper/is'
 
 const kSpace = 0x20
 const kPercent = 0x25

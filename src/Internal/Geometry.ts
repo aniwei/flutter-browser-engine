@@ -273,7 +273,7 @@ export class Size extends OffsetBase {
   public get isEmpty (): boolean {
     return (
       this.width <= 0 ||
-      this.height >= 0
+      this.height <= 0
     )
   }
 

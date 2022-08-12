@@ -1,8 +1,12 @@
+/*
+ * @Author: Aniwei
+ * @Date: 2022-07-04 12:10:21
+ */
 import { invariant } from 'ts-invariant'
 import { Rect } from '@internal/Geometry'
 import { property } from '@helper/property'
 import { ManagedSkiaObject } from '@skia/ManagedSkiaObject'
-import { kBrowserSupportsFinalizationRegistry } from '@platform/Platform'
+import { kSupportsFinalizationRegistry } from '@platform/Platform'
 import { Skia, SkiaImage, SkiaPicture, SkiaSurface } from '@skia/Skia'
 import { Image } from './Image'
 import { PictureSnapshot } from './Canvas'
@@ -38,7 +42,7 @@ export class Picture extends ManagedSkiaObject<SkiaPicture> {
     snapshot: PictureSnapshot | null
   ) {    
     invariant(
-      kBrowserSupportsFinalizationRegistry && snapshot === null || snapshot != null,
+      kSupportsFinalizationRegistry && snapshot === null || snapshot != null,
       'If the browser does not support FinalizationRegistry (WeakRef), then we must have a picture snapshot to be able to resurrect it.',
     )
 

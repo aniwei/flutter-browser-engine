@@ -6,10 +6,11 @@ import { Rasterizer } from '@rendering/Rasterizer'
 import { Rect } from '@internal/Geometry'
 import { Window, WindowPadding } from '@ui/Window'
 
-import { configuration } from './configuration'
+import { PlatformBinding } from './PlatformBinding'
 
 import type { LayerScene } from '@rendering/LayerSceneBuilder'
-import type { VoidCallback } from '@basic/Platform'
+import type { OperatingSystem, Viewpoint, VoidCallback } from '@basic/Platform'
+import { property } from '@helper/property'
 
 export type DisplayFeatureOptions = {
   bounds: Rect
@@ -64,28 +65,31 @@ export class PlatformDispatcher {
     return new PlatformDispatcher()
   }
 
-  static get devicePixelRatio () {
-    return configuration.devicePixelRatio
+  static get devicePixelRatio (): number {
+    return PlatformBinding.instance?.configuration.devicePixelRatio as number
   }
 
-  static get viewpoint () {
-    return configuration.viewpoint
+  static get viewpoint (): Viewpoint {
+    return PlatformBinding.instance?.configuration.viewpoint as Viewpoint
   }
 
-  static get innerWidth () {
-    return configuration.width
+  static get innerWidth (): number {
+    return PlatformBinding.instance?.configuration.width as number
   }
 
-  static get innerHeight () {
-    return configuration.height
+  static get innerHeight (): number {
+    return PlatformBinding.instance?.configuration.width as number
   }
 
-  static get system () {
-    return configuration.system
+  static get system (): OperatingSystem {
+    return PlatformBinding.instance?.configuration.system as OperatingSystem
   }
 
+  @property(function (this, rasterizer: Rasterizer) {
+    return rasterizer ?? (this.rasterizer = new Rasterizer())
+  }) public rasterizer!: Rasterizer
+  
   public windows: Map<string | number, Window> 
-  public rasterizer: Rasterizer
   public configurations: Map<string | number, ViewConfiguration>  
 
   public onMetricsChanged: VoidCallback | null = null
@@ -93,7 +97,6 @@ export class PlatformDispatcher {
   constructor () {
     this.windows = new Map()
     this.configurations = new Map()
-    this.rasterizer = new Rasterizer()
   }
 
   invoke (callback: VoidCallback | null): void {

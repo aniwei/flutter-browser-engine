@@ -83,19 +83,19 @@ export class SkiaFilterOptions extends Map<SkiaFilterQuality, SkiaCubicFilterOpt
   }
 }
 
-export type SkiaInitOption = {
-  devicePixelRatio: number
+export type SkiaOptions = {
+  devicePixelRatio?: number
 }
 
 export class Skia {
   static s: CanvasKit
-  static o: SkiaInitOption
+  static o: SkiaOptions
   static r: {
     SkiaFilterOptions?: SkiaFilterOptions
   } = {}
-  static malloc (uri: string, options?: SkiaInitOption) {
+  static malloc (uri: string, options?: SkiaOptions) {
     Skia.o = { 
-      devicePixelRatio: 1,
+      devicePixelRatio: 2.0,
       ...options 
     }
     return (
@@ -114,7 +114,7 @@ export class Skia {
 
   // config
   static get DevicePixelRatio () {
-    return Skia.o.devicePixelRatio
+    return Skia.o.devicePixelRatio as number
   }
 
   static get PictureRecorder () {

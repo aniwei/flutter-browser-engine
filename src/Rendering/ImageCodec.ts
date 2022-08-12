@@ -1,6 +1,10 @@
+/*
+ * @Author: Aniwei
+ * @Date: 2022-08-03 14:52:24
+ */
 import { URI } from '@internal/URI'
 import { WebOnlyImageCodecChunkCallback, fetchImage } from '@platform/fetchImage'
-import { kBrowserSupportsImageDecoder } from '@platform/Platform'
+import { kSupportsImageDecoder } from '@platform/Platform'
 import { AnimatedImage } from './AnimatedImage'
 
 
@@ -9,7 +13,7 @@ export async function skiaInstantiateWebImageCodec (
   chunkCallback: WebOnlyImageCodecChunkCallback | null
 ) {
   const data = await fetchImage(url, chunkCallback)
-  if (kBrowserSupportsImageDecoder) {
+  if (kSupportsImageDecoder) {
      // @TODO
   } else {
     return AnimatedImage.decodeFromBytes(data, url)
@@ -21,7 +25,7 @@ export function skiaInstantiateImageCodec (
   targetWidth?: number | null, 
   targetHeight?: number | null, 
 ) {
-  if (kBrowserSupportsImageDecoder) {
+  if (kSupportsImageDecoder) {
     // return CkBrowserImageDecoder.create(
     //   data: list,
     //   debugSource: 'encoded image bytes',

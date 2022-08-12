@@ -2,57 +2,41 @@
  * @Author: Aniwei
  * @Date: 2022-07-04 12:10:21
  */
-import { BrowserEngine } from '@basic/Platform'
 
-export function detectBrowserEngineByVendorAgent (
-  vendor: string, 
-  agent: string
-) {
-  if (vendor == 'Google Inc.') {
-    return BrowserEngine.Blink
-  } else if (vendor == 'Apple Computer, Inc.') {
-    return BrowserEngine.Webkit
-  } else if (agent.includes('edge/')) {
-    return BrowserEngine.Edge;
-  } else if (agent.includes('Edg/')) {
-    return BrowserEngine.Blink
-  }  else if (vendor === '' && agent.includes('firefox')) {
-    return BrowserEngine.Firefox
-  }
+import { isBrowser } from '@helper/is'
+import { detectOperatingSystem } from '@helper/detectOperationSystem'
 
-  console.warn('WARNING: failed to detect current browser engine.')
-  return BrowserEngine.Unknown
-}
-  
-export function detectBrowserEngine () {
-  const vendor = window.navigator.vendor;
-  const agent = window.navigator.userAgent.toLowerCase()
+import type { Env } from '@basic/Platform'
 
-  return detectBrowserEngineByVendorAgent(vendor, agent)
-}
+// globalThis
+export const kGlobalThis = isBrowser 
+  ? window
+  : globalThis
 
-export const isWindow = (
-  typeof process !== 'undefined' && 
-  Object.prototype.toString.call(process) === '[object process]' &&
-  process.platform === 'win32'
-)
+// operation system
+export const kOperatingSystem = detectOperatingSystem()
 
-export const kCurrentURI = isWindow ? window.location.href : null
+// browser uri
+export const kCurrentURI = isBrowser ? window.location.href : null
 
 export const kImageDecoderExperimentEnabled = (
   false
 )
 
-export const kBrowserSupportsXMLHTTPRequest = isWindow && typeof window.XMLHttpRequest === 'object'
-export const kBrowserSupportsFetch = isWindow && typeof window.fetch
-export const kBrowserDevicePixelRatio = isWindow ? (window.devicePixelRatio || 2.0) : 2.0
+export const kSupportsXMLHTTPRequest = isBrowser && typeof kGlobalThis.XMLHttpRequest === 'object'
+export const kSupportsFetch = isBrowser && typeof kGlobalThis.fetch
+export const kDevicePixelRatio = isBrowser ? (kGlobalThis.devicePixelRatio || 2.0) : 2.0
 
-export const kBrowserSupportsImageDecoder = kImageDecoderExperimentEnabled 
-export const kBrowserSupportsFinalizationRegistry = isWindow ? 
-  (typeof window.FinalizationRegistry === 'function') :
-  (typeof globalThis.FinalizationRegistry === 'function')
+export const kSupportsImageDecoder = kImageDecoderExperimentEnabled 
+export const kSupportsFinalizationRegistry = typeof kGlobalThis.FinalizationRegistry === 'function'
 
-export const kSupportsFinalizationRegistry = (
-  kBrowserSupportsFinalizationRegistry ||
-  typeof globalThis.FinalizationRegistry === 'function'
-)
+// getting config from env
+export const kEnv = {
+  // device pixel ratio
+  DEVICE_PIXEL_RATIO: 2.0,
+  // maximum surfaces
+  MAXIMUM_SURFACES: 8,
+  // force cpu only
+  FORCE_CPU_ONLY: false,
+  ...process.env
+} as Env

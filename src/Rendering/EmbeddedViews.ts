@@ -197,7 +197,7 @@ export class MutatorsStack extends Array<Mutator> {
   }
 
   pop () {
-    return this.pop()
+    return super.pop()
   }
 
   eq (other: MutatorsStack) {

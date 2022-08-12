@@ -3,11 +3,13 @@
  * @Date: 2022-08-09 10:54:10
  */
 
+import { invariant } from 'ts-invariant'
 import { OperatingSystem, Viewpoint } from '@basic/Platform'
+import { detectOperatingSystem } from '@helper/detectOperationSystem'
+import { isBrowser } from '@helper/is'
 import { property } from '@helper/property'
 import { Size } from '@internal/Geometry'
-import { env } from './env'
-import { isWindow } from './Platform'
+import { kEnv, kGlobalThis } from './Platform'
 
 export enum WebGLVersion {
   Unknown,
@@ -15,83 +17,23 @@ export enum WebGLVersion {
   WebGL1
 }
 
-class Configuration {
-  @property(function (this, baseURL: string) {
-    return baseURL ?? env.BASE_URL
-  }) public baseURL: string = env.BASE_URL ?? ``
+export type ConfigurationOptions = {
+  baseURI?: string
+  forceCPUOnly?: boolean
+  maximumSurfaces?: number
+  devicePixelRatio?: number
+  viewpoint?: Viewpoint
+}
 
-  @property(function (this, forceCPUOnly: boolean) {
-    return forceCPUOnly
-  }) public forceCPUOnly: boolean = env.FORCE_CPU_ONLY ?? false
+export class Configuration {
+  public baseURI: string
+  public forceCPUOnly: boolean
+  public maximumSurfaces: number
+  public devicePixelRatio: number
+  public viewpoint: Viewpoint
+  public system: OperatingSystem = detectOperatingSystem()
 
-  @property(function (this, maximumSurfaces: boolean) {
-    return maximumSurfaces
-  }) public maximumSurfaces: number = env.MAXIMUM_SURFACES ?? env.DEFAULT_MAXIMUM_SURFACES
-
-  @property(function (this, devicePixelRatio: number) {
-    return devicePixelRatio
-  }) public devicePixelRatio: number = env.DEVICE_PIXEL_RATIO ?? env.DEFAULT_DEVICE_PIXEL_RATIO
-
-  @property<Viewpoint | null>(function (this, viewpoint: Viewpoint | null) {
-    if (env.VIEWPOINT) {
-      return env.VIEWPOINT
-    }
-
-    if (isWindow) {
-      return window.visualViewport
-    }
-
-    return null
-  }) public viewpoint!: Viewpoint | null
-
-  @property(function (this, width: number) {
-    return this.size.width
-  }) public width!: number
-
-  @property(function (this, height: number) {
-    return this.size.height
-  }) public height!: number
-
-
-  @property(function (this, size: Size | null) {
-    if (size === null) {
-      if (env.INNER_HEIGHT && env.INNER_WIDTH) {
-        this.size = new Size(
-          Math.ceil(env.INNER_WIDTH), 
-          Math.ceil(env.INNER_HEIGHT)
-        )
-      } else {
-        const viewpoint = this.viewpoint as Viewpoint
-        const devicePixelRatio = this.devicePixelRatio
-
-        if (viewpoint !== null) {
-          if (this.system === OperatingSystem.iOS) {
-            const clientWidth = window.document.documentElement.clientWidth
-            const clientHeight = window.document.documentElement.clientHeight
-    
-            this.size = new Size(
-              Math.ceil(clientWidth * devicePixelRatio),
-              Math.ceil(clientHeight * devicePixelRatio),
-            )
-          } else {
-            this.size = new Size(
-              Math.ceil(window.innerWidth * devicePixelRatio),
-              Math.ceil(window.innerHeight * devicePixelRatio),
-            )
-          }
-        } else {
-          this.size = new Size(
-            Math.ceil(window.innerWidth * devicePixelRatio),
-            Math.ceil(window.innerHeight * devicePixelRatio),
-          )
-        }
-      }
-    }
-
-    return this.size
-  }) public size: Size | null = null
-
-  get WebGLVersion () {
+  @property(function (this) {
     const canvas = document.createElement('canvas')
     canvas.width = 1
     canvas.height = 1
@@ -103,8 +45,71 @@ class Configuration {
     }
 
     return WebGLVersion.Unknown
+  }) public WebGLVersion!: WebGLVersion
+
+  @property(function (this: Configuration) {
+    return this.size?.width
+  }) public width!: number
+
+  @property(function (this) {
+    return this.size.height
+  }) public height!: number
+
+  @property(function (this, size: Size | null) {
+    if (size === null) {
+    
+      const viewpoint = this.viewpoint as Viewpoint
+      const devicePixelRatio = this.devicePixelRatio
+
+      if (viewpoint !== null) {
+        if (this.system === OperatingSystem.iOS) {
+          const clientWidth = kGlobalThis.document.documentElement.clientWidth
+          const clientHeight = kGlobalThis.document.documentElement.clientHeight
+  
+          return this.size = new Size(
+            Math.ceil(clientWidth * devicePixelRatio),
+            Math.ceil(clientHeight * devicePixelRatio),
+          )
+        }
+      }
+
+      this.size = isBrowser 
+        ? new Size(
+            Math.ceil(kGlobalThis.innerWidth * devicePixelRatio),
+            Math.ceil(kGlobalThis.innerHeight * devicePixelRatio),
+          ) 
+        : new Size(
+            Math.ceil(viewpoint.height * devicePixelRatio),
+            Math.ceil(viewpoint.width * devicePixelRatio),
+          ) 
+    }
+    
+
+    return this._size
+  }) public size: Size | null = null
+
+  constructor (options: ConfigurationOptions) {
+    const baseURI = options.baseURI ?? kEnv.BASE_URI
+    const maximumSurfaces = options.maximumSurfaces ?? kEnv.MAXIMUM_SURFACES ?? 8
+    const forceCPUOnly = options.forceCPUOnly ?? kEnv.FORCE_CPU_ONLY ?? false
+    const devicePixelRatio = options.devicePixelRatio ?? kEnv.DEVICE_PIXEL_RATIO ?? 2.0
+  
+    const viewpoint = options.viewpoint ?? ({
+      width: kEnv.INNER_WIDTH,
+      height: kEnv.INNER_WIDTH 
+    } as Viewpoint)
+
+    invariant(baseURI !== undefined)
+    invariant(maximumSurfaces !== undefined)
+    invariant(forceCPUOnly !== undefined)
+    invariant(devicePixelRatio !== undefined)
+    invariant(viewpoint !== undefined)
+
+    this.baseURI = baseURI
+    this.devicePixelRatio = devicePixelRatio
+    this.forceCPUOnly = forceCPUOnly
+    this.maximumSurfaces = maximumSurfaces
+    this.viewpoint = viewpoint
+  
   }
 }
-
-
-export const configuration = new Configuration()

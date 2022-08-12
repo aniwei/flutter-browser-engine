@@ -3,10 +3,10 @@
  * @Date: 2022-08-09 10:04:53
  */
 import { List } from '@internal/List';
-import { CompositorContext, LayerTree } from './LayerTree'
 import { SurfaceFactory } from '@platform/SurfaceFactory'
 
 import type { VoidCallback } from '@basic/Platform'
+import { CompositorContext, LayerTree } from './LayerTree'
 
 export class Rasterizer {
   public context: CompositorContext = new CompositorContext()
@@ -28,6 +28,8 @@ export class Rasterizer {
       compositorFrame.raster(layerTree, true)
       SurfaceFactory.instance.baseSurface.addToScene()
       frame.submit()
+    } catch (error) {
+      debugger
     } finally {
       this.runPostFrameCallbacks()
     }

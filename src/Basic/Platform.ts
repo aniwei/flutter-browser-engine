@@ -24,13 +24,24 @@ export enum OperatingSystem {
   iOS,
   Android,
   Linux,
-  Window,
+  Windows,
   MacOS,
   Unknown
 }
-
 
 export type Viewpoint = {
   width: number
   height: number
 }
+
+export type Env = {
+  BASE_URI?: string,
+  DEVICE_PIXEL_RATIO?: number,
+  DEFAULT_DEVICE_PIXEL_RATIO: number,
+  FORCE_CPU_ONLY?: boolean,
+  MAXIMUM_SURFACES?: number,
+  DEFAULT_MAXIMUM_SURFACES: number,
+  INNER_WIDTH?: number,
+  INNER_HEIGHT?: number,
+  VIEWPOINT?: Viewpoint,
+} & NodeJS.ProcessEnv

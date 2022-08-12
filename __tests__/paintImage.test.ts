@@ -4,10 +4,10 @@
  */
 import Jimp from 'jimp'
 import { resolve } from 'path'
-import { Skia, SkiaCanvas, SkiaFilterQuality } from '@skia/Skia'
 import { URI } from '@internal/URI'
 import { Rect } from '@internal/Geometry'
 import { Canvas } from '@rendering/Canvas'
+import { Skia, SkiaCanvas, SkiaFilterQuality } from '@skia/Skia'
 import { ImageConfiguration } from '@painting/ImageProvider'
 import { ImageStreamListener } from '@painting/ImageStream'
 import { Alignment } from '@painting/Alignment'
@@ -16,9 +16,9 @@ import { runApp } from '../src'
 import { ImageRepeat, paintImage } from '@painting/DecorationImage'
 
 test(`paintImage`, async () => {
-  await Skia.malloc(resolve(__dirname, 'canvaskit.wasm'))
-
-  runApp()
+  await runApp({
+    baseURI: resolve(__dirname, 'canvaskit.wasm')
+  })
 
   const uri = URI.parse('https://img.zcool.cn/community/01917e60bd78de11013f47203d628a.jpg?x-oss-process=image/auto-orient,1/resize,m_lfit,w_1280,limit_1/sharpen,100/format,webp/quality,Q_100')
   const surface = Skia.MakeSurface(513, 1207)

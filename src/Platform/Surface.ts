@@ -7,10 +7,12 @@ import { Size } from '@internal/Geometry'
 import { Surface as RSurface } from '@rendering/Surface'
 import { CanvasKitError } from '@internal/CanvasKitError'
 import { PlatformDispatcher } from '@platform/PlatformDispatcher'
-import { Skia, SkiaCanvas, SkiaGrDirectContext, SkiaSurface } from '@skia/Skia'
-import { isWindow } from './Platform'
+import { Skia, SkiaGrDirectContext, SkiaSurface } from '@skia/Skia'
 import { SurfaceFactory } from './SurfaceFactory'
-import { configuration, WebGLVersion } from './configuration'
+import { PlatformBinding } from './PlatformBinding'
+import { WebGLVersion } from './Configuration'
+import { isBrowser } from '@helper/is'
+import { window } from '@ui/Window'
 
 export type SubmitCallback = { (): boolean } 
 
@@ -107,7 +109,7 @@ export class BrowserSurface extends AbstractSurface {
   constructor () {
     super()
 
-    this.root = window.document.createElement('flt-canvas-container')
+    this.root = document.createElement('flt-canvas-container')
   }
 
   contextRestoredListener (event: Event) {
@@ -135,7 +137,7 @@ export class BrowserSurface extends AbstractSurface {
   }
 
   addToScene () {
-    window.document.body.appendChild(this.root)
+    document.body.appendChild(this.root)
   }
 
   makeSoftwareCanvasSurface (
@@ -251,11 +253,11 @@ export class BrowserSurface extends AbstractSurface {
     this.forceNewContext = false
     this.contextLost = false
 
-    const v = configuration.WebGLVersion
+    const v = PlatformBinding.instance?.configuration.WebGLVersion as WebGLVersion
 
     if (
       v !== WebGLVersion.Unknown && 
-      !configuration.forceCPUOnly
+      !PlatformBinding.instance?.configuration.forceCPUOnly
     ) {
       const glContext = Skia.GetWebGLContext(canvas,{
         antialias: 0,
@@ -279,13 +281,13 @@ export class BrowserSurface extends AbstractSurface {
 
   createNewSurface (size: Size): RSurface {
     invariant(this.canvas !== null)
-    const v = configuration.WebGLVersion
+    const v = PlatformBinding.instance?.configuration.WebGLVersion
     if (v === WebGLVersion.Unknown) {
       return this.makeSoftwareCanvasSurface(
         this.canvas!, 
         'WebGL support not detected'
       )
-    } else if (configuration.forceCPUOnly) {
+    } else if (PlatformBinding.instance?.configuration.forceCPUOnly) {
       return this.makeSoftwareCanvasSurface(
         this.canvas!, 
         'CPU rendering forced by application'
@@ -410,6 +412,6 @@ export class ServerSurface extends AbstractSurface {
   }
 }
 
-export const Surface = isWindow
+export const Surface = isBrowser
   ? BrowserSurface
   : ServerSurface

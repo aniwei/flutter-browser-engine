@@ -8,10 +8,11 @@ import { PictureRecorder } from './PictureRecorder'
 
 import type { Picture } from './Picture'
 import type { Canvas } from './Canvas'
+import { window } from '@ui/Window'
 
 export class LayerTree {
   public rootLayer: RootLayer
-  public frameSize!: Size
+  public frameSize: Size = window.physicalSize
   public devicePixelRatio!: number
 
   constructor (rootLayer: RootLayer) {
