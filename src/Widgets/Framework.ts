@@ -46,82 +46,27 @@ export class BuildOwner {
     element.inDirtyList = true
   }
 
-  void lockState(VoidCallback callback) {
-    assert(callback != null);
-    assert(_debugStateLockLevel >= 0);
-    assert(() {
-      _debugStateLockLevel += 1;
-      return true;
-    }());
+  lockState (callback: VoidCallback) {
+    invariant(callback != null)
+
     try {
-      callback();
+      callback()
     } finally {
-      assert(() {
-        _debugStateLockLevel -= 1;
-        return true;
-      }());
+      // 
     }
-    assert(_debugStateLockLevel >= 0);
   }
 
-  /// Establishes a scope for updating the widget tree, and calls the given
-  /// `callback`, if any. Then, builds all the elements that were marked as
-  /// dirty using [scheduleBuildFor], in depth order.
-  ///
-  /// This mechanism prevents build methods from transitively requiring other
-  /// build methods to run, potentially causing infinite loops.
-  ///
-  /// The dirty list is processed after `callback` returns, building all the
-  /// elements that were marked as dirty using [scheduleBuildFor], in depth
-  /// order. If elements are marked as dirty while this method is running, they
-  /// must be deeper than the `context` node, and deeper than any
-  /// previously-built node in this pass.
-  ///
-  /// To flush the current dirty list without performing any other work, this
-  /// function can be called with no callback. This is what the framework does
-  /// each frame, in [WidgetsBinding.drawFrame].
-  ///
-  /// Only one [buildScope] can be active at a time.
-  ///
-  /// A [buildScope] implies a [lockState] scope as well.
-  ///
-  /// To print a console message every time this method is called, set
-  /// [debugPrintBuildScope] to true. This is useful when debugging problems
-  /// involving widgets not getting marked dirty, or getting marked dirty too
-  /// often.
-  @pragma('vm:notify-debugger-on-exception')
-  void buildScope(Element context, [ VoidCallback? callback ]) {
-    if (callback == null && _dirtyElements.isEmpty)
-      return;
-    assert(context != null);
-    assert(_debugStateLockLevel >= 0);
-    assert(!_debugBuilding);
-    assert(() {
-      if (debugPrintBuildScope)
-        debugPrint('buildScope called with context $context; dirty list is: $_dirtyElements');
-      _debugStateLockLevel += 1;
-      _debugBuilding = true;
-      return true;
-    }());
-    if (!kReleaseMode) {
-      Map<String, String> debugTimelineArguments = timelineArgumentsIndicatingLandmarkEvent;
-      assert(() {
-        if (debugProfileBuildsEnabled) {
-          debugTimelineArguments = <String, String>{
-            ...debugTimelineArguments,
-            'dirty count': '${_dirtyElements.length}',
-            'dirty list': '$_dirtyElements',
-            'lock level': '$_debugStateLockLevel',
-            'scope context': '$context',
-          };
-        }
-        return true;
-      }());
-      Timeline.startSync(
-        'BUILD',
-        arguments: debugTimelineArguments
-      );
+  
+  
+  buildScope (
+    context: Element, 
+    callback?: VoidCallback | null = null
+  ) {
+    if (callback === null && this.dirtyElements.length === 0) {
+      return
     }
+    invariant(context !== null)
+
     try {
       _scheduledFlushDirtyElements = true;
       if (callback != null) {
