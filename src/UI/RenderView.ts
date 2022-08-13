@@ -133,7 +133,6 @@ export class RenderView extends RenderObject {
   performResize () {
     invariant(false)
   }
-
   
   performLayout () {
     invariant(this.rootTransform !== null)

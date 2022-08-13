@@ -1,12 +1,18 @@
 import { invariant } from 'ts-invariant'
-import { property, PropertySetter } from '@helper'
-import { Alignment, AlignmentGeometry, BoxFit, ImageRepeat, paintImage } from '@painting'
-import { Color, ColorFilter, Image, Offset, Rect, Size } from '@rendering'
-import { SkiaBlendMode, SkiaFilterQuality, SkiaTextDirection, Skia } from '@skia'
+import { property, PropertySetter } from '@helper/property'
+import { BoxFit } from '@painting/BoxFit'
+import { Color } from '@internal/Color'
+import { Image } from '@rendering/Image'
+import { ColorFilter } from '@rendering/ColorFilter'
+import { Canvas } from '@rendering/Canvas'
+import { Offset, Rect, Size } from '@internal/Geometry'
+import { Alignment, AlignmentGeometry } from '@painting/Alignment'
+import { ImageRepeat, paintImage } from '@painting/DecorationImage'
+import { SkiaBlendMode, SkiaFilterQuality, SkiaTextDirection, Skia } from '@skia/Skia'
 import { BoxConstraints, RenderBox } from './RenderBox'
 import { PaintingContext, PipelineOwner } from './RenderObject'
 
-function image<Image>(setter?: PropertySetter<Image>) {
+function image(setter?) {
   return property<Image>(function get (this, v: Image) {
     return v
   }, setter ?? function set (this, image: Image) {
@@ -34,7 +40,7 @@ function image<Image>(setter?: PropertySetter<Image>) {
   })
 }
 
-function paint<T>(setter?: PropertySetter<T>) {
+function paint<T>(setter?) {
   return property<T>(function get (this, v: T) {
     return v
   }, setter ?? function set (this, v: T, k: string) {
@@ -47,7 +53,7 @@ function paint<T>(setter?: PropertySetter<T>) {
   })
 }
 
-function layout<T>(setter?: PropertySetter<T>) {
+function layout<T>(setter?) {
   return property<T>(function get (this, v: T) {
     return v
   }, setter ?? function set (this, v: T, k: string) {
@@ -85,7 +91,7 @@ function color<T>() {
   })
 }
 
-export type RenderImageInitOptions = {
+export type RenderImageOptions = {
   image?: Image | null,
   debugImageLabel: string | null,
   width?: number | null,
@@ -102,7 +108,7 @@ export type RenderImageInitOptions = {
   textDirection?: SkiaTextDirection | null,
   invertColors: boolean,
   isAntiAlias: boolean,
-  SkiaFilterQuality: SkiaFilterQuality,
+  filterQuality: SkiaFilterQuality,
 }
 
 export class RenderImage extends RenderBox {
@@ -129,7 +135,7 @@ export class RenderImage extends RenderBox {
   @layout<number>() public height: number | null = null
   @layout<number>() public scale: number | null = null
 
-  @paint<FilterQuality>() public SkiaFilterQuality: SkiaFilterQuality
+  @paint<SkiaFilterQuality>() public filterQuality: SkiaFilterQuality
   @paint<BoxFit>() public fit: BoxFit | null = null
   @paint<boolean>() public isAntiAlias: boolean
   @paint<ImageRepeat>() public repeat: ImageRepeat
@@ -146,9 +152,9 @@ export class RenderImage extends RenderBox {
   public debugImageLabel: string | null = null
   public resolvedAlignment: Alignment | null = null
   public flipHorizontally: boolean | null = null
-  
+  public colorFilter: ColorFilter | null = null
 
-  constructor (options: RenderImageInitOptions) {
+  constructor (options: RenderImageOptions) {
     options.image ??= null
     options.width ??= null
     options.height ??= null
@@ -211,8 +217,6 @@ export class RenderImage extends RenderBox {
     this.markNeedsPaint()
   }
 
-  public colorFilter: ColorFilter | null = null
-
   updateColorFilter () {
     if (this.color === null) {
       this.colorFilter = null
@@ -251,7 +255,7 @@ export class RenderImage extends RenderBox {
       return 0.0
     }
     return this.sizeForConstraints(
-      BoxConstraints.tightForFinite(this.height)
+      BoxConstraints.tightForFinite(height)
       ).width
   }
 
@@ -259,7 +263,7 @@ export class RenderImage extends RenderBox {
   computeMaxIntrinsicWidth (height: number) {
     invariant(height >= 0.0)
     return this.sizeForConstraints(
-      BoxConstraints.tightForFinite(this.height)
+      BoxConstraints.tightForFinite(height)
     ).width
   }
 
@@ -273,7 +277,7 @@ export class RenderImage extends RenderBox {
       return 0.0
     }
     return this.sizeForConstraints(
-      BoxConstraints.tightForFinite(this.width)
+      BoxConstraints.tightForFinite(width)
     ).height
   }
 
@@ -281,7 +285,7 @@ export class RenderImage extends RenderBox {
   computeMaxIntrinsicHeight (width: number) {
     invariant(width >= 0.0)
     return this.sizeForConstraints(
-      BoxConstraints.tightForFinite(this.width)
+      BoxConstraints.tightForFinite(width)
     ).height;
   }
 
@@ -294,7 +298,7 @@ export class RenderImage extends RenderBox {
   }
 
   performLayout () {
-    this.size = this.sizeForConstraints(this.constraints)
+    this.size = this.sizeForConstraints(this.constraints as BoxConstraints)
   }
 
   attach (owner: PipelineOwner) {
@@ -319,11 +323,11 @@ export class RenderImage extends RenderBox {
     invariant(this.resolvedAlignment !== null)
     invariant(this.flipHorizontally !== null)
     paintImage(
-      context.canvas,
-      offset.and(this.size),
+      context.canvas as Canvas,
+      offset.and(this.size as Size),
       this.image,
       this.debugImageLabel,
-      this.scale,
+      this.scale as number,
       this.opacity?.value ?? 1.0,
       this.colorFilter,
       this.fit,

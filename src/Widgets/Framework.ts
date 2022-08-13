@@ -3,18 +3,43 @@
  * @Date: 2022-08-12 17:33:49
  */
 
-import { VoidCallback } from '@basic/Platform';
-import invariant from 'ts-invariant';
+import { invariant } from 'ts-invariant'
+import { VoidCallback } from '@basic/Platform'
+import { RenderObject } from '@ui/RenderObject'
+import { Size } from '@internal/Geometry'
+import { RenderBox } from '@ui/RenderBox'
 
 export type ElementVisitor = { (element: Element ): void }
+
+export enum ElementLifecycle {
+  Initial,
+  Active,
+  Inactive,
+  Defunct,
+}
 
 export type BuildOwnerOptions = {
   onBuildScheduled: VoidCallback,
   focusManager?: FocusManager
 }
 
+abstract class Widget {
+  static canUpdate (
+    oldWidget: Widget, 
+    newWidget: Widget
+  ): boolean {
+    return oldWidget.key === newWidget.key
+  }
+
+  key: Key | null
+  abstract createElement (): Element
+
+  eq (other: Widget) {
+    return other === this
+  }
+}
+
 export class BuildOwner {
-  
   public onBuildScheduled: VoidCallback | null = null
   public dirtyElements: Element[] = []
   public inactiveElements: InactiveElements = new InactiveElements()
@@ -31,7 +56,7 @@ export class BuildOwner {
 
   scheduleBuildFor (element: Element) {
     invariant(element !== null)
-    invariant(element.owner == this)
+    invariant(element.owner === this)
     
     if (element.inDirtyList) {
       this.dirtyElementsNeedsResorting = true
@@ -46,578 +71,909 @@ export class BuildOwner {
     element.inDirtyList = true
   }
 
-  void lockState(VoidCallback callback) {
-    assert(callback != null);
-    assert(_debugStateLockLevel >= 0);
-    assert(() {
-      _debugStateLockLevel += 1;
-      return true;
-    }());
+  lockState (callback: VoidCallback) {
+    invariant(callback !== null)
+    
     try {
-      callback();
+      callback()
     } finally {
-      assert(() {
-        _debugStateLockLevel -= 1;
-        return true;
-      }());
+      // TODO
     }
-    assert(_debugStateLockLevel >= 0);
   }
 
-  /// Establishes a scope for updating the widget tree, and calls the given
-  /// `callback`, if any. Then, builds all the elements that were marked as
-  /// dirty using [scheduleBuildFor], in depth order.
-  ///
-  /// This mechanism prevents build methods from transitively requiring other
-  /// build methods to run, potentially causing infinite loops.
-  ///
-  /// The dirty list is processed after `callback` returns, building all the
-  /// elements that were marked as dirty using [scheduleBuildFor], in depth
-  /// order. If elements are marked as dirty while this method is running, they
-  /// must be deeper than the `context` node, and deeper than any
-  /// previously-built node in this pass.
-  ///
-  /// To flush the current dirty list without performing any other work, this
-  /// function can be called with no callback. This is what the framework does
-  /// each frame, in [WidgetsBinding.drawFrame].
-  ///
-  /// Only one [buildScope] can be active at a time.
-  ///
-  /// A [buildScope] implies a [lockState] scope as well.
-  ///
-  /// To print a console message every time this method is called, set
-  /// [debugPrintBuildScope] to true. This is useful when debugging problems
-  /// involving widgets not getting marked dirty, or getting marked dirty too
-  /// often.
-  @pragma('vm:notify-debugger-on-exception')
-  void buildScope(Element context, [ VoidCallback? callback ]) {
-    if (callback == null && _dirtyElements.isEmpty)
-      return;
-    assert(context != null);
-    assert(_debugStateLockLevel >= 0);
-    assert(!_debugBuilding);
-    assert(() {
-      if (debugPrintBuildScope)
-        debugPrint('buildScope called with context $context; dirty list is: $_dirtyElements');
-      _debugStateLockLevel += 1;
-      _debugBuilding = true;
-      return true;
-    }());
-    if (!kReleaseMode) {
-      Map<String, String> debugTimelineArguments = timelineArgumentsIndicatingLandmarkEvent;
-      assert(() {
-        if (debugProfileBuildsEnabled) {
-          debugTimelineArguments = <String, String>{
-            ...debugTimelineArguments,
-            'dirty count': '${_dirtyElements.length}',
-            'dirty list': '$_dirtyElements',
-            'lock level': '$_debugStateLockLevel',
-            'scope context': '$context',
-          };
-        }
-        return true;
-      }());
-      Timeline.startSync(
-        'BUILD',
-        arguments: debugTimelineArguments
-      );
+  buildScope (
+    context: Element, 
+    callback?: VoidCallback
+  ) {
+    if (
+      callback === null && 
+      this.dirtyElements.length === 0
+    ) {
+      return
     }
+
+    invariant(context !== null)
+    
     try {
-      _scheduledFlushDirtyElements = true;
-      if (callback != null) {
-        assert(_debugStateLocked);
-        Element? debugPreviousBuildTarget;
-        assert(() {
-          context._debugSetAllowIgnoredCallsToMarkNeedsBuild(true);
-          debugPreviousBuildTarget = _debugCurrentBuildTarget;
-          _debugCurrentBuildTarget = context;
-          return true;
-        }());
-        _dirtyElementsNeedsResorting = false;
+      this.scheduledFlushDirtyElements = true
+      if (callback !== null && callback !== undefined) {
+        this.dirtyElementsNeedsResorting = false
         try {
-          callback();
+          callback()
         } finally {
-          assert(() {
-            context._debugSetAllowIgnoredCallsToMarkNeedsBuild(false);
-            assert(_debugCurrentBuildTarget == context);
-            _debugCurrentBuildTarget = debugPreviousBuildTarget;
-            _debugElementWasRebuilt(context);
-            return true;
-          }());
+          // TODO
         }
       }
-      _dirtyElements.sort(Element._sort);
-      _dirtyElementsNeedsResorting = false;
-      int dirtyCount = _dirtyElements.length;
-      int index = 0;
+      this.dirtyElements.sort(Element.sort)
+      this.dirtyElementsNeedsResorting = false
+      let dirtyCount = this.dirtyElements.length
+      let index = 0
       while (index < dirtyCount) {
-        final Element element = _dirtyElements[index];
-        assert(element != null);
-        assert(element._inDirtyList);
-        assert(() {
-          if (element._lifecycleState == _ElementLifecycle.active && !element._debugIsInScope(context)) {
-            throw FlutterError.fromParts(<DiagnosticsNode>[
-              ErrorSummary('Tried to build dirty widget in the wrong build scope.'),
-              ErrorDescription(
-                'A widget which was marked as dirty and is still active was scheduled to be built, '
-                'but the current build scope unexpectedly does not contain that widget.',
-              ),
-              ErrorHint(
-                'Sometimes this is detected when an element is removed from the widget tree, but the '
-                'element somehow did not get marked as inactive. In that case, it might be caused by '
-                'an ancestor element failing to implement visitChildren correctly, thus preventing '
-                'some or all of its descendants from being correctly deactivated.',
-              ),
-              DiagnosticsProperty<Element>(
-                'The root of the build scope was',
-                context,
-                style: DiagnosticsTreeStyle.errorProperty,
-              ),
-              DiagnosticsProperty<Element>(
-                'The offending element (which does not appear to be a descendant of the root of the build scope) was',
-                element,
-                style: DiagnosticsTreeStyle.errorProperty,
-              ),
-            ]);
-          }
-          return true;
-        }());
-        if (!kReleaseMode && debugProfileBuildsEnabled) {
-          Map<String, String> debugTimelineArguments = timelineArgumentsIndicatingLandmarkEvent;
-          assert(() {
-            debugTimelineArguments = element.widget.toDiagnosticsNode().toTimelineArguments();
-            return true;
-          }());
-          Timeline.startSync(
-            '${element.widget.runtimeType}',
-            arguments: debugTimelineArguments,
-          );
-        }
+        const element = this.dirtyElements[index]
+        invariant(element !== null)
+        invariant(element.inDirtyList)
+        
+        
         try {
-          element.rebuild();
-        } catch (e, stack) {
-          _debugReportException(
-            ErrorDescription('while rebuilding dirty elements'),
-            e,
-            stack,
-            informationCollector: () => <DiagnosticsNode>[
-              if (kDebugMode && index < _dirtyElements.length)
-                DiagnosticsDebugCreator(DebugCreator(element)),
-              if (index < _dirtyElements.length)
-                element.describeElement('The element being rebuilt at the time was index $index of $dirtyCount')
-              else
-                ErrorHint('The element being rebuilt at the time was index $index of $dirtyCount, but _dirtyElements only had ${_dirtyElements.length} entries. This suggests some confusion in the framework internals.'),
-            ],
-          );
+          element.rebuild()
+        } catch (e) {
+          // TODO
+          debugger
         }
-        if (!kReleaseMode && debugProfileBuildsEnabled)
-          Timeline.finishSync();
-        index += 1;
-        if (dirtyCount < _dirtyElements.length || _dirtyElementsNeedsResorting!) {
-          _dirtyElements.sort(Element._sort);
-          _dirtyElementsNeedsResorting = false;
-          dirtyCount = _dirtyElements.length;
-          while (index > 0 && _dirtyElements[index - 1].dirty) {
-            // It is possible for previously dirty but inactive widgets to move right in the list.
-            // We therefore have to move the index left in the list to account for this.
-            // We don't know how many could have moved. However, we do know that the only possible
-            // change to the list is that nodes that were previously to the left of the index have
-            // now moved to be to the right of the right-most cleaned node, and we do know that
-            // all the clean nodes were to the left of the index. So we move the index left
-            // until just after the right-most clean node.
-            index -= 1;
+        
+        index += 1
+        if (
+          dirtyCount < this.dirtyElements.length || 
+          this.dirtyElementsNeedsResorting!
+        ) {
+          this.dirtyElements.sort(Element.sort)
+          this.dirtyElementsNeedsResorting = false
+          dirtyCount = this.dirtyElements.length
+          
+          while (index > 0 && this.dirtyElements[index - 1].dirty) {
+            index -= 1
           }
         }
       }
-      assert(() {
-        if (_dirtyElements.any((Element element) => element._lifecycleState == _ElementLifecycle.active && element.dirty)) {
-          throw FlutterError.fromParts(<DiagnosticsNode>[
-            ErrorSummary('buildScope missed some dirty elements.'),
-            ErrorHint('This probably indicates that the dirty list should have been resorted but was not.'),
-            Element.describeElements('The list of dirty elements at the end of the buildScope call was', _dirtyElements),
-          ]);
-        }
-        return true;
-      }());
     } finally {
-      for (final Element element in _dirtyElements) {
-        assert(element._inDirtyList);
-        element._inDirtyList = false;
+      for (const element in this.dirtyElements) {
+        invariant(element.inDirtyList)
+        element.inDirtyList = false
       }
-      _dirtyElements.clear();
-      _scheduledFlushDirtyElements = false;
-      _dirtyElementsNeedsResorting = null;
-      if (!kReleaseMode) {
-        Timeline.finishSync();
-      }
-      assert(_debugBuilding);
-      assert(() {
-        _debugBuilding = false;
-        _debugStateLockLevel -= 1;
-        if (debugPrintBuildScope)
-          debugPrint('buildScope finished');
-        return true;
-      }());
+      this.dirtyElements = []
+      this.scheduledFlushDirtyElements = false
+      this.dirtyElementsNeedsResorting = null
     }
-    assert(_debugStateLockLevel >= 0);
   }
 
-  Map<Element, Set<GlobalKey>>? _debugElementsThatWillNeedToBeRebuiltDueToGlobalKeyShenanigans;
-
-  void _debugTrackElementThatWillNeedToBeRebuiltDueToGlobalKeyShenanigans(Element node, GlobalKey key) {
-    _debugElementsThatWillNeedToBeRebuiltDueToGlobalKeyShenanigans ??= HashMap<Element, Set<GlobalKey>>();
-    final Set<GlobalKey> keys = _debugElementsThatWillNeedToBeRebuiltDueToGlobalKeyShenanigans!
-      .putIfAbsent(node, () => HashSet<GlobalKey>());
-    keys.add(key);
+  globalKeyRegistry: Map<GlobalKey, Element> = new Map()
+  get globalKeyCount () {
+    return this.globalKeyRegistry.length
   }
 
-  void _debugElementWasRebuilt(Element node) {
-    _debugElementsThatWillNeedToBeRebuiltDueToGlobalKeyShenanigans?.remove(node);
+  registerGlobalKey (
+    key: GlobalKey, 
+    element: Element
+  ) {
+    this.globalKeyRegistry.set(key, element)
   }
 
-  final Map<GlobalKey, Element> _globalKeyRegistry = <GlobalKey, Element>{};
-
-  // In Profile/Release mode this field is initialized to `null`. The Dart compiler can
-  // eliminate unused fields, but not their initializers.
-  @_debugOnly
-  final Set<Element>? _debugIllFatedElements = kDebugMode ? HashSet<Element>() : null;
-
-  // This map keeps track which child reserves the global key with the parent.
-  // Parent, child -> global key.
-  // This provides us a way to remove old reservation while parent rebuilds the
-  // child in the same slot.
-  //
-  // In Profile/Release mode this field is initialized to `null`. The Dart compiler can
-  // eliminate unused fields, but not their initializers.
-  @_debugOnly
-  final Map<Element, Map<Element, GlobalKey>>? _debugGlobalKeyReservations = kDebugMode ? <Element, Map<Element, GlobalKey>>{} : null;
-
-  /// The number of [GlobalKey] instances that are currently associated with
-  /// [Element]s that have been built by this build owner.
-  int get globalKeyCount => _globalKeyRegistry.length;
-
-  void _debugRemoveGlobalKeyReservationFor(Element parent, Element child) {
-    assert(() {
-      assert(parent != null);
-      assert(child != null);
-      _debugGlobalKeyReservations?[parent]?.remove(child);
-      return true;
-    }());
-  }
-
-  void _registerGlobalKey(GlobalKey key, Element element) {
-    assert(() {
-      if (_globalKeyRegistry.containsKey(key)) {
-        assert(element.widget != null);
-        final Element oldElement = _globalKeyRegistry[key]!;
-        assert(oldElement.widget != null);
-        assert(element.widget.runtimeType != oldElement.widget.runtimeType);
-        _debugIllFatedElements?.add(oldElement);
-      }
-      return true;
-    }());
-    _globalKeyRegistry[key] = element;
-  }
-
-  void _unregisterGlobalKey(GlobalKey key, Element element) {
-    assert(() {
-      if (_globalKeyRegistry.containsKey(key) && _globalKeyRegistry[key] != element) {
-        assert(element.widget != null);
-        final Element oldElement = _globalKeyRegistry[key]!;
-        assert(oldElement.widget != null);
-        assert(element.widget.runtimeType != oldElement.widget.runtimeType);
-      }
-      return true;
-    }());
-    if (_globalKeyRegistry[key] == element)
-      _globalKeyRegistry.remove(key);
-  }
-
-  void _debugReserveGlobalKeyFor(Element parent, Element child, GlobalKey key) {
-    assert(() {
-      assert(parent != null);
-      assert(child != null);
-      _debugGlobalKeyReservations?[parent] ??= <Element, GlobalKey>{};
-      _debugGlobalKeyReservations?[parent]![child] = key;
-      return true;
-    }());
-  }
-
-  void _debugVerifyGlobalKeyReservation() {
-    assert(() {
-      final Map<GlobalKey, Element> keyToParent = <GlobalKey, Element>{};
-      _debugGlobalKeyReservations?.forEach((Element parent, Map<Element, GlobalKey> childToKey) {
-        // We ignore parent that are unmounted or detached.
-        if (parent._lifecycleState == _ElementLifecycle.defunct || parent.renderObject?.attached == false)
-          return;
-        childToKey.forEach((Element child, GlobalKey key) {
-          // If parent = null, the node is deactivated by its parent and is
-          // not re-attached to other part of the tree. We should ignore this
-          // node.
-          if (child._parent == null)
-            return;
-          // It is possible the same key registers to the same parent twice
-          // with different children. That is illegal, but it is not in the
-          // scope of this check. Such error will be detected in
-          // _debugVerifyIllFatedPopulation or
-          // _debugElementsThatWillNeedToBeRebuiltDueToGlobalKeyShenanigans.
-          if (keyToParent.containsKey(key) && keyToParent[key] != parent) {
-            // We have duplication reservations for the same global key.
-            final Element older = keyToParent[key]!;
-            final Element newer = parent;
-            final FlutterError error;
-            if (older.toString() != newer.toString()) {
-              error = FlutterError.fromParts(<DiagnosticsNode>[
-                ErrorSummary('Multiple widgets used the same GlobalKey.'),
-                ErrorDescription(
-                  'The key $key was used by multiple widgets. The parents of those widgets were:\n'
-                  '- ${older.toString()}\n'
-                  '- ${newer.toString()}\n'
-                  'A GlobalKey can only be specified on one widget at a time in the widget tree.',
-                ),
-              ]);
-            } else {
-              error = FlutterError.fromParts(<DiagnosticsNode>[
-                ErrorSummary('Multiple widgets used the same GlobalKey.'),
-                ErrorDescription(
-                  'The key $key was used by multiple widgets. The parents of those widgets were '
-                  'different widgets that both had the following description:\n'
-                  '  ${parent.toString()}\n'
-                  'A GlobalKey can only be specified on one widget at a time in the widget tree.',
-                ),
-              ]);
-            }
-            // Fix the tree by removing the duplicated child from one of its
-            // parents to resolve the duplicated key issue. This allows us to
-            // tear down the tree during testing without producing additional
-            // misleading exceptions.
-            if (child._parent != older) {
-              older.visitChildren((Element currentChild) {
-                if (currentChild == child)
-                  older.forgetChild(child);
-              });
-            }
-            if (child._parent != newer) {
-              newer.visitChildren((Element currentChild) {
-                if (currentChild == child)
-                  newer.forgetChild(child);
-              });
-            }
-            throw error;
-          } else {
-            keyToParent[key] = parent;
-          }
-        });
-      });
-      _debugGlobalKeyReservations?.clear();
-      return true;
-    }());
-  }
-
-  void _debugVerifyIllFatedPopulation() {
-    assert(() {
-      Map<GlobalKey, Set<Element>>? duplicates;
-      for (final Element element in _debugIllFatedElements!) {
-        if (element._lifecycleState != _ElementLifecycle.defunct) {
-          assert(element != null);
-          assert(element.widget != null);
-          assert(element.widget.key != null);
-          final GlobalKey key = element.widget.key! as GlobalKey;
-          assert(_globalKeyRegistry.containsKey(key));
-          duplicates ??= <GlobalKey, Set<Element>>{};
-          // Uses ordered set to produce consistent error message.
-          final Set<Element> elements = duplicates.putIfAbsent(key, () => LinkedHashSet<Element>());
-          elements.add(element);
-          elements.add(_globalKeyRegistry[key]!);
-        }
-      }
-      _debugIllFatedElements?.clear();
-      if (duplicates != null) {
-        final List<DiagnosticsNode> information = <DiagnosticsNode>[];
-        information.add(ErrorSummary('Multiple widgets used the same GlobalKey.'));
-        for (final GlobalKey key in duplicates.keys) {
-          final Set<Element> elements = duplicates[key]!;
-          // TODO(jacobr): this will omit the '- ' before each widget name and
-          // use the more standard whitespace style instead. Please let me know
-          // if the '- ' style is a feature we want to maintain and we can add
-          // another tree style that supports it. I also see '* ' in some places
-          // so it would be nice to unify and normalize.
-          information.add(Element.describeElements('The key $key was used by ${elements.length} widgets', elements));
-        }
-        information.add(ErrorDescription('A GlobalKey can only be specified on one widget at a time in the widget tree.'));
-        throw FlutterError.fromParts(information);
-      }
-      return true;
-    }());
-  }
-
-  /// Complete the element build pass by unmounting any elements that are no
-  /// longer active.
-  ///
-  /// This is called by [WidgetsBinding.drawFrame].
-  ///
-  /// In debug mode, this also runs some sanity checks, for example checking for
-  /// duplicate global keys.
-  ///
-  /// After the current call stack unwinds, a microtask that notifies listeners
-  /// about changes to global keys will run.
-  @pragma('vm:notify-debugger-on-exception')
-  void finalizeTree() {
-    if (!kReleaseMode) {
-      Timeline.startSync('FINALIZE TREE', arguments: timelineArgumentsIndicatingLandmarkEvent);
+  unregisterGlobalKey(
+    key: GlobalKey, 
+    element: Element
+  ) {
+    if (this.globalKeyRegistry.get(key) === element) {
+      this.globalKeyRegistry.delete(key)
     }
+  }
+
+  finalizeTree () {
     try {
-      lockState(_inactiveElements._unmountAll); // this unregisters the GlobalKeys
-      assert(() {
-        try {
-          _debugVerifyGlobalKeyReservation();
-          _debugVerifyIllFatedPopulation();
-          if (_debugElementsThatWillNeedToBeRebuiltDueToGlobalKeyShenanigans != null &&
-              _debugElementsThatWillNeedToBeRebuiltDueToGlobalKeyShenanigans!.isNotEmpty) {
-            final Set<GlobalKey> keys = HashSet<GlobalKey>();
-            for (final Element element in _debugElementsThatWillNeedToBeRebuiltDueToGlobalKeyShenanigans!.keys) {
-              if (element._lifecycleState != _ElementLifecycle.defunct)
-                keys.addAll(_debugElementsThatWillNeedToBeRebuiltDueToGlobalKeyShenanigans![element]!);
-            }
-            if (keys.isNotEmpty) {
-              final Map<String, int> keyStringCount = HashMap<String, int>();
-              for (final String key in keys.map<String>((GlobalKey key) => key.toString())) {
-                if (keyStringCount.containsKey(key)) {
-                  keyStringCount.update(key, (int value) => value + 1);
-                } else {
-                  keyStringCount[key] = 1;
-                }
-              }
-              final List<String> keyLabels = <String>[];
-              keyStringCount.forEach((String key, int count) {
-                if (count == 1) {
-                  keyLabels.add(key);
-                } else {
-                  keyLabels.add('$key ($count different affected keys had this toString representation)');
-                }
-              });
-              final Iterable<Element> elements = _debugElementsThatWillNeedToBeRebuiltDueToGlobalKeyShenanigans!.keys;
-              final Map<String, int> elementStringCount = HashMap<String, int>();
-              for (final String element in elements.map<String>((Element element) => element.toString())) {
-                if (elementStringCount.containsKey(element)) {
-                  elementStringCount.update(element, (int value) => value + 1);
-                } else {
-                  elementStringCount[element] = 1;
-                }
-              }
-              final List<String> elementLabels = <String>[];
-              elementStringCount.forEach((String element, int count) {
-                if (count == 1) {
-                  elementLabels.add(element);
-                } else {
-                  elementLabels.add('$element ($count different affected elements had this toString representation)');
-                }
-              });
-              assert(keyLabels.isNotEmpty);
-              final String the = keys.length == 1 ? ' the' : '';
-              final String s = keys.length == 1 ? '' : 's';
-              final String were = keys.length == 1 ? 'was' : 'were';
-              final String their = keys.length == 1 ? 'its' : 'their';
-              final String respective = elementLabels.length == 1 ? '' : ' respective';
-              final String those = keys.length == 1 ? 'that' : 'those';
-              final String s2 = elementLabels.length == 1 ? '' : 's';
-              final String those2 = elementLabels.length == 1 ? 'that' : 'those';
-              final String they = elementLabels.length == 1 ? 'it' : 'they';
-              final String think = elementLabels.length == 1 ? 'thinks' : 'think';
-              final String are = elementLabels.length == 1 ? 'is' : 'are';
-              // TODO(jacobr): make this error more structured to better expose which widgets had problems.
-              throw FlutterError.fromParts(<DiagnosticsNode>[
-                ErrorSummary('Duplicate GlobalKey$s detected in widget tree.'),
-                // TODO(jacobr): refactor this code so the elements are clickable
-                // in GUI debug tools.
-                ErrorDescription(
-                  'The following GlobalKey$s $were specified multiple times in the widget tree. This will lead to '
-                  'parts of the widget tree being truncated unexpectedly, because the second time a key is seen, '
-                  'the previous instance is moved to the new location. The key$s $were:\n'
-                  '- ${keyLabels.join("\n  ")}\n'
-                  'This was determined by noticing that after$the widget$s with the above global key$s $were moved '
-                  'out of $their$respective previous parent$s2, $those2 previous parent$s2 never updated during this frame, meaning '
-                  'that $they either did not update at all or updated before the widget$s $were moved, in either case '
-                  'implying that $they still $think that $they should have a child with $those global key$s.\n'
-                  'The specific parent$s2 that did not update after having one or more children forcibly removed '
-                  'due to GlobalKey reparenting $are:\n'
-                  '- ${elementLabels.join("\n  ")}'
-                  '\nA GlobalKey can only be specified on one widget at a time in the widget tree.',
-                ),
-              ]);
-            }
-          }
-        } finally {
-          _debugElementsThatWillNeedToBeRebuiltDueToGlobalKeyShenanigans?.clear();
-        }
-        return true;
-      }());
-    } catch (e, stack) {
-      // Catching the exception directly to avoid activating the ErrorWidget.
-      // Since the tree is in a broken state, adding the ErrorWidget would
-      // cause more exceptions.
-      _debugReportException(ErrorSummary('while finalizing the widget tree'), e, stack);
+      this.lockState(this.inactiveElements.unmountAll)
+    } catch (e) {
+      // TODO
     } finally {
-      if (!kReleaseMode) {
-        Timeline.finishSync();
-      }
+      // TODO
     }
   }
 
-  /// Cause the entire subtree rooted at the given [Element] to be entirely
-  /// rebuilt. This is used by development tools when the application code has
-  /// changed and is being hot-reloaded, to cause the widget tree to pick up any
-  /// changed implementations.
-  ///
-  /// This is expensive and should not be called except during development.
-  void reassemble(Element root, DebugReassembleConfig? reassembleConfig) {
-    if (!kReleaseMode) {
-      Timeline.startSync('Preparing Hot Reload (widgets)');
-    }
+  reassemble (
+    root: Element, 
+  ): void {
     try {
-      assert(root._parent == null);
-      assert(root.owner == this);
-      root._debugReassembleConfig = reassembleConfig;
-      root.reassemble();
+      invariant(root.parent === null)
+      invariant(root.owner === this)
+      root.reassemble()
     } finally {
-      if (!kReleaseMode) {
-        Timeline.finishSync();
-      }
+      // TODO
     }
   }
 }
 
 export abstract class BuildContext {
-  Widget get widget
-  BuildOwner? get owner
-  bool get debugDoingBuild;
+  abstract widget: Widget
+  abstract owner: BuildOwner | null
+  
+  abstract findRenderObject () : RenderObject | null
+  abstract size: Size
+  
+  abstract dependOnInheritedElement (
+    ancestor: InheritedElement, 
+    aspect: unknown
+  ): InheritedWidget 
 
-  RenderObject? findRenderObject();
-  Size? get size;
-  InheritedWidget dependOnInheritedElement(InheritedElement ancestor, { Object aspect });
+  abstract dependOnInheritedWidgetOfExactType<T extends InheritedWidget>(aspect?: unknown): T | null
+  abstract getElementForInheritedWidgetOfExactType<T extends InheritedWidget>(): InheritedElement | null
 
-  T? dependOnInheritedWidgetOfExactType<T extends InheritedWidget>({ Object? aspect });
+  abstract findAncestorWidgetOfExactType<T extends Widget>(): T | null
+  abstract findAncestorStateOfType<T extends State>(): T | null
 
-  InheritedElement? getElementForInheritedWidgetOfExactType<T extends InheritedWidget>();
-
-  T? findAncestorWidgetOfExactType<T extends Widget>();
-
-  T? findAncestorStateOfType<T extends State>();
-
-  T? findRootAncestorStateOfType<T extends State>();
-  T? findAncestorRenderObjectOfType<T extends RenderObject>();
-  void visitAncestorElements(bool Function(Element element) visitor)
-  visitChildElements (visitor: ElementVisitor): void
+  abstract findRootAncestorStateOfType<T extends State>(): T | null
+  abstract findAncestorRenderObjectOfType<T extends RenderObject>(): T | null
+  abstract visitAncestorElements(visitor: { (element: Element ): boolean }): boolean
+  abstract visitChildElements (visitor: ElementVisitor): void
 }
 
- export abstract class Element implements BuildContext {
+abstract class Element implements BuildContext {
+  static activateRecursively (element: Element) {
+    invariant(element.lifecycleState === ElementLifecycle.Inactive)
+    element.activate()
+    invariant(element.lifecycleState === ElementLifecycle.Active);
+    element.visitChildren(Element.activateRecursively)
+  }
+
+  static sort (
+    a: Element, 
+    b: Element
+  ) {
+    if (a.depth < b.depth) {
+      return -1
+    }
+    if (b.depth < a.depth) {
+      return 1
+    }
+    if (b.dirty && !a.dirty) {
+      return -1
+    }
+    if (a.dirty && !b.dirty) {
+      return 1
+    }
+    return 0
+  }
+
+  public depth: number
+  public owner: BuildOwner | null
+  public slot: unknown | null
+  public parent: Element | null
+  public widget: Widget | null
+  public lifecycleState: ElementLifecycle = ElementLifecycle.Initial
+
+  get renderObject (): RenderObject | null {
+    const result: RenderObject | null
+    const visit = (element: Element) => {
+      invariant(result === null)
+      if (element.lifecycleState === ElementLifecycle.Defunct) {
+        return
+      } else if (element instanceof RenderObjectElement) {
+        result = element.renderObject
+      } else {
+        element.visitChildren(visit)
+      }
+    }
+    visit(this)
+    return result
+  }
+  
   constructor (widget: Widget) {
+    invariant(widget !== null)
     this.widget = widget
   }
 
-  eq (element: Element) {
-    if (element === this) {
+  eq (other: Element): boolean {
+    if (other === this) {
       return true
     }
+
+    return false
   }
- }
+
+  reassemble () {
+    this.visitChildren((child: Element ) => {
+      child.reassemble()
+    })
+  }
+
+  visitChildren (visitor: ElementVisitor ) { }
+
+  visitChildElements (visitor: ElementVisitor) {
+    this.visitChildren(visitor)
+  }
+
+  updateChild (
+    child: Element | null, 
+    newWidget: Widget | null, 
+    newSlot: unknown | null
+  ): Element | null {
+    if (newWidget === null) {
+      if (child !== null) {
+        this.deactivateChild(child)
+      }
+      return null
+    }
+
+    let newChild: Element
+    if (child !== null) {
+      let hasSameSuperclass = true
+      
+      if (
+        hasSameSuperclass && 
+        child.widget === newWidget
+      ) {
+        if (child.slot !== newSlot) {
+          this.updateSlotForChild(child, newSlot)
+        }
+        newChild = child
+      } else if (
+        hasSameSuperclass && 
+        Widget.canUpdate(child.widget, newWidget)
+      ) {
+        if (child.slot !== newSlot) {
+          this.updateSlotForChild(child, newSlot)
+        }
+        
+        child.update(newWidget)
+        invariant(child.widget === newWidget)
+        newChild = child
+      } else {
+        this.deactivateChild(child)
+        invariant(child.parent === null)
+        
+        newChild = this.inflateWidget(newWidget, newSlot)
+      }
+    } else {
+      newChild = this.inflateWidget(newWidget, newSlot)
+    }
+
+    return newChild
+  }
+  
+  mount (
+    parent: Element | null, 
+    newSlot: unknown | null
+  ): void {
+    invariant(this.lifecycleState === ElementLifecycle.Initial)
+    invariant(this.widget !== null)
+    invariant(this.parent === null)
+    invariant(parent === null || parent.lifecycleState === ElementLifecycle.Active)
+    invariant(this.slot === null)
+    this.parent = parent
+    this.slot = newSlot
+    this.lifecycleState = ElementLifecycle.Active
+    this.depth = this.parent !== null ? this.parent!.depth + 1 : 1
+    
+    if (parent !== null) {
+      this.owner = parent.owner
+    }
+
+    invariant(this.owner !== null);
+    const key: Key | null = widget.key
+    
+    if (key instanceof GlobalKey) {
+      this.owner!.registerGlobalKey(key, this)
+    }
+
+    this.updateInheritance()
+  }
+
+  update (newWidget: Widget): void {
+    invariant(
+      this.lifecycleState === ElementLifecycle.Active
+      && this.widget !== null
+      && newWidget !== null
+      && newWidget !== this.widget
+      && this.depth !== null
+      && Widget.canUpdate(this.widget, newWidget)
+    )
+  
+    this.widget = newWidget
+  }
+
+  updateSlotForChild (
+    child: Element, 
+    newSlot: unknown | null
+  ): void {
+    invariant(this.lifecycleState === ElementLifecycle.Active)
+    invariant(child !== null)
+    invariant(child.parent === this)
+
+    const visit = (element: Element) => {
+      element.updateSlot(newSlot)
+      if (!(element instanceof RenderObjectElement)) {
+        element.visitChildren(visit);
+      }
+    }
+
+    visit(child)
+  }
+
+  updateSlot (newSlot: unknown | null) {
+    invariant(this.lifecycleState === ElementLifecycle.Active)
+    invariant(this.widget !== null)
+    invariant(this.parent !== null)
+    invariant(this.parent!.lifecycleState === ElementLifecycle.Active)
+    invariant(this.depth !== null)
+    this.slot = newSlot
+  }
+
+  updateDepth (parentDepth: number): void {
+    const expectedDepth = parentDepth + 1
+    if (this.depth < expectedDepth) {
+      this.depth = expectedDepth
+      this.visitChildren((child: Element) => {
+        child.updateDepth(expectedDepth)
+      })
+    }
+  }
+
+  detachRenderObject (): void {
+    this.visitChildren((child: Element) => {
+      child.detachRenderObject()
+    })
+    this.slot = null
+  }
+
+  attachRenderObject (newSlot: unknown | null): void {
+    invariant(this.slot === null)
+    this.visitChildren((child: Element) {
+      child.attachRenderObject(newSlot)
+    })
+    this.slot = newSlot
+  }
+
+  retakeInactiveElement (
+    key: GlobalKey, 
+    newWidget: Widget
+  ): Element | null {
+    final Element? element = key._currentElement;
+    if (element === null)
+      return null;
+    if (!Widget.canUpdate(element.widget, newWidget))
+      return null;
+    invariant(() {
+      if (debugPrintGlobalKeyedWidgetLifecycle)
+        debugPrint('Attempting to take $element from ${element._parent ?? "inactive elements list"} to put in $this.');
+      return true;
+    }());
+    final Element? parent = element._parent;
+    if (parent !== null) {
+      invariant(() {
+        if (parent === this) {
+          throw FlutterError.fromParts(<DiagnosticsNode>[
+            ErrorSummary("A GlobalKey was used multiple times inside one widget's child list."),
+            DiagnosticsProperty<GlobalKey>('The offending GlobalKey was', key),
+            parent.describeElement('The parent of the widgets with that key was'),
+            element.describeElement('The first child to get instantiated with that key became'),
+            DiagnosticsProperty<Widget>('The second child that was to be instantiated with that key was', widget, style: DiagnosticsTreeStyle.errorProperty),
+            ErrorDescription('A GlobalKey can only be specified on one widget at a time in the widget tree.'),
+          ]);
+        }
+        parent.owner!._debugTrackElementThatWillNeedToBeRebuiltDueToGlobalKeyShenanigans(
+          parent,
+          key,
+        );
+        return true;
+      }());
+      parent.forgetChild(element);
+      parent.deactivateChild(element);
+    }
+    invariant(element._parent === null);
+    owner!._inactiveElements.remove(element);
+    return element;
+  }
+
+  inflateWidget (
+    newWidget: Widget,
+    newSlot: unknown | null
+  ): Element {
+    invariant(newWidget !== null)
+    const key:  unknown | null = newWidget.key
+    if (key instanceof GlobalKey) {
+      const newChild: Element | null = this.retakeInactiveElement(key, newWidget)
+      if (newChild !== null) {
+        invariant(newChild.parent === null)
+        newChild.activateWithParent(this, newSlot)
+        const updatedChild: Element | null = this.updateChild(newChild, newWidget, newSlot)
+        invariant(newChild === updatedChild)
+        return updatedChild!
+      }
+    }
+    const newChild: Element = newWidget.createElement()
+   
+    newChild.mount(this, newSlot)
+    invariant(newChild.lifecycleState === ElementLifecycle.Active)
+    return newChild
+  }
+
+  deactivateChild (child: Element) {
+    invariant(child !== null)
+    invariant(child.parent === this)
+    child.parent = null
+    child.detachRenderObject()
+    
+    this.owner!.inactiveElements.add(child)
+  }
+
+  forgetChild (child: Element) { }
+
+  activateWithParent (
+    parent: Element, 
+    newSlot: unknown | null
+  ) {
+    invariant(this.lifecycleState === ElementLifecycle.Inactive)
+    this.parent = parent
+    
+    this.updateDepth(this.parent!.depth)
+    Element.activateRecursively(this)
+    this.attachRenderObject(newSlot)
+    invariant(this.lifecycleState === ElementLifecycle.Active)
+  }
+
+  activate () {
+    invariant(this.lifecycleState === ElementLifecycle.Inactive)
+    invariant(this.widget !== null)
+    invariant(this.owner !== null)
+    invariant(this.depth !== null)
+    const hadDependencies: boolean = (this.dependencies !== null && this.dependencies.length > 0) || this.hadUnsatisfiedDependencies
+    this.lifecycleState = ElementLifecycle.Active
+    
+    this.dependencies = []
+    this.hadUnsatisfiedDependencies = false
+    this.updateInheritance()
+
+    if (this.dirty) {
+      this.owner!.scheduleBuildFor(this)
+    }
+    if (hadDependencies) {
+      this.didChangeDependencies()
+    }
+  }
+
+  deactivate () {
+    invariant(this.lifecycleState === ElementLifecycle.Active)
+    invariant(this.widget !== null)
+    invariant(this.depth !== null)
+    if (
+      this.dependencies !== null && 
+      this.dependencies!.size > 0
+    ) {
+      for (const dependency in this.dependencies!) {
+        dependency.dependents.remove(this)
+      }
+    }
+    this.inheritedWidgets = null
+    this.lifecycleState = ElementLifecycle.Inactive;
+  }
+
+  unmount () {
+    invariant(this.lifecycleState === ElementLifecycle.Inactive)
+    invariant(this.widget !== null)
+    invariant(this.depth !== null)
+    invariant(this.owner !== null)
+
+    const key: Key | null = this.widget!.key;
+    if (key instanceof GlobalKey) {
+      this.owner!.unregisterGlobalKey(key, this)
+    }
+    
+    this.widget = null
+    this.dependencies = null
+    this.lifecycleState = ElementLifecycle.Defunct
+  }
+
+  findRenderObject (): RenderObject | null {
+    return renderObject
+  }
+
+  
+  get size (): Size | null {
+    const renderObject: RenderObject | null = this.findRenderObject()
+    
+    if (renderObject instanceof RenderBox) {
+      return renderObject.size
+    }
+
+    return null
+  }
+
+  inheritedWidgets: Map<Type, InheritedElement> | null
+  dependencies: Set<InheritedElement> | null
+  hadUnsatisfiedDependencies: boolean = false
+
+  dependOnInheritedElement(
+    ancestor: InheritedElement, 
+    aspect?: unknown
+  ): InheritedWidget {
+    invariant(ancestor !== null)
+    this.dependencies ??= new Set<InheritedElement>()
+    this.dependencies!.add(ancestor)
+    ancestor.updateDependencies(this, aspect)
+    return ancestor.widget
+  }
+
+  dependOnInheritedWidgetOfExactType<T extends InheritedWidget>(aspect?: unknown) {
+    const ancestor: InheritedElement | null = this.inheritedWidgets === null ? null : this.inheritedWidgets![T]
+    if (ancestor !== null) {
+      return this.dependOnInheritedElement(ancestor, aspect) as T
+    }
+    this.hadUnsatisfiedDependencies = true
+    return null
+  }
+
+  getElementForInheritedWidgetOfExactType<T extends InheritedWidget>(): InheritedElement | null {
+    const ancestor: InheritedElement | null = this.inheritedWidgets === null 
+      ? null 
+      : this.inheritedWidgets![T]
+
+    return ancestor
+  }
+
+  updateInheritance () {
+    invariant(this.lifecycleState === ElementLifecycle.Active)
+    this.inheritedWidgets = this.parent?.inheritedWidgets
+  }
+
+  findAncestorWidgetOfExactType<T extends Widget>(): T | null {
+    let ancestor: Element | null = this.parent
+    
+    while (ancestor !== null) {
+      ancestor = ancestor.parent
+    }
+
+    return ancestor?.widget as T
+  }
+
+  findAncestorStateOfType<T extends State<StatefulWidget>>(): T | null {
+    let ancestor: Element | null = this.parent
+    while (ancestor !== null) {
+      if (
+        ancestor instanceof StatefulElement && 
+        ancestor.state instanceof T
+      ) {
+        break
+      }
+      ancestor = ancestor.parent
+    }
+
+    const statefulAncestor: StatefulElement | null = ancestor as StatefulElement
+    return statefulAncestor?.state 
+  }
+
+  findRootAncestorStateOfType<T extends State<StatefulWidget>>(): T | null {
+    let ancestor: Element | null = this.parent
+    let statefulAncestor: StatefulElement | null
+
+    while (ancestor !== null) {
+      if (
+        ancestor instanceof StatefulElement 
+      ) {
+        statefulAncestor = ancestor
+      }
+      ancestor = ancestor.parent
+    }
+
+    return statefulAncestor?.state as T 
+  }
+
+  findAncestorRenderObjectOfType<T extends RenderObject>(): T | null {
+    let ancestor: Element | null = this.parent
+    while (ancestor !== null) {
+      if (
+        ancestor instanceof RenderObjectElement && 
+        ancestor.renderObject instanceof T
+      ) {
+        return ancestor.renderObject as T
+      }
+      ancestor = ancestor.parent
+    }
+
+    return null
+  }
+
+  visitAncestorElements (visitor: { (element: Element): void }) {
+    let ancestor: Element | null = this.parent
+    while (ancestor !== null && visitor(ancestor)) {
+      ancestor = ancestor.parent
+    }
+  }
+
+  didChangeDependencies () {
+    invariant(this.lifecycleState === ElementLifecycle.Active)
+    this.markNeedsBuild()
+  }
+
+  public dirty: boolean = true
+  public inDirtyList: boolean = false
+
+  markNeedsBuild () {
+    invariant(this.lifecycleState !== ElementLifecycle.Defunct)
+    if (this.lifecycleState !== ElementLifecycle.Active) {
+      return
+    }
+    invariant(this.owner !== null)
+    invariant(this.lifecycleState === this.ElementLifecycle.Active)
+    if (this.dirty) {
+      return
+    }
+    this.dirty = true
+    this.owner!.scheduleBuildFor(this)
+  }
+
+  rebuild () {
+    invariant(_lifecycleState !== ElementLifecycle.Initial)
+    if (_lifecycleState !== ElementLifecycle.Active || !_dirty)
+      return;
+   
+    invariant(this.lifecycleState === ElementLifecycle.Active)
+    
+    
+    this.performRebuild()
+    invariant(!this.dirty)
+  }
+
+  abstract performRebuild (): void
+}
+
+abstract class ComponentElement extends Element {
+  /// Creates an element that uses the given widget as its configuration.
+  ComponentElement(Widget widget) : super(widget);
+
+  Element? _child;
+
+  bool _debugDoingBuild = false;
+  @override
+  bool get debugDoingBuild => _debugDoingBuild;
+
+  @override
+  void mount(Element? parent, Object? newSlot) {
+    super.mount(parent, newSlot);
+    invariant(_child === null);
+    invariant(_lifecycleState === _ElementLifecycle.active);
+    _firstBuild();
+    invariant(_child !== null);
+  }
+
+  void _firstBuild() {
+    // StatefulElement overrides this to also call state.didChangeDependencies.
+    rebuild(); // This eventually calls performRebuild.
+  }
+
+  /// Calls the [StatelessWidget.build] method of the [StatelessWidget] object
+  /// (for stateless widgets) or the [State.build] method of the [State] object
+  /// (for stateful widgets) and then updates the widget tree.
+  ///
+  /// Called automatically during [mount] to generate the first build, and by
+  /// [rebuild] when the element needs updating.
+  @override
+  @pragma('vm:notify-debugger-on-exception')
+  void performRebuild() {
+    invariant(_debugSetAllowIgnoredCallsToMarkNeedsBuild(true));
+    Widget? built;
+    try {
+      invariant(() {
+        _debugDoingBuild = true;
+        return true;
+      }());
+      built = build();
+      invariant(() {
+        _debugDoingBuild = false;
+        return true;
+      }());
+      debugWidgetBuilderValue(widget, built);
+    } catch (e, stack) {
+      _debugDoingBuild = false;
+      built = ErrorWidget.builder(
+        _debugReportException(
+          ErrorDescription('building $this'),
+          e,
+          stack,
+          informationCollector: () => <DiagnosticsNode>[
+            if (kDebugMode)
+              DiagnosticsDebugCreator(DebugCreator(this)),
+          ],
+        ),
+      );
+    } finally {
+      // We delay marking the element as clean until after calling build() so
+      // that attempts to markNeedsBuild() during build() will be ignored.
+      _dirty = false;
+      invariant(_debugSetAllowIgnoredCallsToMarkNeedsBuild(false));
+    }
+    try {
+      _child = updateChild(_child, built, slot);
+      invariant(_child !== null);
+    } catch (e, stack) {
+      built = ErrorWidget.builder(
+        _debugReportException(
+          ErrorDescription('building $this'),
+          e,
+          stack,
+          informationCollector: () => <DiagnosticsNode>[
+            if (kDebugMode)
+              DiagnosticsDebugCreator(DebugCreator(this)),
+          ],
+        ),
+      );
+      _child = updateChild(null, built, slot);
+    }
+  }
+
+  /// Subclasses should override this function to actually call the appropriate
+  /// `build` function (e.g., [StatelessWidget.build] or [State.build]) for
+  /// their widget.
+  @protected
+  Widget build();
+
+  @override
+  void visitChildren(ElementVisitor visitor) {
+    if (_child !== null)
+      visitor(_child!);
+  }
+
+  @override
+  void forgetChild(Element child) {
+    invariant(child === _child);
+    _child = null;
+    super.forgetChild(child);
+  }
+}
+
+abstract class ProxyElement extends ComponentElement {
+  constructor (widget) {
+    super(widget)
+  }
+
+  Widget build () {
+    return this.widget.child
+  }
+
+  update (newWidget: ProxyWidget) {
+    const oldWidget = this.widget
+    invariant(this.widget !== null)
+    invariant(this.widget !== newWidget);
+    super.update(newWidget);
+    invariant(widget === newWidget);
+    updated(oldWidget);
+    _dirty = true;
+    rebuild();
+  }
+
+  updated (oldWidget: ProxyWidget) {
+    this.notifyClients(oldWidget)
+  }
+
+  abstract notifyClients(oldWidget: ProxyWidget): void
+}
+
+class InheritedElement extends ProxyElement {
+  InheritedElement(InheritedWidget widget) : super(widget);
+
+  @override
+  InheritedWidget get widget => super.widget as InheritedWidget;
+
+  final Map<Element, Object?> _dependents = HashMap<Element, Object?>();
+
+  @override
+  void _updateInheritance() {
+    invariant(_lifecycleState === _ElementLifecycle.active);
+    final Map<Type, InheritedElement>? incomingWidgets = _parent?._inheritedWidgets;
+    if (incomingWidgets !== null)
+      _inheritedWidgets = HashMap<Type, InheritedElement>.of(incomingWidgets);
+    else
+      _inheritedWidgets = HashMap<Type, InheritedElement>();
+    _inheritedWidgets![widget.runtimeType] = this;
+  }
+
+  @override
+  void debugDeactivated() {
+    invariant(() {
+      invariant(_dependents.isEmpty);
+      return true;
+    }());
+    super.debugDeactivated();
+  }
+
+  @protected
+  Object? getDependencies(Element dependent) {
+    return _dependents[dependent];
+  }
+
+  void setDependencies(Element dependent, Object? value) {
+    _dependents[dependent] = value;
+  }
+
+  void updateDependencies(Element dependent, Object? aspect) {
+    setDependencies(dependent, null);
+  }
+
+  @protected
+  void notifyDependent(covariant InheritedWidget oldWidget, Element dependent) {
+    dependent.didChangeDependencies();
+  }
+
+  void updated(InheritedWidget oldWidget) {
+    if (widget.updateShouldNotify(oldWidget))
+      super.updated(oldWidget);
+  }
+
+  void notifyClients(InheritedWidget oldWidget) {
+    invariant(_debugCheckOwnerBuildTargetExists('notifyClients'));
+    for (final Element dependent in _dependents.keys) {
+      invariant(() {
+        // check that it really is our descendant
+        Element? ancestor = dependent._parent;
+        while (ancestor !== this && ancestor !== null)
+          ancestor = ancestor._parent;
+        return ancestor === this;
+      }());
+      // check that it really depends on us
+      invariant(dependent._dependencies!.contains(this));
+      notifyDependent(oldWidget, dependent);
+    }
+  }
+}
+
+class InactiveElements {
+  static deactivateRecursively (element: Element) {
+    invariant(element.lifecycleState === ElementLifecycle.Active)
+    element.deactivate()
+    invariant(element.lifecycleState === ElementLifecycle.Inactive)
+    element.visitChildren(InactiveElements.deactivateRecursively)
+   
+  }
+
+  locked: boolean = false
+  elements: Set<Element> = new Set<Element>()
+
+  unmount (element: Element) {
+    invariant(element.lifecycleState === ElementLifecycle.Inactive)
+
+    element.visitChildren((child: Element) => {
+      invariant(child.parent === element)
+      this.unmount(child)
+    })
+    element.unmount()
+    invariant(element.lifecycleState === ElementLifecycle.Defunct)
+  }
+
+  unmountAll () {
+    this.locked = true
+    const elements: Element[] = Array.from(this.elements).sort(Element.sort)
+    this.elements = []
+    try {
+      elements.reversed().forEach(this.unmount)
+    } finally {
+      invariant(elements.length === 0)
+      this.locked = false
+    }
+  }
+
+  add (element: Element) {
+    invariant(!this.locked)
+    invariant(!this.elements.includes(element))
+    invariant(element.parent === null)
+
+    if (element.lifecycleState === ElementLifecycle.Active) {
+      InactiveElements.deactivateRecursively(element)
+    }
+
+    this.elements.push(element)
+  }
+
+  remove (element: Element) {
+    invariant(!this.locked)
+    invariant(this.elements.contains(element))
+    invariant(element.parent === null)
+    this.elements.remove(element)
+    invariant(element.lifecycleState !== ElementLifecycle.Active)
+  }
+}
