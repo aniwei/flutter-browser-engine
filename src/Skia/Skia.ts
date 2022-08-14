@@ -56,7 +56,10 @@ export type {
   Surface as SkiaSurface,
   PictureRecorder as SkiaPictureRecorder,
   GrDirectContext as SkiaGrDirectContext,
-  WebGLOptions as SkiaWebGLOptions
+  WebGLOptions as SkiaWebGLOptions,
+  ParagraphStyle as SkiaParagraphStyle,
+  StrutStyle as SkiaStrutStyleProperties,
+  FontStyle as SkiaFontStyle
 } from 'canvaskit-wasm'
 
 export class SkiaFilterOptions extends Map<SkiaFilterQuality, SkiaCubicFilterOption | SkiaTransformFilterOption> {
