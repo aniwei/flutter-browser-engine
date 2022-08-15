@@ -201,11 +201,10 @@ class BoxConstraints extends Constraints {
 
   /// Returns new box constraints that remove the minimum width and height requirements.
   BoxConstraints loosen() {
-    assert(debugAssertIsValid());
     return BoxConstraints(
       maxWidth: maxWidth,
       maxHeight: maxHeight,
-    );
+    )
   }
 
   /// Returns new box constraints that respect the given constraints while being

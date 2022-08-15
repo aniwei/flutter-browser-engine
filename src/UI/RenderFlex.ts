@@ -1,11 +1,15 @@
 import { invariant } from 'ts-invariant'
-import { Clip } from '@rendering/Painting'
+import { Clip } from '@basic/Painting'
+import { Skia, SkiaTextDirection } from '@skia/Skia'
+import { TextBaseline } from '@rendering/Text'
 import { Offset, Size } from '@internal/Geometry'
+import { Axis, VerticalDirection } from '@basic/Axis'
 import { property, PropertySetter } from '@helper/property'
-import { Axis, VerticalDirection } from '@painting'
-import { SkiaTextDirection } from '@skia/Skia'
 import { BoxConstraints, RenderBox } from './RenderBox'
 import { PaintingContext, RenderObject } from './RenderObject'
+import { ChildLayouter } from '@basic/Layout'
+import { ChildLayoutHelper } from '@helper/ChildLayout'
+import { flipAxis } from '@helper/painting'
 
 export type ChildSizingFunction = { (child: RenderBox, extent: number): number }
 
@@ -36,6 +40,12 @@ export enum FlexFit {
   Loose,
 }
 
+export type LayoutSizes = {
+  mainSize: number
+  crossSize: number
+  allocatedSize: number
+}
+
 function layout <T> (setter?: PropertySetter<T>) {
   return property<T>(function get (this, value: T) {
     return value
@@ -48,6 +58,35 @@ function layout <T> (setter?: PropertySetter<T>) {
   })
 }
 
+function startIsTopLeft (
+  direction: Axis , 
+  textDirection: SkiaTextDirection | null, 
+  verticalDirection: VerticalDirection | null
+): boolean | null | void {
+  invariant(direction !== null)
+  
+  switch (direction) {
+    case Axis.Horizontal:
+      switch (textDirection) {
+        case Skia.TextDirection.LTR:
+          return true
+        case Skia.TextDirection.RTL:
+          return false
+        case null:
+          return null
+      }
+    case Axis.Vertical:
+      switch (verticalDirection) {
+        case VerticalDirection.Down:
+          return true
+        case VerticalDirection.Up:
+          return false
+        case null:
+          return null
+      }
+  }
+}
+
 export class RenderFlex extends RenderBox {
   @layout<Axis>() public direction: Axis
   @layout<MainAxisAlignment>() public mainAxisAlignment: MainAxisAlignment
@@ -57,6 +96,10 @@ export class RenderFlex extends RenderBox {
   @layout<VerticalDirection>() public verticalDirection: VerticalDirection
   @layout<TextBaseline>() public textBaseline: TextBaseline | null
   @layout<Clip>() public clipBehavior: Clip
+
+  public flex: number | null = null
+  public fit: FlexFit | null = null
+  public overflow: number = 0
 
   get canComputeIntrinsics () {
     return this.crossAxisAlignment !== CrossAxisAlignment.Baseline
@@ -119,44 +162,46 @@ export class RenderFlex extends RenderBox {
       }
       return maxFlexFractionSoFar * totalFlex + inflexibleSpace
     } else {
-      cosnt availableMainSpace = extent
-      int totalFlex = 0;
-      double inflexibleSpace = 0.0;
-      double maxCrossSize = 0.0;
-      RenderBox? child = firstChild;
-      while (child != null) {
-        final int flex = _getFlex(child);
-        totalFlex += flex;
-        late final double mainSize;
-        late final double crossSize;
-        if (flex == 0) {
-          switch (_direction) {
-            case Axis.horizontal:
-              mainSize = child.getMaxIntrinsicWidth(double.infinity);
-              crossSize = childSize(child, mainSize);
-              break;
-            case Axis.vertical:
-              mainSize = child.getMaxIntrinsicHeight(double.infinity);
-              crossSize = childSize(child, mainSize);
-              break;
+      const availableMainSpace = extent
+      let totalFlex = 0
+      let inflexibleSpace = 0.0
+      let maxCrossSize = 0.0
+      let child: RenderBox | null = this.firstChild as RenderBox
+      while (child !== null) {
+        const flex = this.getFlex(child)
+        totalFlex += flex
+        let mainSize
+        let crossSize
+        if (flex === 0) {
+          switch (this.direction) {
+            case Axis.Horizontal: {
+              mainSize = child.getMaxIntrinsicWidth(Number.POSITIVE_INFINITY)
+              crossSize = childSize(child, mainSize)
+              break
+            }
+            case Axis.Vertical: {
+              mainSize = child.getMaxIntrinsicHeight(Number.POSITIVE_INFINITY)
+              crossSize = childSize(child, mainSize)
+              break
+            }
           }
-          inflexibleSpace += mainSize;
-          maxCrossSize = math.max(maxCrossSize, crossSize);
+          inflexibleSpace += mainSize
+          maxCrossSize = Math.max(maxCrossSize, crossSize)
         }
-        final FlexParentData childParentData = child.parentData! as FlexParentData;
-        child = childParentData.nextSibling;
+        
+        child = this.nextSibling as RenderBox
       }
 
-      final double spacePerFlex = Math.max(0.0, (availableMainSpace - inflexibleSpace) / totalFlex)
+      const spacePerFlex = Math.max(0.0, (availableMainSpace - inflexibleSpace) / totalFlex)
 
-      // Size remaining (flexible) items, find the maximum cross size.
-      child = firstChild;
-      while (child != null) {
-        final int flex = _getFlex(child);
-        if (flex > 0)
-          maxCrossSize = math.max(maxCrossSize, childSize(child, spacePerFlex * flex));
-        final FlexParentData childParentData = child.parentData! as FlexParentData;
-        child = childParentData.nextSibling;
+      
+      child = this.firstChild as RenderBox
+      while (child !== null) {
+        const flex = this.getFlex(child)
+        if (flex > 0) {
+          maxCrossSize = Math.max(maxCrossSize, childSize(child, spacePerFlex * flex))
+        }
+        child = this.nextSibling as RenderBox
       }
 
       return maxCrossSize
@@ -195,20 +240,19 @@ export class RenderFlex extends RenderBox {
     );
   }
 
-  double? computeDistanceToActualBaseline(TextBaseline baseline) {
-    if (_direction == Axis.horizontal)
-      return defaultComputeDistanceToHighestActualBaseline(baseline);
-    return defaultComputeDistanceToFirstActualBaseline(baseline);
+  computeDistanceToActualBaseline (baseline: TextBaseline): number | null {
+    if (this.direction === Axis.Horizontal) {
+      return this.defaultComputeDistanceToHighestActualBaseline(baseline)
+    }
+    return this.defaultComputeDistanceToFirstActualBaseline(baseline)
   }
 
   getFlex (child: RenderBox) {
-    final FlexParentData childParentData = child.parentData! as FlexParentData;
-    return childParentData.flex ?? 0;
+    return this.flex ?? 0
   }
 
   getFit (child: RenderBox ): FlexFit {
-    final FlexParentData childParentData = child.parentData! as FlexParentData;
-    return childParentData.fit ?? FlexFit.tight;
+    return this.fit ?? FlexFit.Tight
   }
 
   getCrossSize (size: Size) {
@@ -221,11 +265,11 @@ export class RenderFlex extends RenderBox {
   }
 
   getMainSize (size: Size) {
-    switch (_direction) {
-      case Axis.horizontal:
-        return size.width;
-      case Axis.vertical:
-        return size.height;
+    switch (this.direction) {
+      case Axis.Horizontal:
+        return size.width
+      case Axis.Vertical:
+        return size.height
     }
   }
 
@@ -234,286 +278,321 @@ export class RenderFlex extends RenderBox {
       return Size.zero
     }
 
-    final _LayoutSizes sizes = _computeSizes(
-      layoutChild: ChildLayoutHelper.dryLayoutChild,
-      constraints: constraints,
-    );
+    const sizes = this.computeSizes(
+      constraints,
+      ChildLayoutHelper.dryLayoutChild,
+    )
 
     switch (this.direction) {
       case Axis.Horizontal:
-        return constraints.constrain(Size(sizes.mainSize, sizes.crossSize));
-      case Axis.vertical:
-        return constraints.constrain(Size(sizes.crossSize, sizes.mainSize));
+        return constraints.constrain(new Size(sizes.mainSize, sizes.crossSize))
+      case Axis.Vertical:
+        return constraints.constrain(new Size(sizes.crossSize, sizes.mainSize))
     }
   }
 
   computeSizes (
     constraints: BoxConstraints, 
     layoutChild: ChildLayouter
-  ) {
+  ): LayoutSizes {
     invariant(constraints !== null)
 
-    int totalFlex = 0;
-    final double maxMainSize = _direction == Axis.horizontal ? constraints.maxWidth : constraints.maxHeight;
-    final bool canFlex = maxMainSize < double.infinity;
+    let totalFlex = 0
+    const maxMainSize = this.direction === Axis.Horizontal 
+      ? constraints.maxWidth 
+      : constraints.maxHeight
 
-    double crossSize = 0.0;
-    double allocatedSize = 0.0; 
-    RenderBox? child = firstChild;
-    RenderBox? lastFlexChild;
-    while (child != null) {
-      final FlexParentData childParentData = child.parentData! as FlexParentData;
-      final int flex = _getFlex(child);
+    const canFlex = maxMainSize < Number.POSITIVE_INFINITY
+
+    let crossSize = 0.0
+    let allocatedSize = 0.0
+    let lastFlexChild: RenderBox | null = null
+    let child: RenderBox | null = this.firstChild as RenderBox
+
+    while (child !== null) {
+      const flex = this.getFlex(child)
       if (flex > 0) {
-        totalFlex += flex;
-        lastFlexChild = child;
+        totalFlex += flex
+        lastFlexChild = child
       } else {
-        final BoxConstraints innerConstraints;
-        if (crossAxisAlignment == CrossAxisAlignment.stretch) {
-          switch (_direction) {
-            case Axis.horizontal:
-              innerConstraints = BoxConstraints.tightFor(height: constraints.maxHeight);
-              break;
-            case Axis.vertical:
-              innerConstraints = BoxConstraints.tightFor(width: constraints.maxWidth);
+        let innerConstraints: BoxConstraints
+        if (this.crossAxisAlignment === CrossAxisAlignment.Stretch) {
+          switch (this.direction) {
+            case Axis.Horizontal:
+              innerConstraints = BoxConstraints.tightFor(constraints.maxHeight)
+              break
+            case Axis.Vertical:
+              innerConstraints = BoxConstraints.tightFor(constraints.maxWidth)
               break;
           }
         } else {
-          switch (_direction) {
-            case Axis.horizontal:
-              innerConstraints = BoxConstraints(maxHeight: constraints.maxHeight);
-              break;
-            case Axis.vertical:
-              innerConstraints = BoxConstraints(maxWidth: constraints.maxWidth);
-              break;
+          switch (this.direction) {
+            case Axis.Horizontal:
+              innerConstraints = new BoxConstraints(constraints.maxHeight)
+              break
+            case Axis.Vertical:
+              innerConstraints = new BoxConstraints(constraints.maxWidth)
+              break
           }
         }
-        final Size childSize = layoutChild(child, innerConstraints);
-        allocatedSize += _getMainSize(childSize);
-        crossSize = math.max(crossSize, _getCrossSize(childSize));
+        const childSize: Size = layoutChild(child, innerConstraints)
+        allocatedSize += this.getMainSize(childSize)
+        crossSize = Math.max(crossSize, this.getCrossSize(childSize))
       }
-      assert(child.parentData == childParentData);
-      child = childParentData.nextSibling;
+      
+      child = this.nextSibling as RenderBox
     }
 
-    // Distribute free space to flexible children.
-    final double freeSpace = math.max(0.0, (canFlex ? maxMainSize : 0.0) - allocatedSize);
-    double allocatedFlexSpace = 0.0;
+    let freeSpace = Math.max(0.0, (canFlex ? maxMainSize : 0.0) - allocatedSize)
+    let allocatedFlexSpace = 0.0
+
     if (totalFlex > 0) {
-      final double spacePerFlex = canFlex ? (freeSpace / totalFlex) : double.nan;
-      child = firstChild;
-      while (child != null) {
-        final int flex = _getFlex(child);
+      let spacePerFlex = canFlex ? (freeSpace / totalFlex) : NaN
+      child = this.firstChild as RenderBox
+      while (child !== null) {
+        const flex = this.getFlex(child)
         if (flex > 0) {
-          final double maxChildExtent = canFlex ? (child == lastFlexChild ? (freeSpace - allocatedFlexSpace) : spacePerFlex * flex) : double.infinity;
-          late final double minChildExtent;
-          switch (_getFit(child)) {
-            case FlexFit.tight:
-              assert(maxChildExtent < double.infinity);
-              minChildExtent = maxChildExtent;
-              break;
-            case FlexFit.loose:
-              minChildExtent = 0.0;
-              break;
+          const maxChildExtent = canFlex 
+            ? child === lastFlexChild 
+              ? (freeSpace - allocatedFlexSpace) 
+              : spacePerFlex * flex
+            : Number.POSITIVE_INFINITY
+
+          let minChildExtent: number
+
+          switch (this.getFit(child)) {
+            case FlexFit.Tight:
+              invariant(maxChildExtent < Number.POSITIVE_INFINITY)
+              minChildExtent = maxChildExtent
+              break
+            case FlexFit.Loose:
+              minChildExtent = 0.0
+              break
           }
-          assert(minChildExtent != null);
-          final BoxConstraints innerConstraints;
-          if (crossAxisAlignment == CrossAxisAlignment.stretch) {
-            switch (_direction) {
-              case Axis.horizontal:
-                innerConstraints = BoxConstraints(
+
+          invariant(minChildExtent !== null)
+          let innerConstraints: BoxConstraints
+          if (this.crossAxisAlignment === CrossAxisAlignment.Stretch) {
+            switch (this.direction) {
+              case Axis.Horizontal:
+                innerConstraints = new BoxConstraints({
                   minWidth: minChildExtent,
                   maxWidth: maxChildExtent,
                   minHeight: constraints.maxHeight,
                   maxHeight: constraints.maxHeight,
-                );
-                break;
-              case Axis.vertical:
-                innerConstraints = BoxConstraints(
+                })
+                break
+              case Axis.Vertical:
+                innerConstraints = new BoxConstraints({
                   minWidth: constraints.maxWidth,
                   maxWidth: constraints.maxWidth,
                   minHeight: minChildExtent,
                   maxHeight: maxChildExtent,
-                );
-                break;
+                })
+                break
             }
           } else {
             switch (this.direction) {
               case Axis.Horizontal:
-                innerConstraints = new BoxConstraints(
+                innerConstraints = new BoxConstraints({
                   minWidth: minChildExtent,
                   maxWidth: maxChildExtent,
                   maxHeight: constraints.maxHeight,
-                );
-                break;
+                })
+                break
               case Axis.Vertical:
-                innerConstraints = BoxConstraints(
-                  maxWidth: constraints.maxWidth,
-                  minHeight: minChildExtent,
-                  maxHeight: maxChildExtent,
-                );
-                break;
+                innerConstraints = new BoxConstraints({
+                  minWidth: minChildExtent,
+                  maxWidth: maxChildExtent,
+                  maxHeight: constraints.maxWidth,
+                })
+                break
             }
           }
-          final Size childSize = layoutChild(child, innerConstraints);
-          final double childMainSize = _getMainSize(childSize);
-          assert(childMainSize <= maxChildExtent);
-          allocatedSize += childMainSize;
-          allocatedFlexSpace += maxChildExtent;
-          crossSize = math.max(crossSize, _getCrossSize(childSize));
+          const childSize: Size = layoutChild(child, innerConstraints)
+          const childMainSize = this.getMainSize(childSize)
+          
+          invariant(childMainSize <= maxChildExtent)
+
+          allocatedSize += childMainSize
+          allocatedFlexSpace += maxChildExtent
+          crossSize = Math.max(crossSize, this.getCrossSize(childSize))
         }
-        final FlexParentData childParentData = child.parentData! as FlexParentData;
-        child = childParentData.nextSibling;
+        child = this.nextSibling as RenderBox
       }
     }
 
-    final double idealSize = canFlex && mainAxisSize == MainAxisSize.max ? maxMainSize : allocatedSize;
-    return _LayoutSizes(
+    const idealSize = canFlex && this.mainAxisSize === MainAxisSize.Max ? maxMainSize : allocatedSize
+    return {
       mainSize: idealSize,
       crossSize: crossSize,
       allocatedSize: allocatedSize,
-    );
+    }
   }
 
 
   performLayout () {
-    const constraints = this.constraints
+    const constraints = this.constraints as BoxConstraints
     const sizes = this.computeSizes(
-      layoutChild: ChildLayoutHelper.layoutChild,
       constraints,
+      ChildLayoutHelper.layoutChild,
     )
 
-    final double allocatedSize = sizes.allocatedSize;
-    double actualSize = sizes.mainSize;
-    double crossSize = sizes.crossSize;
-    double maxBaselineDistance = 0.0;
-    if (crossAxisAlignment == CrossAxisAlignment.baseline) {
-      RenderBox? child = firstChild;
-      double maxSizeAboveBaseline = 0;
-      double maxSizeBelowBaseline = 0;
-      while (child != null) {
-        assert(() {
-          if (textBaseline == null)
-            throw FlutterError('To use FlexAlignItems.baseline, you must also specify which baseline to use using the "baseline" argument.');
-          return true;
-        }());
-        final double? distance = child.getDistanceToBaseline(textBaseline!, onlyReal: true);
-        if (distance != null) {
-          maxBaselineDistance = math.max(maxBaselineDistance, distance);
-          maxSizeAboveBaseline = math.max(
+    const allocatedSize = sizes.allocatedSize
+    let actualSize = sizes.mainSize
+    let crossSize = sizes.crossSize
+    let maxBaselineDistance = 0.0
+    if (this.crossAxisAlignment === CrossAxisAlignment.Baseline) {
+      let child: RenderBox | null = this.firstChild as RenderBox
+      let maxSizeAboveBaseline = 0
+      let maxSizeBelowBaseline = 0
+      while (child !== null) {
+        const distance = child.getDistanceToBaseline(this.textBaseline!, true)
+        if (distance !== null) {
+          maxBaselineDistance = Math.max(maxBaselineDistance, distance)
+          maxSizeAboveBaseline = Math.max(
             distance,
             maxSizeAboveBaseline,
-          );
-          maxSizeBelowBaseline = math.max(
-            child.size.height - distance,
+          )
+          maxSizeBelowBaseline = Math.max(
+            child.size!.height! - distance,
             maxSizeBelowBaseline,
-          );
-          crossSize = math.max(maxSizeAboveBaseline + maxSizeBelowBaseline, crossSize);
+          )
+          crossSize = Math.max(
+            maxSizeAboveBaseline + maxSizeBelowBaseline, 
+            crossSize
+          )
         }
-        final FlexParentData childParentData = child.parentData! as FlexParentData;
-        child = childParentData.nextSibling;
+        child = this.nextSibling as RenderBox
       }
     }
 
-    // Align items along the main axis.
-    switch (_direction) {
-      case Axis.horizontal:
-        size = constraints.constrain(Size(actualSize, crossSize));
-        actualSize = size.width;
-        crossSize = size.height;
-        break;
-      case Axis.vertical:
-        size = constraints.constrain(Size(crossSize, actualSize));
-        actualSize = size.height;
-        crossSize = size.width;
-        break;
-    }
-    final double actualSizeDelta = actualSize - allocatedSize;
-    _overflow = math.max(0.0, -actualSizeDelta);
-    final double remainingSpace = math.max(0.0, actualSizeDelta);
-    late final double leadingSpace;
-    late final double betweenSpace;
-    // flipMainAxis is used to decide whether to lay out left-to-right/top-to-bottom (false), or
-    // right-to-left/bottom-to-top (true). The _startIsTopLeft will return null if there's only
-    // one child and the relevant direction is null, in which case we arbitrarily decide not to
-    // flip, but that doesn't have any detectable effect.
-    final bool flipMainAxis = !(_startIsTopLeft(direction, textDirection, verticalDirection) ?? true);
-    switch (_mainAxisAlignment) {
-      case MainAxisAlignment.start:
-        leadingSpace = 0.0;
-        betweenSpace = 0.0;
-        break;
-      case MainAxisAlignment.end:
-        leadingSpace = remainingSpace;
-        betweenSpace = 0.0;
-        break;
-      case MainAxisAlignment.center:
-        leadingSpace = remainingSpace / 2.0;
-        betweenSpace = 0.0;
-        break;
-      case MainAxisAlignment.spaceBetween:
-        leadingSpace = 0.0;
-        betweenSpace = childCount > 1 ? remainingSpace / (childCount - 1) : 0.0;
-        break;
-      case MainAxisAlignment.spaceAround:
-        betweenSpace = childCount > 0 ? remainingSpace / childCount : 0.0;
-        leadingSpace = betweenSpace / 2.0;
-        break;
-      case MainAxisAlignment.spaceEvenly:
-        betweenSpace = childCount > 0 ? remainingSpace / (childCount + 1) : 0.0;
-        leadingSpace = betweenSpace;
-        break;
+    switch (this.direction) {
+      case Axis.Horizontal:
+        this.size = constraints.constrain(new Size(actualSize, crossSize))
+        actualSize = this.size.width
+        crossSize = this.size.height
+        break
+      case Axis.Vertical:
+        this.size = constraints.constrain(new Size(crossSize, actualSize))
+        actualSize = this.size.height
+        crossSize = this.size.width
+        break
     }
 
-    // Position elements
-    double childMainPosition = flipMainAxis ? actualSize - leadingSpace : leadingSpace;
-    RenderBox? child = firstChild;
-    while (child != null) {
-      final FlexParentData childParentData = child.parentData! as FlexParentData;
-      final double childCrossPosition;
-      switch (_crossAxisAlignment) {
-        case CrossAxisAlignment.start:
-        case CrossAxisAlignment.end:
-          childCrossPosition = _startIsTopLeft(flipAxis(direction), textDirection, verticalDirection)
-                               == (_crossAxisAlignment == CrossAxisAlignment.start)
-                             ? 0.0
-                             : crossSize - _getCrossSize(child.size);
-          break;
-        case CrossAxisAlignment.center:
-          childCrossPosition = crossSize / 2.0 - _getCrossSize(child.size) / 2.0;
-          break;
-        case CrossAxisAlignment.stretch:
-          childCrossPosition = 0.0;
-          break;
-        case CrossAxisAlignment.baseline:
-          if (_direction == Axis.horizontal) {
-            assert(textBaseline != null);
-            final double? distance = child.getDistanceToBaseline(textBaseline!, onlyReal: true);
-            if (distance != null)
-              childCrossPosition = maxBaselineDistance - distance;
-            else
-              childCrossPosition = 0.0;
+    const actualSizeDelta = actualSize - allocatedSize
+    this.overflow = Math.max(0.0, -actualSizeDelta)
+    const remainingSpace = Math.max(0.0, actualSizeDelta)
+    let leadingSpace: number
+    let betweenSpace: number
+
+    const flipMainAxis = !(startIsTopLeft(
+      this.direction, 
+      this.textDirection, 
+      this.verticalDirection
+    ) ?? true)
+    switch (this.mainAxisAlignment) {
+      case MainAxisAlignment.Start:
+        leadingSpace = 0.0
+        betweenSpace = 0.0
+        break
+      case MainAxisAlignment.End:
+        leadingSpace = remainingSpace
+        betweenSpace = 0.0
+        break
+      case MainAxisAlignment.Center:
+        leadingSpace = remainingSpace / 2.0
+        betweenSpace = 0.0
+        break
+      case MainAxisAlignment.SpaceBetween:
+        leadingSpace = 0.0
+        betweenSpace = this.childCount > 1 
+          ? remainingSpace / (this.childCount - 1) 
+          : 0.0
+        break
+      case MainAxisAlignment.SpaceAround:
+        betweenSpace = this.childCount > 0 
+          ? remainingSpace / this.childCount 
+          : 0.0
+        leadingSpace = betweenSpace / 2.0
+        break
+      case MainAxisAlignment.SpaceEvenly:
+        betweenSpace = this.childCount > 0 
+          ? remainingSpace / (this.childCount + 1) 
+          : 0.0
+        leadingSpace = betweenSpace
+        break
+    }
+
+    let childMainPosition = flipMainAxis 
+      ? actualSize - leadingSpace 
+      : leadingSpace
+
+    let child: RenderBox | null = this.firstChild as RenderBox
+    
+    while (child !== null) {
+      let childCrossPosition: number
+      switch (this.crossAxisAlignment) {
+        case CrossAxisAlignment.Start:
+        case CrossAxisAlignment.End:
+          childCrossPosition = startIsTopLeft(
+            flipAxis(this.direction), 
+            this.textDirection, 
+            this.verticalDirection
+          ) === (this.crossAxisAlignment === CrossAxisAlignment.Start)
+            ? 0.0
+            : crossSize - this.getCrossSize(child.size as Size)
+          break
+        case CrossAxisAlignment.Center:
+          childCrossPosition = crossSize / 2.0 - this.getCrossSize(child.size as Size) / 2.0
+          break
+        case CrossAxisAlignment.Stretch:
+          childCrossPosition = 0.0
+          break
+        case CrossAxisAlignment.Baseline:
+          if (this.direction === Axis.Horizontal) {
+            invariant(this.textBaseline !== null)
+            const distance: number | null = child.getDistanceToBaseline(
+              this.textBaseline!, 
+              true
+            )
+            if (distance !== null) {
+              childCrossPosition = maxBaselineDistance - distance
+            } else {
+              childCrossPosition = 0.0
+            }
           } else {
-            childCrossPosition = 0.0;
+            childCrossPosition = 0.0
           }
-          break;
+          break
       }
-      if (flipMainAxis)
-        childMainPosition -= _getMainSize(child.size);
-      switch (_direction) {
-        case Axis.horizontal:
-          childParentData.offset = Offset(childMainPosition, childCrossPosition);
-          break;
-        case Axis.vertical:
-          childParentData.offset = Offset(childCrossPosition, childMainPosition);
-          break;
-      }
+
       if (flipMainAxis) {
-        childMainPosition -= betweenSpace;
-      } else {
-        childMainPosition += _getMainSize(child.size) + betweenSpace;
+        childMainPosition -= this.getMainSize(child.size as Size)
       }
-      child = childParentData.nextSibling;
+
+      switch (this.direction) {
+        case Axis.Horizontal:
+          this.offset = new Offset(
+            childMainPosition, 
+            childCrossPosition
+          )
+          break
+        case Axis.Vertical:
+          this.offset = new Offset(
+            childCrossPosition, 
+            childMainPosition
+          )
+          break
+      }
+
+      if (flipMainAxis) {
+        childMainPosition -= betweenSpace
+      } else {
+        childMainPosition += this.getMainSize(child.size as Size) + betweenSpace
+      }
+      
+      child = this.nextSibling as RenderBox
     }
   }
 
@@ -526,7 +605,7 @@ export class RenderFlex extends RenderBox {
       return
     }
 
-    if (size.isEmpty) {
+    if (this.size?.isEmpty) {
       return
     }
 

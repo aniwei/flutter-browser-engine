@@ -1,3 +1,10 @@
+import { clampInt } from '@helper/clamp'
+import { lerpDouble } from '@helper/lerp'
+import { listEquals } from '@helper/listEquals'
+import { Rect } from '@internal/Geometry'
+import { SkiaFontStyle, SkiaParagraphStyle, SkiaParagraphStyleProperties, SkiaStrutStyleProperties, SkiaTextDirection, SkiaTextStyleProperties } from '@skia/Skia'
+import invariant from 'ts-invariant'
+
 export enum FontStyle {
   Normal,
   Italic,
@@ -12,61 +19,304 @@ export enum PlaceholderAlignment {
   middle,
 }
 
-export class FontWeight {
-  const FontWeight._(this.index);
-  final int index;
-  static const FontWeight w100 = FontWeight._(0);
-  static const FontWeight w200 = FontWeight._(1);
-  static const FontWeight w300 = FontWeight._(2);
-  static const FontWeight w400 = FontWeight._(3);
-  static const FontWeight w500 = FontWeight._(4);
-  static const FontWeight w600 = FontWeight._(5);
-  static const FontWeight w700 = FontWeight._(6);
-  static const FontWeight w800 = FontWeight._(7);
-  static const FontWeight w900 = FontWeight._(8);
-  static const FontWeight normal = w400;
-  static const FontWeight bold = w700;
-  static const List<FontWeight> values = <FontWeight>[
-    w100,
-    w200,
-    w300,
-    w400,
-    w500,
-    w600,
-    w700,
-    w800,
-    w900
-  ];
-  static FontWeight? lerp(FontWeight? a, FontWeight? b, double t) {
-    assert(t != null); // ignore: unnecessary_null_comparison
-    if (a == null && b == null) {
-      return null;
-    }
-    return values[engine.clampInt(
-      lerpDouble(a?.index ?? normal.index, b?.index ?? normal.index, t)!
-          .round(),
-      0,
-      8,
-    )];
+export enum TextAlign {
+  Left,
+  Right,
+  Center,
+  Justify,
+  Start,
+  End,
+}
+
+export type ParagraphStyleOptions = {
+  textAlign?: TextAlign | null,
+  textDirection?: SkiaTextDirection | null,
+  maxLines?: number | null,
+  fontFamily?: string | null,
+  fontSize?: number | null,
+  height?: number | null,
+  textHeightBehavior?: TextHeightBehavior | null,
+  fontWeight?: FontWeight | null,
+  fontStyle?: FontStyle | null,
+  strutStyle?: StrutStyle | null,
+  ellipsis?: string | null,
+  locale?: Locale | null,
+}
+
+export type TextHeightBehaviorOptions = {
+  applyHeightToFirstAscent?: boolean
+  applyHeightToLastDescent?: boolean
+  leadingDistribution?: TextLeadingDistribution
+}
+
+export class TextHeightBehavior {
+  constructor (options: TextHeightBehaviorOptions) {
+    options.applyHeightToFirstAscent ??= true
+    options.applyHeightToLastDescent ??= true
+    options.leadingDistribution ??= TextLeadingDistribution.Proportional
+
+    this.applyHeightToFirstAscent = options.applyHeightToFirstAscent
+    this.applyHeightToLastDescent = options.applyHeightToLastDescent
+    this.leadingDistribution = options.leadingDistribution
   }
 
-  @override
-  String toString() {
-    return const <int, String>{
-      0: 'FontWeight.w100',
-      1: 'FontWeight.w200',
-      2: 'FontWeight.w300',
-      3: 'FontWeight.w400',
-      4: 'FontWeight.w500',
-      5: 'FontWeight.w600',
-      6: 'FontWeight.w700',
-      7: 'FontWeight.w800',
-      8: 'FontWeight.w900',
-    }[index]!;
+  applyHeightToFirstAscent: boolean
+  applyHeightToLastDescent: boolean
+  leadingDistribution: TextLeadingDistribution
+
+  eq (other: TextHeightBehavior) {
+    if (this === other) {
+      return true
+    }
+
+    return (
+      other instanceof TextHeightBehavior &&
+      other.applyHeightToFirstAscent === this.applyHeightToFirstAscent &&
+      other.applyHeightToLastDescent === this.applyHeightToLastDescent &&
+      other.leadingDistribution === this.leadingDistribution
+    )
   }
 }
 
-class FontFeature {
+export class FontWeight {
+  public index: number
+  static w100: FontWeight = new FontWeight(0)
+  static w200: FontWeight = new FontWeight(1)
+  static w300: FontWeight = new FontWeight(2)
+  static w400: FontWeight = new FontWeight(3)
+  static w500: FontWeight = new FontWeight(4)
+  static w600: FontWeight = new FontWeight(5)
+  static w700: FontWeight = new FontWeight(6)
+  static w800: FontWeight = new FontWeight(7)
+  static w900: FontWeight = new FontWeight(8)
+  static normal: FontWeight = FontWeight.w400
+  static bold: FontWeight = FontWeight.w700
+
+  static values: FontWeight[] = [
+    FontWeight.w100,
+    FontWeight.w200,
+    FontWeight.w300,
+    FontWeight.w400,
+    FontWeight.w500,
+    FontWeight.w600,
+    FontWeight.w700,
+    FontWeight.w800,
+    FontWeight.w900
+  ]
+  
+  static lerp(
+    a?: FontWeight | null, 
+    b?: FontWeight | null, 
+    t: number
+  ): FontWeight | null {
+    invariant(t !== null)
+    if (a === null && b === null) {
+      return null
+    }
+
+    const index = clampInt(
+      Math.round(
+        lerpDouble(
+          a?.index ?? normal.index, 
+          b?.index ?? normal.index, 
+          t
+        )!
+      ),
+      0,
+      8,
+    )
+
+    return values[index]
+  }
+}
+
+export class ParagraphStyle {
+  static malloc (options: ParagraphStyleOptions) {
+    const skia
+    return new ParagraphStyle(skia, options)
+  }
+
+  constructor(options: ParagraphStyleOptions) {
+    options.textDirection ??= Skia.TextDirection.LTR
+
+    this.skia = options.skia
+    this.textDirection = options.textDirection
+    this.fontFamily = options.fontFamily
+    this.fontSize = options.fontSize
+    this.height = options.height
+    this.fontWeight = options.fontWeight
+    this.fontStyle = options.fontStyle
+    this.leadingDistribution = options.leadingDistribution
+  } 
+
+  public skia: SkiaParagraphStyle | null = null
+  public textDirection: SkiaTextDirection | null = null
+  public fontFamily: string | null = null
+  public fontSize: number | null = null
+  public height: number | null = null
+  public fontWeight: FontWeight | null = null
+  public fontStyle: FontStyle | null = null
+  public leadingDistribution: TextHeightBehavior  | null = null
+
+  static toSkTextStyleProperties(
+    fontFamily?: string | null,
+    fontSize?: number | null,
+    height?: number | null,
+    fontWeight?: FontWeight | null,
+    fontStyle?: FontStyle | null,
+  ): SkiaTextStyleProperties {
+    const properties: SkiaTextStyleProperties = {}
+    
+    if (
+      fontWeight !== null || 
+      fontStyle !== null
+    ) {
+      properties.fontStyle = toSkFontStyle(fontWeight, fontStyle)
+    }
+
+    if (fontSize !== null) {
+      properties.fontSize = fontSize
+    }
+
+    if (height !== null) {
+      properties.heightMultiplier = height;
+    }
+
+    properties.fontFamilies = getEffectiveFontFamilies(fontFamily)
+
+    return properties
+  }
+
+  static toSkStrutStyleProperties(
+    style: StrutStyle, 
+    paragraphHeightBehavior?: TextHeightBehavior | null
+  ): SkiaStrutStyleProperties {
+    const properties: SkiaStrutStyleProperties = {
+      fontFamilies: getEffectiveFontFamilies(
+        style.fontFamily,
+        style.fontFamilyFallback
+      )
+    }
+    
+    if (style.fontSize !== null) {
+      properties.fontSize = style.fontSize
+    }
+
+    if (style.height !== null) {
+      properties.heightMultiplier = style.height
+    }
+
+    const effectiveLeadingDistribution = style.leadingDistribution ?? paragraphHeightBehavior?.leadingDistribution
+
+    switch (effectiveLeadingDistribution) {
+      case null:
+        break
+      case TextLeadingDistribution.Even:
+        properties.halfLeading = true
+        break
+      case TextLeadingDistribution.Proportional:
+        properties.halfLeading = false
+        break
+    }
+
+    if (style.leading !== null) {
+      properties.leading = style.leading
+    }
+
+    if (
+      style.fontWeight !== null || 
+      style.fontStyle !== null
+    ) {
+      properties.fontStyle = toSkFontStyle(
+        style.fontWeight, 
+        style.fontStyle
+      )
+    }
+
+    if (style.forceStrutHeight !== null) {
+      properties.forceStrutHeight = style.forceStrutHeight
+    }
+
+    properties.strutEnabled = true
+
+    return properties
+  }
+
+  static toSkParagraphStyle(
+    textAlign?: TextAlign | null,
+    textDirection?: TextDirection | null,
+    maxLines?: number | null,
+    String? fontFamily,
+    double? fontSize,
+    double? height,
+    ui.TextHeightBehavior? textHeightBehavior,
+    ui.FontWeight? fontWeight,
+    ui.FontStyle? fontStyle,
+    ui.StrutStyle? strutStyle,
+    String? ellipsis,
+    ui.Locale? locale,
+  ) {
+    const properties: SkiaParagraphStyleProperties = {}
+
+    if (
+      textAlign !== null && 
+      textAlign !== undefined
+    ) {
+      properties.textAlign = toSkTextAlign(textAlign)
+    }
+
+    if (textDirection !== null) {
+      properties.textDirection = toSkTextDirection(textDirection)
+    }
+
+    if (maxLines !== null) {
+      properties.maxLines = maxLines
+    }
+
+    if (height !== null) {
+      properties.heightMultiplier = height;
+    }
+
+    if (textHeightBehavior !== null) {
+      properties.textHeightBehavior =
+          toSkTextHeightBehavior(textHeightBehavior);
+    }
+
+    if (ellipsis !== null) {
+      properties.ellipsis = ellipsis
+    }
+
+    if (strutStyle !== null) {
+      properties.strutStyle = toSkStrutStyleProperties(strutStyle, textHeightBehavior)
+    }
+
+    properties.textStyle = toSkTextStyleProperties(fontFamily, fontSize, height, fontWeight, fontStyle)
+
+    return Skia.ParagraphStyle(properties)
+  }
+
+   getTextStyle () {
+    return TextStyle.malloc({
+      fontFamily: this.fontFamily,
+      fontSize: this.fontSize,
+      height: this.height,
+      leadingDistribution: this.leadingDistribution,
+      fontWeight: this.fontWeight,
+      fontStyle: this.fontStyle,
+   })
+  }
+}
+
+export type FontFeatureOptions = {
+  feature: string,
+  value?: number
+}
+
+export class FontFeature {
+  constructor (options: FontFeatureOptions) {
+
+  }
+
   const FontFeature(this.feature, [this.value = 1])
       : assert(feature != null), // ignore: unnecessary_null_comparison
         assert(feature.length == 4,
@@ -173,21 +423,6 @@ class FontFeature {
   String toString() => "FontFeature('$feature', $value)";
 }
 
-// The order of this enum must match the order of the values in RenderStyleConstants.h's ETextAlign.
-enum TextAlign {
-  left,
-  right,
-  center,
-  justify,
-  start,
-  end,
-}
-
-export enum TextBaseline {
-  Alphabetic,
-  Ideographic,
-}
-
 class TextDecoration {
   const TextDecoration._(this._mask);
   factory TextDecoration.combine(List<TextDecoration> decorations) {
@@ -284,253 +519,71 @@ class TextHeightBehavior {
   }
 }
 
-abstract class TextStyle {
-  factory TextStyle({
-    Color? color,
-    TextDecoration? decoration,
-    Color? decorationColor,
-    TextDecorationStyle? decorationStyle,
-    double? decorationThickness,
-    FontWeight? fontWeight,
-    FontStyle? fontStyle,
-    TextBaseline? textBaseline,
-    String? fontFamily,
-    List<String>? fontFamilyFallback,
-    double? fontSize,
-    double? letterSpacing,
-    double? wordSpacing,
-    double? height,
-    TextLeadingDistribution? leadingDistribution,
-    Locale? locale,
-    Paint? background,
-    Paint? foreground,
-    List<Shadow>? shadows,
-    List<FontFeature>? fontFeatures,
-  }) {
-    if (engine.useCanvasKit) {
-      return engine.CkTextStyle(
-        color: color,
-        decoration: decoration,
-        decorationColor: decorationColor,
-        decorationStyle: decorationStyle,
-        decorationThickness: decorationThickness,
-        fontWeight: fontWeight,
-        fontStyle: fontStyle,
-        textBaseline: textBaseline,
-        fontFamily: fontFamily,
-        fontFamilyFallback: fontFamilyFallback,
-        fontSize: fontSize,
-        letterSpacing: letterSpacing,
-        wordSpacing: wordSpacing,
-        height: height,
-        leadingDistribution: leadingDistribution,
-        locale: locale,
-        background: background as engine.CkPaint?,
-        foreground: foreground as engine.CkPaint?,
-        shadows: shadows,
-        fontFeatures: fontFeatures,
-      );
-    } else {
-      return engine.EngineTextStyle(
-        color: color,
-        decoration: decoration,
-        decorationColor: decorationColor,
-        decorationStyle: decorationStyle,
-        decorationThickness: decorationThickness,
-        fontWeight: fontWeight,
-        fontStyle: fontStyle,
-        textBaseline: textBaseline,
-        fontFamily: fontFamily,
-        fontFamilyFallback: fontFamilyFallback,
-        fontSize: fontSize,
-        letterSpacing: letterSpacing,
-        wordSpacing: wordSpacing,
-        height: height,
-        locale: locale,
-        background: background,
-        foreground: foreground,
-        shadows: shadows,
-        fontFeatures: fontFeatures,
-      );
-    }
-  }
+export type TextBoxOptions = {
+  left: number
+  top: number
+  right: number
+  bottom: number
+  direction: SkiaTextDirection
 }
 
-abstract class ParagraphStyle {
-  //   See: https://github.com/flutter/flutter/issues/9819
-  factory ParagraphStyle({
-    TextAlign? textAlign,
-    TextDirection? textDirection,
-    int? maxLines,
-    String? fontFamily,
-    double? fontSize,
-    double? height,
-    TextHeightBehavior? textHeightBehavior,
-    FontWeight? fontWeight,
-    FontStyle? fontStyle,
-    StrutStyle? strutStyle,
-    String? ellipsis,
-    Locale? locale,
-  }) {
-    if (engine.useCanvasKit) {
-      return engine.CkParagraphStyle(
-        textAlign: textAlign,
-        textDirection: textDirection,
-        maxLines: maxLines,
-        fontFamily: fontFamily,
-        fontSize: fontSize,
-        height: height,
-        textHeightBehavior: textHeightBehavior,
-        fontWeight: fontWeight,
-        fontStyle: fontStyle,
-        strutStyle: strutStyle,
-        ellipsis: ellipsis,
-        locale: locale,
-      );
-    } else {
-      return engine.EngineParagraphStyle(
-        textAlign: textAlign,
-        textDirection: textDirection,
-        maxLines: maxLines,
-        fontFamily: fontFamily,
-        fontSize: fontSize,
-        height: height,
-        textHeightBehavior: textHeightBehavior,
-        fontWeight: fontWeight,
-        fontStyle: fontStyle,
-        strutStyle: strutStyle,
-        ellipsis: ellipsis,
-        locale: locale,
-      );
+export class TextBox {
+  static fromLTRBD(
+    left: number,
+    top: number,
+    right: number,
+    bottom: number,
+    direction: SkiaTextDirection,
+  ) {
+    return new TextBox(
+      left,
+      top,
+      right,
+      bottom,
+      direction,
+    )
+  }
+  public left: double
+  public top: double
+  public right: double
+  public bottom: double
+  public direction: SkiaTextDirection
+
+  get start () {
+    return (this.direction === Skia.TextDirection.LTR) 
+      ? left 
+      : right
+  }
+
+  get end () {
+    return (this.direction === TextDirection.LTR) 
+      ? this.right 
+      : this.left
+  }
+
+
+  toRect (): Rect {
+    return Rect.fromLTRB(
+      left, 
+      top, 
+      right, 
+      bottom
+    )
+  }
+
+  eq (other: TextBox) {
+    if (other === this) {
+      return true
     }
-  }
-}
-
-abstract class StrutStyle {
-  /// Creates a new StrutStyle object.
-  ///
-  /// * `fontFamily`: The name of the font to use when painting the text (e.g.,
-  ///   Roboto).
-  ///
-  /// * `fontFamilyFallback`: An ordered list of font family names that will be searched for when
-  ///    the font in `fontFamily` cannot be found.
-  ///
-  /// * `fontSize`: The size of glyphs (in logical pixels) to use when painting
-  ///   the text.
-  ///
-  /// * `lineHeight`: The minimum height of the line boxes, as a multiple of the
-  ///   font size. The lines of the paragraph will be at least
-  ///   `(lineHeight + leading) * fontSize` tall when fontSize
-  ///   is not null. When fontSize is null, there is no minimum line height. Tall
-  ///   glyphs due to baseline alignment or large [TextStyle.fontSize] may cause
-  ///   the actual line height after layout to be taller than specified here.
-  ///   [fontSize] must be provided for this property to take effect.
-  ///
-  /// * `leading`: The minimum amount of leading between lines as a multiple of
-  ///   the font size. [fontSize] must be provided for this property to take effect.
-  ///
-  /// * `fontWeight`: The typeface thickness to use when painting the text
-  ///   (e.g., bold).
-  ///
-  /// * `fontStyle`: The typeface variant to use when drawing the letters (e.g.,
-  ///   italics).
-  ///
-  /// * `forceStrutHeight`: When true, the paragraph will force all lines to be exactly
-  ///   `(lineHeight + leading) * fontSize` tall from baseline to baseline.
-  ///   [TextStyle] is no longer able to influence the line height, and any tall
-  ///   glyphs may overlap with lines above. If a [fontFamily] is specified, the
-  ///   total ascent of the first line will be the min of the `Ascent + half-leading`
-  ///   of the [fontFamily] and `(lineHeight + leading) * fontSize`. Otherwise, it
-  ///   will be determined by the Ascent + half-leading of the first text.
-  factory StrutStyle({
-    String? fontFamily,
-    List<String>? fontFamilyFallback,
-    double? fontSize,
-    double? height,
-    TextLeadingDistribution? leadingDistribution,
-    double? leading,
-    FontWeight? fontWeight,
-    FontStyle? fontStyle,
-    bool? forceStrutHeight,
-  }) {
-    if (engine.useCanvasKit) {
-      return engine.CkStrutStyle(
-        fontFamily: fontFamily,
-        fontFamilyFallback: fontFamilyFallback,
-        fontSize: fontSize,
-        height: height,
-        leadingDistribution: leadingDistribution,
-        leading: leading,
-        fontWeight: fontWeight,
-        fontStyle: fontStyle,
-        forceStrutHeight: forceStrutHeight,
-      );
-    } else {
-      return engine.EngineStrutStyle(
-        fontFamily: fontFamily,
-        fontFamilyFallback: fontFamilyFallback,
-        fontSize: fontSize,
-        height: height,
-        leadingDistribution: leadingDistribution,
-        leading: leading,
-        fontWeight: fontWeight,
-        fontStyle: fontStyle,
-        forceStrutHeight: forceStrutHeight,
-      );
-    }
-  }
-}
-
-// The order of this enum must match the order of the values in TextDirection.h's TextDirection.
-enum TextDirection {
-  rtl,
-  ltr,
-}
-
-class TextBox {
-  const TextBox.fromLTRBD(
-    this.left,
-    this.top,
-    this.right,
-    this.bottom,
-    this.direction,
-  );
-  final double left;
-  final double top;
-  final double right;
-  final double bottom;
-  final TextDirection direction;
-  Rect toRect() => Rect.fromLTRB(left, top, right, bottom);
-  double get start {
-    return (direction == TextDirection.ltr) ? left : right;
-  }
-
-  double get end {
-    return (direction == TextDirection.ltr) ? right : left;
-  }
-
-  @override
-  bool operator ==(Object other) {
-    if (identical(this, other)) {
-      return true;
-    }
-    if (other.runtimeType != runtimeType) {
-      return false;
-    }
-    return other is TextBox &&
-        other.left == left &&
-        other.top == top &&
-        other.right == right &&
-        other.bottom == bottom &&
-        other.direction == direction;
-  }
-
-  @override
-  int get hashCode => hashValues(left, top, right, bottom, direction);
-
-  @override
-  String toString() {
-    return 'TextBox.fromLTRBD(${left.toStringAsFixed(1)}, ${top.toStringAsFixed(1)}, ${right.toStringAsFixed(1)}, ${bottom.toStringAsFixed(1)}, $direction)';
+    
+    return (
+      other instanceof TextBox &&
+      other.left === this.left &&
+      other.top === this.top &&
+      other.right === this.right &&
+      other.bottom === this.bottom &&
+      other.direction === this.direction
+    )
   }
 }
 
@@ -729,4 +782,99 @@ Future<void> loadFontFromList(Uint8List list, {String? fontFamily}) {
         .loadFontFromList(list, fontFamily: fontFamily!)
         .then((_) => engine.sendFontChangeMessage());
   }
+}
+
+
+export type StrutStyleOptions = {
+  fontFamily?: string | null
+  fontFamilyFallback?: string[] | null
+  fontSize?: number | null
+  height?: number | null
+  leadingDistribution?: TextLeadingDistribution | null
+  leading?: number | null
+  fontWeight?: FontWeight | null
+  fontStyle?: FontStyle | null
+  forceStrutHeight?: boolean | null
+}
+
+export class StrutStyle {
+  constructor (options: StrutStyleOptions) {
+    this.fontFamily = options.fontFamily
+    this.fontFamilyFallback = options.fontFamilyFallback
+    this.fontSize = options.fontSize
+    this.height = options.height
+    this.leadingDistribution = options.leadingDistribution
+    this.leading = options.leading
+    this.fontWeight = options.fontWeight
+    this.fontStyle = options.fontStyle
+    this.forceStrutHeight = options.forceStrutHeight
+  }  
+
+  fontFamily: string
+  fontFamilyFallback: string
+  fontSize: string
+  height: string
+  leading: string
+  fontWeight: string
+  fontStyle: string
+  forceStrutHeight: string
+  leadingDistribution: string
+
+  eq (other: StrutStyle) {
+    if (other === this) {
+      return true
+    }
+
+    return (
+      other instanceof StrutStyle &&
+      other.fontFamily === this.fontFamily &&
+      other.fontSize === this.fontSize &&
+      other.height === this.height &&
+      other.leading === this.leading &&
+      other.leadingDistribution === this.leadingDistribution &&
+      other.fontWeight === this.fontWeight &&
+      other.fontStyle === this.fontStyle &&
+      other.forceStrutHeight === this.forceStrutHeight &&
+      listEquals<String>(other.fontFamilyFallback, fontFamilyFallback)
+    )
+  }
+}
+
+export function getEffectiveFontFamilies (
+  fontFamily?: string | null,
+  fontFamilyFallback?: string[] | null
+): string[] {
+  const fontFamilies: string[] = []
+
+  if (fontFamily !== null) {
+    fontFamilies.push(fontFamily)
+  }
+
+  if (
+    fontFamilyFallback !== null &&
+    !fontFamilyFallback.every((font: string) => fontFamily === font)
+  ) {
+    for (const font of fontFamilyFallback) {
+      fontFamilies.push(font)
+    }
+}
+
+  // TODO
+  // fontFamilies.addAll(FontFallbackData.instance.globalFontFallbacks);
+  return fontFamilies
+}
+
+
+export function toSkFontStyle (
+  fontWeight: FontWeight, 
+  fontStyle: FontStyle
+) {
+  const style: SkiaFontStyle = {}
+  if (fontWeight !== null) {
+    style.weight = toSkFontWeight(fontWeight)
+  }
+  if (fontStyle != null) {
+    style.slant = toSkFontSlant(fontStyle);
+  }
+  return style;
 }

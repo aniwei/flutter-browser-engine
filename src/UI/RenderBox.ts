@@ -20,6 +20,13 @@ export enum IntrinsicDimension {
 
 // @TODO-HITEST
 
+export type BoxConstraintsOptions = {
+  minWidth?: number
+  maxWidth?: number
+  minHeight?: number
+  maxHeight?: number
+}
+
 export class BoxConstraints extends Constraints {
   static lerp (
     a: BoxConstraints | null = null, 
@@ -43,66 +50,74 @@ export class BoxConstraints extends Constraints {
     invariant((Number.isFinite(a.minHeight) && Number.isFinite(b.minHeight)) || (a.minHeight === Number.POSITIVE_INFINITY && b.minHeight === Number.POSITIVE_INFINITY), 'Cannot interpolate between finite constraints and unbounded constraints.')
     invariant((Number.isFinite(a.maxHeight) && Number.isFinite(b.maxHeight)) || (a.maxHeight === Number.POSITIVE_INFINITY && b.maxHeight === Number.POSITIVE_INFINITY), 'Cannot interpolate between finite constraints and unbounded constraints.')
     
-    return new BoxConstraints(
-      Number.isFinite(a.minWidth) ? lerpDouble(a.minWidth, b.minWidth, t)! : Number.POSITIVE_INFINITY,
-      Number.isFinite(a.maxWidth) ? lerpDouble(a.maxWidth, b.maxWidth, t)! : Number.POSITIVE_INFINITY,
-      Number.isFinite(a.minHeight) ? lerpDouble(a.minHeight, b.minHeight, t)! : Number.POSITIVE_INFINITY,
-      Number.isFinite(a.maxHeight) ? lerpDouble(a.maxHeight, b.maxHeight, t)! : Number.POSITIVE_INFINITY,
-    );
+    return new BoxConstraints({
+      minWidth: Number.isFinite(a.minWidth) 
+        ? lerpDouble(a.minWidth, b.minWidth, t)! 
+        : Number.POSITIVE_INFINITY,
+      maxWidth: Number.isFinite(a.maxWidth) 
+        ? lerpDouble(a.maxWidth, b.maxWidth, t)! 
+        : Number.POSITIVE_INFINITY,
+      minHeight: Number.isFinite(a.minHeight) 
+        ? lerpDouble(a.minHeight, b.minHeight, t)! 
+        : Number.POSITIVE_INFINITY,
+      maxHeight: Number.isFinite(a.maxHeight) 
+        ? lerpDouble(a.maxHeight, b.maxHeight, t)! 
+        : Number.POSITIVE_INFINITY,
+    })
   }
 
   static tight (size: Size) {
-    return new BoxConstraints(
-      size.width,
-      size.width,
-      size.height,
-      size.height
-    )
+    return new BoxConstraints({
+      minWidth: size.width,
+      maxWidth: size.width,
+      minHeight: size.height,
+      maxHeight: size.height
+    })
   }
 
   static tightFor(
     width: number | null = null,
     height: number | null = null,
   ) {
-    return new BoxConstraints(
-      width ?? 0.0,
-      width ?? Number.POSITIVE_INFINITY,
-      height ?? 0.0,
-      height ?? Number.POSITIVE_INFINITY
-    )
+    return new BoxConstraints({
+      minWidth: width ?? 0.0,
+      maxWidth: width ?? Number.POSITIVE_INFINITY,
+      minHeight: height ?? 0.0,
+      maxHeight: height ?? Number.POSITIVE_INFINITY
+    })
   }
 
   static tightForFinite(
     width: number = Number.POSITIVE_INFINITY,
     height: number = Number.POSITIVE_INFINITY,
   ) {
-    return new BoxConstraints(
-      width !== Number.POSITIVE_INFINITY ? width : 0.0,
-      width !== Number.POSITIVE_INFINITY ? width : Number.POSITIVE_INFINITY,
-      height !== Number.POSITIVE_INFINITY ? height : 0.0,
-      height !== Number.POSITIVE_INFINITY ? height : Number.POSITIVE_INFINITY
-    )
+    return new BoxConstraints({
+      minWidth: width !== Number.POSITIVE_INFINITY ? width : 0.0,
+      maxWidth: width !== Number.POSITIVE_INFINITY ? width : Number.POSITIVE_INFINITY,
+      minHeight: height !== Number.POSITIVE_INFINITY ? height : 0.0,
+      maxHeight: height !== Number.POSITIVE_INFINITY ? height : Number.POSITIVE_INFINITY
+    })
   }
 
   static loose (size: Size) {
-    return new BoxConstraints(
-      0.0,
-      size.width,
-      0.0,
-      size.height
-    )
+    return new BoxConstraints({
+      minWidth: 0.0,
+      maxWidth: size.width,
+      minHeight: 0.0,
+      maxHeight: size.height
+    })
   }
     
   static expand(
     width: number | null = null,
     height: number | null = null,
   ) {
-    return new BoxConstraints(
-      width ?? Number.POSITIVE_INFINITY,
-      width ?? Number.POSITIVE_INFINITY,
-      height ?? Number.POSITIVE_INFINITY,
-      height ?? Number.POSITIVE_INFINITY,
-    )
+    return new BoxConstraints({
+      minWidth: width ?? Number.POSITIVE_INFINITY,
+      maxWidth: width ?? Number.POSITIVE_INFINITY,
+      minHeight: height ?? Number.POSITIVE_INFINITY,
+      maxHeight: height ?? Number.POSITIVE_INFINITY,
+    })
   }
 
   public minWidth: number
@@ -111,12 +126,12 @@ export class BoxConstraints extends Constraints {
   public maxHeight: number
 
   get flipped () {
-    return new BoxConstraints(
-      this.minHeight,
-      this.maxHeight,
-      this.minWidth,
-      this.maxWidth,
-    )
+    return new BoxConstraints({
+      minWidth: this.minHeight,
+      maxWidth: this.maxHeight,
+      minHeight: this.minWidth,
+      maxHeight: this.maxWidth,
+    })
   }
 
   get biggest () {
@@ -155,36 +170,39 @@ export class BoxConstraints extends Constraints {
     return this.minHeight >= Number.POSITIVE_INFINITY
   } 
 
-  constructor (
-    minWidth: number = 0.0,
-    maxWidth: number = Number.POSITIVE_INFINITY,
-    minHeight: number = 0.0,
-    maxHeight: number = Number.POSITIVE_INFINITY,
-  ) {
+  constructor (options) {
     super()
-    invariant(minWidth !== null)
-    invariant(maxWidth !== null)
-    invariant(minHeight !== null)
-    invariant(maxHeight !== null)
+    
+    options.minWidth ??= 0.0
+    options.maxWidth ??= Number.POSITIVE_INFINITY
+    options.minHeight ??= 0.0
+    options.maxHeight ??= Number.POSITIVE_INFINITY
 
-    this.minWidth = minWidth
-    this.maxWidth = maxWidth
-    this.minHeight = minHeight
-    this.maxHeight = maxHeight
+    this.minWidth = options.minWidth
+    this.maxWidth = options.maxWidth
+    this.minHeight = options.minHeight
+    this.maxHeight = options.maxHeight
   }
-
+    
   tighten(
     width: number | null = null, 
     height: number | null = null 
   ): BoxConstraints {
-    return new BoxConstraints(
-      width === null ? this.minWidth : clamp(width, this.minWidth, this.maxWidth),
-      width === null ? this.maxWidth : clamp(width, this.minWidth, this.maxWidth),
-      height === null ? this.minHeight : clamp(height, this.minHeight, this.maxHeight),
-      height === null ? this.maxHeight : clamp(height, this.minHeight, this.maxHeight),
-    )
+    return new BoxConstraints({
+      minWidth: width === null 
+        ? this.minWidth 
+        : clamp(width, this.minWidth, this.maxWidth),
+      maxWidth: width === null 
+        ? this.maxWidth 
+        : clamp(width, this.minWidth, this.maxWidth),
+      minHeight: height === null 
+        ? this.minHeight 
+        : clamp(height, this.minHeight, this.maxHeight),
+      maxHeight: height === null 
+        ? this.maxHeight 
+        : clamp(height, this.minHeight, this.maxHeight),
+    })
   }
-
 
   copyWith(
     minWidth: number | null = null,
@@ -192,12 +210,12 @@ export class BoxConstraints extends Constraints {
     minHeight: number | null = null,
     maxHeight: number | null = null,
   ) {
-    return new BoxConstraints(
-      minWidth ?? this.minWidth,
-      maxWidth ?? this.maxWidth,
-      minHeight ?? this.minHeight,
-      maxHeight ?? this.maxHeight,
-    );
+    return new BoxConstraints({
+      minWidth: minWidth ?? this.minWidth,
+      maxWidth: maxWidth ?? this.maxWidth,
+      minHeight: minHeight ?? this.minHeight,
+      maxHeight: maxHeight ?? this.maxHeight,
+    })
   }
 
   deflate (edges: EdgeInsets) {
@@ -207,46 +225,42 @@ export class BoxConstraints extends Constraints {
     const deflatedMinWidth: number = Math.max(0.0, this.minWidth - horizontal)
     const deflatedMinHeight: number = Math.max(0.0, this.minHeight - vertical)
 
-    return new BoxConstraints(
-      deflatedMinWidth,
-      Math.max(deflatedMinWidth, this.maxWidth - horizontal),
-      deflatedMinHeight,
-      Math.max(deflatedMinHeight, this.maxHeight - vertical),
-    )
+    return new BoxConstraints({
+      minWidth: deflatedMinWidth,
+      maxWidth: Math.max(deflatedMinWidth, this.maxWidth - horizontal),
+      minHeight: deflatedMinHeight,
+      maxHeight: Math.max(deflatedMinHeight, this.maxHeight - vertical),
+    })
   }
 
   loosen (): BoxConstraints {
-    return new BoxConstraints(
-      0.0,
-      this.maxWidth,
-      0.0,
-      this.maxHeight,
-    )
+    return new BoxConstraints({
+      maxWidth: this.maxWidth,
+      maxHeight: this.maxHeight,
+    })
   }
 
   enforce (constraints: BoxConstraints): BoxConstraints {
-    return new BoxConstraints(
-      clamp(this.minWidth, constraints.minWidth, constraints.maxWidth),
-      clamp(this.maxWidth, constraints.minWidth, constraints.maxWidth),
-      clamp(this.minHeight, constraints.minHeight, constraints.maxHeight),
-      clamp(this.maxHeight, constraints.minHeight, constraints.maxHeight),
-    )
+    return new BoxConstraints({
+      minWidth: clamp(this.minWidth, constraints.minWidth, constraints.maxWidth),
+      maxWidth: clamp(this.maxWidth, constraints.minWidth, constraints.maxWidth),
+      minHeight: clamp(this.minHeight, constraints.minHeight, constraints.maxHeight),
+      maxHeight: clamp(this.maxHeight, constraints.minHeight, constraints.maxHeight),
+    })
   }
   
   widthConstraints (): BoxConstraints  {
-    return new BoxConstraints(
-      this.minWidth, 
-      this.maxWidth
-    )
+    return new BoxConstraints({
+      minWidth: this.minWidth, 
+      maxWidth: this.maxWidth
+    })
   }
 
   heightConstraints (): BoxConstraints {
-    return new BoxConstraints(
-      0.0,
-      Number.POSITIVE_INFINITY,
-      this.minHeight, 
-      this.maxHeight
-    )
+    return new BoxConstraints({
+      minHeight: this.minHeight, 
+      maxHeight: this.maxHeight
+    })
   }
 
   constrainWidth (width: number = Number.POSITIVE_INFINITY) {
@@ -334,30 +348,30 @@ export class BoxConstraints extends Constraints {
   }
 
   multiply (factor: number) {
-    return new BoxConstraints(
-     this.minWidth * factor,
-     this.maxWidth * factor,
-     this.minHeight * factor,
-     this.maxHeight * factor,
-    )
+    return new BoxConstraints({
+      minWidth: this.minWidth * factor,
+      maxWidth: this.maxWidth * factor,
+      minHeight: this.minHeight * factor,
+      maxHeight: this.maxHeight * factor,
+    })
   }
 
   divide (factor: number) {
-    return new BoxConstraints(
-      this.minWidth / factor,
-      this.maxWidth / factor,
-      this.minHeight / factor,
-      this.maxHeight / factor,
-    )
+    return new BoxConstraints({
+      minWidth: this.minWidth / factor,
+      maxWidth: this.maxWidth / factor,
+      minHeight: this.minHeight / factor,
+      maxHeight: this.maxHeight / factor,
+    })
   }
 
   module (value: number) {
-    return new BoxConstraints(
-      this.minWidth % value,
-      this.maxWidth % value,
-      this.minHeight % value,
-      this.maxHeight % value,
-    )
+    return new BoxConstraints({
+      minWidth: this.minWidth % value,
+      maxWidth: this.maxWidth % value,
+      minHeight: this.minHeight % value,
+      maxHeight: this.maxHeight % value,
+    })
   }
 
   get isNormalized () {
@@ -375,12 +389,13 @@ export class BoxConstraints extends Constraints {
     }
     const minWidth = this.minWidth >= 0.0 ? this.minWidth : 0.0
     const minHeight = this.minHeight >= 0.0 ? this.minHeight : 0.0
-    return new BoxConstraints(
-      minWidth,
-      minWidth > this.maxWidth ? minWidth : this.maxWidth,
-      minHeight,
-      minHeight > this.maxHeight ? minHeight : this.maxHeight,
-    );
+
+    return new BoxConstraints({
+      minWidth: minWidth,
+      maxWidth: minWidth > this.maxWidth ? minWidth : this.maxWidth,
+      minHeight: minHeight,
+      maxHeight: minHeight > this.maxHeight ? minHeight : this.maxHeight,
+    })
   }
 
   eq (other: BoxConstraints) {
@@ -436,6 +451,7 @@ export abstract class RenderBox extends ContainerRenderObject {
   }) public size: Size | null = null
 
   public offset: Offset = Offset.zero
+  public transform: Matrix4 | null = null
   public computingThisDryLayout: boolean = false
   public cachedDryLayoutSizes: CacheMap<BoxConstraints, Size> | null = null
   public cachedIntrinsicDimensions: CacheMap<IntrinsicDimensionsCacheEntry, number> | null = null
@@ -679,6 +695,43 @@ export abstract class RenderBox extends ContainerRenderObject {
     return MatrixUtils.transformPoint(this.getTransformTo(ancestor), point);
   }  
   // @TODO-EVENT
+
+  defaultComputeDistanceToFirstActualBaseline (baseline: TextBaseline): number | null {
+    let child = this.firstChild as RenderBox
+
+    while (child !== null) {
+      const result: number | null = child.getDistanceToActualBaseline(baseline)
+      
+      if (result !== null) {
+        return result + this.offset.dy
+      }
+
+      child = this.nextSibling as RenderBox
+    }
+
+    return null
+  }
+
+  defaultComputeDistanceToHighestActualBaseline (baseline: TextBaseline): number | null {
+    
+    let result: number | null = null
+    let child: RenderBox | null = this.firstChild as RenderBox
+
+    while (child !== null) {
+      let candidate: number | null = child.getDistanceToActualBaseline(baseline)
+      
+      if (candidate !== null) {
+        candidate += this.offset.dy
+        if (result !== null) {
+          result = Math.min(result, candidate);
+        } else
+          result = candidate;
+      }
+      child = this.nextSibling as RenderBox
+    }
+
+    return result
+  }
 }
 
 

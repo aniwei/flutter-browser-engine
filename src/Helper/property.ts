@@ -1,22 +1,27 @@
-export type PropertySetter<T> = { (v: T, k: string, key: string): void }
-export type PropertyGetter<T> = { (v: T, k: string, key: string): T } 
+/*
+ * @Author: Aniwei
+ * @Date: 2022-06-13 10:20:59
+ */
+export type PropertyOperation = { (v, k: string, key: string): void } 
 
 export function property<T> (
-  getter: PropertyGetter<T> = function (v, k) { return v as T },
-  setter: PropertySetter<T> = function (this, v: T, k) { this[k] = v }
+  getter: PropertyOperation = function (this: T, v, k) { 
+    return v
+  },
+  setter: PropertyOperation = function (this: T, v, k) { 
+    this[`_${k}`] = v 
+  }
 ) {
   return function (
     target,
     key: string
   ) {
-    const k = `_${key}` 
-
     Reflect.defineProperty(target, key, {
       get () {
-        return Reflect.apply(getter, this, [this[k], k])
+        return Reflect.apply(getter, this as T, [this[`_${key}`], key])
       },
       set (value: T) {
-        return Reflect.apply(setter, this, [value, k, key])
+        Reflect.apply(setter, this as T, [value, key])
       }
     })
   }
