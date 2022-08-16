@@ -1,5 +1,9 @@
+/*
+ * @Author: Aniwei
+ * @Date: 2022-07-04 12:10:21
+ */
 import { HTTP } from '@platform/HTTP'
-import { kBrowserSupportsImageDecoder } from '@platform/Platform'
+import { kSupportsImageDecoder } from '@platform/Platform'
 import { URI } from '@internal/URI'
 import { AnimatedImage } from '@rendering/AnimatedImage'
 
@@ -32,7 +36,7 @@ export async function skiaInstantiateWebImageCodec (
   chunkCallback: WebOnlyImageCodecChunkCallback | null
 ) {
   const data = await fetchImage(url, chunkCallback)
-  if (kBrowserSupportsImageDecoder) {
+  if (kSupportsImageDecoder) {
      // @TODO
   } else {
     return AnimatedImage.decodeFromBytes(data, url)

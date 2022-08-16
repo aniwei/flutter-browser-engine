@@ -4,17 +4,10 @@
  */
 import { invariant } from 'ts-invariant'
 import { Canvas } from './Canvas'
-import type { SkiaSurface } from '@skia/Skia'
+import type { ISurface } from '@skia'
 
 export class Surface {
-  static malloc (
-    skia: SkiaSurface, 
-    glContext: number | null
-  ) {
-    return new Surface(skia, glContext)
-  }
-
-  public surface: SkiaSurface
+  public surface: ISurface
   public glContext: number | null = null
   public isDisposed: boolean = false
 
@@ -36,7 +29,7 @@ export class Surface {
   } 
 
   constructor (
-    surface: SkiaSurface,
+    surface: ISurface,
     glContext: number | null
   ) {
     this.surface = surface

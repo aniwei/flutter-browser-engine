@@ -257,9 +257,7 @@ export class CkPath extends ManagedSkiaObject<SkPath> implements ui.Path {
     ui.Path uiPath1,
     ui.Path uiPath2,
   ) {
-    final CkPath path1 = uiPath1 as CkPath;
-    final CkPath path2 = uiPath2 as CkPath;
-    final SkPath newPath = canvasKit.Path.MakeFromOp(
+    final SkPath newPath = Skia.Path.MakeFromOp(
       path1.skiaObject,
       path2.skiaObject,
       toSkPathOp(operation),

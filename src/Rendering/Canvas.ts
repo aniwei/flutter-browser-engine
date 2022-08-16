@@ -2,11 +2,11 @@ import { invariant } from 'ts-invariant'
 import { ArgumentError } from '@internal/ArgumentError'
 import { RRect, Rect, Offset  } from '@internal/Geometry'
 import { offsetIsValid, rectIsValid, rrectIsValid } from '@helper/validators'
-import { Skia, SkiaClipOp, SkiaPointMode, SkiaFilterQuality, SkiaPicture, SkiaPictureRecorder } from '@skia/Skia'
+import { Skia, SkiaClipOp, SkiaPointMode, SkiaFilterQuality, SkiaPicture, SkiaPictureRecorder } from '@skia/binding'
 import { toMatrix32, toMallocedSkiaPoints, makeFreshSkColor } from '@skia/SkiaFormat'
 import { SkiaShadowFlags } from '@skia/SkiaShadowFlags'
 
-import type { SkiaBlendMode, SkiaCanvas } from '@skia/Skia'
+import type { SkiaBlendMode, SkiaCanvas } from '@skia/binding'
 import type { Picture } from './Picture'
 import type { PictureRecorder } from './PictureRecorder'
 import type { Image } from './Image'
@@ -15,10 +15,17 @@ import type { Path } from './Path'
 import type { ImageFilter, ManagedSkImageFilterConvertible } from './ImageFilter'
 import type { Vertices } from './Vertices'
 import type { Color } from '@internal/Color'
+import { ICanvas } from '@skia'
 
 type Methods<T> = { 
   [K in keyof T as (T[K] extends Function ? K : never)]: T[K] 
 }
+
+const kMitchellNetravaliB = 1.0 / 3.0
+const kMitchellNetravaliC = 1.0 / 3.0
+const kNoneShadowFlag = 0x00
+const kTransparentOccluderShadowFlag = 0x01
+const kDirectionalLightShadowFlag = 0x04
 
 function command (Command: { new (type, ...rest: unknown[]): PaintCommand } = PaintCommand) {
   return function (
@@ -91,36 +98,29 @@ export class PaintCommand {
 }
 
 export class Canvas {
-  static kMitchellNetravaliB = 1.0 / 3.0
-  static kMitchellNetravaliC = 1.0 / 3.0
-  static kNoneShadowFlag = 0x00
-  static kTransparentOccluderShadowFlag = 0x01
-  static kDirectionalLightShadowFlag = 0x04
-
-  static get clipOpIntersect (): SkiaClipOp {
-    return Skia.ClipOp.Intersect
+  static get clipOpIntersect (): ClipOp {
+    return Skia.binding.ClipOp.Intersect
   }
 
+  /**
+   * @description: 
+   * @param {PictureRecorder} recorder
+   * @param {Rect} cullRect
+   * @return {*}
+   */
   static fromPictureRecorder (
     recorder: PictureRecorder,
-    cullRect?: Rect | null
+    cullRect: Rect = Rect.largest
   ) {
     invariant(recorder !== null)
     if (recorder.isRecording) {
       throw new ArgumentError(`"recorder" must not already be associated with another Canvas.`)
     }
 
-    cullRect ??= Rect.largest
     const canvas = recorder.beginRecording(cullRect)
-  
-    return Canvas.malloc(canvas.skia)
+    return new Canvas(canvas.skia)
   }
 
-  static malloc (skia: SkiaCanvas) {
-    return new Canvas(skia)
-  }
-
-  public skia: SkiaCanvas
 
   public get pictureSnapshot () {
     return null
@@ -130,6 +130,9 @@ export class Canvas {
     return this.skia.getSaveCount()
   }
 
+
+  public skia: ICanvas
+  
   constructor (skia: SkiaCanvas) {
     this.skia = skia
   }
@@ -138,10 +141,12 @@ export class Canvas {
     return this.saveCount
   }
 
-  clear (color: Color) {
-    this.skia.clear(color)
-  }
-
+  /**
+   * @description: 
+   * @param {Path} path
+   * @param {boolean} doAntiAlias
+   * @return {*}
+   */
   clipPath (
     path: Path, 
     doAntiAlias: boolean = true
@@ -149,7 +154,7 @@ export class Canvas {
     invariant(path !== null)
     invariant(doAntiAlias !== null)
     this.skia.clipPath(
-      path.skia, 
+      path.skia!, 
       Canvas.clipOpIntersect,
       doAntiAlias
     )
@@ -554,6 +559,10 @@ export class Canvas {
 
   save () {
     return this.skia.save()
+  }
+
+  clear (color: Color) {
+    this.skia.clear(color)
   }
 
   saveLayer (

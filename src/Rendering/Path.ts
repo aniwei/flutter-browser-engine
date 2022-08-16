@@ -1,281 +1,140 @@
+/*
+ * @Author: Aniwei
+ * @Date: 2022-06-29 17:18:02
+ */
 import { ManagedSkiaObject } from '@skia/ManagedSkiaObject'
 import { Offset, Radius, Rect, RRect } from '@internal/Geometry'
-import { Skia, SkiaPath, SkiaFillType, SkiaPathOp } from '@skia/Skia'
+import { PathOp, IPath, FillType } from '@skia'
+import { Skia } from '@skia/Skia'
+import { Matrix4 } from '@math/Matrix4'
+import { toMallocedSkiaPoints, toSkiaMatrix } from '@helper/skia'
 
-function property<T> (
-  getter: { (v: T, k?: string): T } = function (v, k) { return v as T },
-  setter: { (v: T, k: string): void } = function (this, v: T, k) { this[k] = v }
-) {
-  return function (
-    target,
-    key: string
-  ) {
-    const k = `_${key}` 
-
-    Reflect.defineProperty(target, key, {
-      get () {
-        return Reflect.apply(getter, this, [this[k], k])
-      },
-      set (value: T) {
-        return Reflect.apply(setter, this, [value, k])
-      }
-    })
-  }
-}
-
-export interface IPath {
-  fillType: SkiaFillType
-  moveTo (
-    x: number, 
-    y: number
-  )
-  relativeMoveTo (
-    dx: number, 
-    dy: number
-  )
-  lineTo (
-    x: number, 
-    y: number
-  )
-  relativeLineTo (
-    dx: number, 
-    dy: number
-  )
-  quadraticBezierTo (
-    x1: number, 
-    y1: number, 
-    x2: number, 
-    y2: number
-  )
-  relativeQuadraticBezierTo (
-    x1: number, 
-    y1: number, 
-    x2: number, 
-    y2: number
-  )
-  cubicTo (
-    x1: number, 
-    y1: number, 
-    x2: number, 
-    y2: number, 
-    x3: number, 
-    y3: number
-  )
-  relativeCubicTo (
-    x1: number, 
-    y1: number, 
-    x2: number, 
-    y2: number, 
-    x3: number, 
-    y3: number
-  )
-  conicTo (
-    x1: number, 
-    y1: number, 
-    x2: number, 
-    y2: number, 
-    w: number
-  )
-  relativeConicTo (
-    x1: number, 
-    y1: number, 
-    x2: number, 
-    y2: number, 
-    w: number
-  )
-  arcTo (
-    rect: Rect, 
-    startAngle: number, 
-    sweepAngle: number, 
-    forceMoveTo: boolean
-  )
-  arcToPoint (
-    arcEnd: Offset,
-    radius: Radius,
-    rotation: number,
-    largeArc: boolean,
-    clockwise: boolean,
-  )
-  relativeArcToPoint(
-    arcEndDelta: Offset,
-    radius: Radius,
-    rotation: number,
-    largeArc: boolean,
-    clockwise: boolean,
-  )
-  addRect (rect: Rect)
-  addOval (oval: Rect)
-  addArc (
-    oval: Rect, 
-    startAngle: number, 
-    sweepAngle: number
-  )
-  addPolygon (
-    points: Offset[], 
-    close: boolean
-  )
-  addRRect (rrect: RRect)
-  addPath (
-    path: Path, 
-    offset: Offset, 
-    matrix4: Float64Array | null
-  )
-  extendWithPath (
-    path: Path, 
-    offset: Offset, 
-    matrix4: Float64Array | null
-  )
-  close ()
-  reset ()
-  contains (point: Offset ): boolean
-  shift (offset: Offset): Path
-  transform (matrix4: Float64Array): Path
-  getBounds (): Rect
-  computeMetrics (forceClosed: boolean)
-}
-
-export class Path extends ManagedSkiaObject<SkiaPath> implements IPath {
+/**
+ * @description: 路径类
+ * @return {*}
+ */
+export class Path extends ManagedSkiaObject<IPath> {
+  /**
+   * @description: 从路径创建新的路径对象
+   * @param {Path} other
+   * @return {*}
+   */  
   static from (other: Path) {
-    const path = Path.malloc()
+    const path = new Path(other.skia?.copy())
     path.fillType = other.fillType
-    path.skia = other.skia.copy()
-
     return path
   }
 
-  static fromSkiaPath (skPath: SkiaPath, fillType: SkiaFillType) {
-    const path = Path.malloc()
-    path.fillType = fillType
-    path.skia = skPath
-    return path
-  }
-
-  static combine (
-    operation: SkiaPathOp,
-    pathA: Path,
-    pathB: Path
+  
+  /**
+   * @description: 
+   * @param {IPath} skia
+   * @param {FillType} fillType
+   * @return {*}
+   */
+  static fromSkia (
+    skia: IPath, 
+    fillType: FillType
   ) {
-    const path = Skia.Path.MakeFromOp(
-      pathA.skia,
-      pathB.skia,
-      operation
-    ) as SkiaPath
-
-    return Path.fromSkiaPath(path, pathA.fillType)
+    const path = new Path(skia)
+    path.fillType = fillType
+    return path
   }
 
-  static malloc (): Path {
-    return new Path(new Skia.Path())
+  
+  /**
+   * @description: 
+   * @param {PathOp} operation
+   * @param {Path} pathA
+   * @param {Path} pathB
+   * @return {*}
+   */
+  static combine(
+    operation: PathOp,
+    pathA: Path,
+    pathB: Path,
+  ) {
+    const skia = Skia.Path.MakeFromOp(
+      pathA.skia!,
+      pathB.skia!,
+      operation,
+    )
+    return Path.fromSkia(skia!, pathA.fillType)
   }
 
-  @property(function (value) {
-    return value
-  }, function (this, value) {
-    if (this.fillType !== value) {
-      this.skia.setFillType(value)
-      this._fillType = value
-    }
-  }) public fillType = Skia.FillType.Winding
-
-  public get isEmpty () {
-    return this.skia.isEmpty()
+  /**
+   * @description: 填充类型
+   */  
+  public _fileType: FillType = Skia.FillType.Winding 
+  public set fillType (fillType: FillType) {
+    this.skia?.setFillType(fillType)
+    this._fileType = fillType
   }
-
+  public get fillType (): FillType {
+    return this._fileType
+  }
+  
   public cachedCommands: Float32Array | null = null
 
-  constructor (skia: SkiaPath) {
-    super(skia)
-    this.fillType = Skia.FillType.Winding
-  }
-  relativeMoveTo(dx: number, dy: number) {
-    throw new Error('Method not implemented.')
-  }
-  relativeLineTo(dx: number, dy: number) {
-    throw new Error('Method not implemented.')
-  }
-  quadraticBezierTo(x1: number, y1: number, x2: number, y2: number) {
-    throw new Error('Method not implemented.')
-  }
-  relativeQuadraticBezierTo(x1: number, y1: number, x2: number, y2: number) {
-    throw new Error('Method not implemented.')
-  }
-  cubicTo(x1: number, y1: number, x2: number, y2: number, x3: number, y3: number) {
-    throw new Error('Method not implemented.')
-  }
-  relativeCubicTo(x1: number, y1: number, x2: number, y2: number, x3: number, y3: number) {
-    throw new Error('Method not implemented.')
-  }
-  conicTo(x1: number, y1: number, x2: number, y2: number, w: number) {
-    throw new Error('Method not implemented.')
-  }
-  relativeConicTo(x1: number, y1: number, x2: number, y2: number, w: number) {
-    throw new Error('Method not implemented.')
-  }
-  arcTo(rect: Rect, startAngle: number, sweepAngle: number, forceMoveTo: boolean) {
-    throw new Error('Method not implemented.')
-  }
-  arcToPoint(arcEnd: Offset, radius: Radius, rotation: number, largeArc: boolean, clockwise: boolean) {
-    throw new Error('Method not implemented.')
-  }
-  relativeArcToPoint(arcEndDelta: Offset, radius: Radius, rotation: number, largeArc: boolean, clockwise: boolean) {
-    throw new Error('Method not implemented.')
-  }
-  addPolygon(points: Offset[], close: boolean) {
-    throw new Error('Method not implemented.')
-  }
-  addRRect(rrect: RRect) {
-    throw new Error('Method not implemented.')
-  }
-  extendWithPath(path: Path, offset: Offset, matrix4: Float64Array | null) {
-    throw new Error('Method not implemented.')
-  }
-  contains(point: Offset): boolean {
-    throw new Error('Method not implemented.')
-  }
-  shift(offset: Offset): Path {
-    throw new Error('Method not implemented.')
-  }
-  getBounds(): Rect {
-    throw new Error('Method not implemented.')
-  }
-  computeMetrics(forceClosed: boolean) {
-    throw new Error('Method not implemented.')
-  }
-
+  /**
+   * @description: 
+   * @param {Rect} oval
+   * @param {number} startAngle
+   * @param {number} sweepAngle
+   * @return {*}
+   */
   addArc (
-    oval: Rect, 
-    startAngle: number, 
+    oval: Rect,
+    startAngle: number,
     sweepAngle: number
-  ) {
-    const toDegree = 180.0 / Math.PI
-    this.skia.addArc(
-      oval, 
-      startAngle * toDegree, 
-      sweepAngle * toDegree
-    )  
-  }
+  ): void {
+    const degrees = 180 / Math.PI
 
-  addOval (oval: Rect) {
-    this.skia.addOval(
+    this.skia?.addArc(
       oval, 
-      false, 
-      1
+      startAngle * degrees, 
+      sweepAngle * degrees
     )
   }
 
+  /**
+   * @description: 
+   * @param {Rect} oval
+   * @return {*}
+   */  
+  addOval (oval: Rect) {
+    this.skia?.addOval(oval, false, 1)
+  }
+
+  /**
+   * @description: 
+   * @param {Path} path
+   * @param {Offset} offset
+   * @param {Matrix4} matrix4
+   * @return {*}
+   */
   addPath (
     path: Path,
     offset: Offset,
-    matrix4: Float64Array | null
+    matrix4?: Matrix4 | null
   ) {
-    let matrix
+    matrix4 ??= null
+    let matrix: Float32Array
     if (matrix4 === null) {
-
+      matrix = toSkiaMatrix(
+        Matrix4.translationValues(
+          offset.dx,
+          offset.dy,
+          0
+        )
+      )
     } else {
-
+      matrix = toSkiaMatrix(matrix4)
+      matrix[2] += offset.dx
+      matrix[5] += offset.dy
     }
 
-    this.skia.addPath(
+    this.skia?.addPath(
       path.skia,
       matrix[0],
       matrix[1],
@@ -286,36 +145,150 @@ export class Path extends ManagedSkiaObject<SkiaPath> implements IPath {
       matrix[6],
       matrix[7],
       matrix[8],
+      false
+    )
+  }
+
+  
+  /**
+   * @description: 
+   * @param {Offset} points
+   * @param {boolean} close
+   * @return {*}
+   */
+  addPolygon (
+    points: Offset[],
+    close: boolean
+  ): Path {
+    this.skia?.addPoly(
+      toMallocedSkiaPoints(points), 
+      close
+    )
+
+    return this
+  }
+
+  /**
+   * @description: 
+   * @param {RRect} rrect
+   * @return {*}
+   */
+  addRRect (rrect: RRect) {
+    this.skia?.addRRect(
+      rrect,
       false,
     )
   }
 
-  addRect (
-    rect: Rect
+  /**
+   * @description: 
+   * @param {Rect} rect
+   * @return {*}
+   */
+  addRect (rect: Rect) {
+    this.skia?.addRect(rect)
+  }
+
+  /**
+   * @description: 
+   * @param {Rect} rect
+   * @param {number} startAngle
+   * @param {number} sweepAngle
+   * @param {boolean} forceMoveTo
+   * @return {*}
+   */
+  arcTo(
+    rect: Rect, 
+    startAngle: number, 
+    sweepAngle: number, 
+    forceMoveTo: boolean
   ) {
-
+    const degrees = 180 / Math.PI
+    this.skia?.arcToOval(
+      rect,
+      startAngle * degrees,
+      sweepAngle * degrees,
+      forceMoveTo,
+    )
   }
 
-  moveTo (x: number, y: number) {
-    this.skia.moveTo(x, y)
+  /**
+   * @description: 
+   * @param {Offset} arcEnd
+   * @param {Radius} radius
+   * @param {number} rotation
+   * @param {boolean} largeArc
+   * @param {boolean} clockwise
+   * @return {*}
+   */
+  arcToPoint(
+    arcEnd: Offset,
+    radius: Radius = Radius.zero,
+    rotation: number = 0.0,
+    largeArc: boolean = false,
+    clockwise: boolean = true
+  ) {
+    this.skia?.arcToRotated(
+      radius.x,
+      radius.y,
+      rotation,
+      !largeArc,
+      !clockwise,
+      arcEnd.dx,
+      arcEnd.dy,
+    )
   }
 
-  lineTo (x: number, y: number) {
-    this.skia.lineTo(x, y)
+  /**
+   * @description: 
+   * @param {boolean} forceClosed
+   * @return {*}
+   */
+  computeMetrics (forceClosed: boolean = false) {
+    // TOFIN
+    // return new PathMetrics(this, forceClosed)
   }
 
-  reset () {
-    this.fillType = Skia.FillType.Winding
-    this.skia.reset()
+
+  /**
+   * @description: 
+   * @param {Offset} point
+   * @return {*}
+   */
+  contains (point: Offset) {
+    return this.skia?.contains(point.dx, point.dy)
   }
 
-  close () {
-    this.skia.close()
-  }
-
-  transform (matrix: Float64Array): Path {
-    const path = this.skia.copy()
-    path.transform(
+  /**
+   * @description: 
+   * @param {Path} path
+   * @param {Offset} offset
+   * @param {Matrix4} matrix4
+   * @return {*}
+   */
+  extendWithPath (
+    path: Path, 
+    offset: Offset, 
+    matrix4?: Matrix4 | null
+  ) {
+    matrix4 ??= null
+    let matrix: Float32Array
+    if (matrix4 === null) {
+      matrix = toSkiaMatrix(
+        Matrix4.translationValues(
+          offset.dx, 
+          offset.dy, 
+          0.0
+        )
+      )
+    } else {
+      matrix = toSkiaMatrix(matrix4)
+      matrix[2] += offset.dx
+      matrix[5] += offset.dy
+    }
+    
+    this.skia?.addPath(
+      path.skia,
       matrix[0],
       matrix[1],
       matrix[2],
@@ -325,23 +298,258 @@ export class Path extends ManagedSkiaObject<SkiaPath> implements IPath {
       matrix[6],
       matrix[7],
       matrix[8],
+      true,
     )
-
-    return Path.fromSkiaPath(path, this.fillType)
   }
 
-  delete () {
-    this.cachedCommands = this.skia?.toCmds()
-    super.delete()
+  /**
+   * @description: 
+   * @return {*}
+   */
+  getBounds (): Rect {
+    const sk = this.skia!.getBounds()
+    return Rect.fromLTRB(sk[0], sk[1], sk[2], sk[3])
   }
 
-  resurrect (): SkiaPath {
+  /**
+   * @description: 
+   * @param {number} x
+   * @param {number} y
+   * @return {*}
+   */
+  lineTo (
+    x: number, 
+    y: number
+  ) {
+    this.skia?.lineTo(x, y)
+  }
+
+  /**
+   * @description: 
+   * @param {number} x
+   * @param {number} y
+   * @return {*}
+   */
+  moveTo (
+    x: number, 
+    y: number
+  ) {
+    this.skia?.moveTo(x, y)
+  }
+
+  /**
+   * @description: 
+   * @param {number} x1
+   * @param {number} y1
+   * @param {number} x2
+   * @param {number} y2
+   * @return {*}
+   */
+  quadraticBezierTo (
+    x1: number, 
+    y1: number, 
+    x2: number, 
+    y2: number
+  ) {
+    this.skia?.quadTo(x1, y1, x2, y2)
+  }
+
+  /**
+   * @description: 
+   * @param {Offset} arcEndDelta
+   * @param {Radius} radius
+   * @param {number} rotation
+   * @param {boolean} largeArc
+   * @param {boolean} clockwise
+   * @return {*}
+   */
+  relativeArcToPoint (
+    arcEndDelta: Offset,
+    radius: Radius = Radius.zero,
+    rotation: number = 0.0,
+    largeArc: boolean = false,
+    clockwise: boolean = true
+  ) {
+    this.skia?.rArcTo(
+      radius.x,
+      radius.y,
+      rotation,
+      !largeArc,
+      !clockwise,
+      arcEndDelta.dx,
+      arcEndDelta.dy,
+    )
+  }
+
+  /**
+   * @description: 
+   * @param {number} x1
+   * @param {number} y1
+   * @param {number} x2
+   * @param {number} y2
+   * @param {number} w
+   * @return {*}
+   */
+  relativeConicTo (
+    x1: number, 
+    y1: number, 
+    x2: number, 
+    y2: number, 
+    w: number
+  ) {
+    this.skia?.rConicTo(x1, y1, x2, y2, w)
+  }
+
+  /**
+   * @description: 
+   * @param {number} x1
+   * @param {number} y1
+   * @param {number} x2
+   * @param {number} y2
+   * @param {number} x3
+   * @param {number} y3
+   * @return {*}
+   */
+  relativeCubicTo (
+    x1: number, 
+    y1: number, 
+    x2: number, 
+    y2: number, 
+    x3: number, 
+    y3: number
+  ) {
+    this.skia?.rCubicTo(x1, y1, x2, y2, x3, y3)
+  }
+
+  /**
+   * @description: 
+   * @param {number} dx
+   * @param {number} dy
+   * @param {number} dy
+   * @return {*}
+   */
+  relativeLineTo (
+    dx: number, 
+    dy: number
+  ) {
+    this.skia?.rLineTo(dx, dy)
+  }
+
+  relativeMoveTo (
+    dx: number, 
+    dy: number
+  ) {
+    this.skia?.rMoveTo(dx, dy)
+  }
+
+  /**
+   * @description: 
+   * @param {number} x1
+   * @param {number} y1
+   * @param {number} x2
+   * @param {number} y2
+   * @return {*}
+   */
+  relativeQuadraticBezierTo (
+    x1: number, 
+    y1: number, 
+    x2: number, 
+    y2: number
+  ) {
+    this.skia?.rQuadTo(x1, y1, x2, y2)
+  }
+
+  /**
+   * @description: 
+   * @param {number} x1
+   * @param {number} y1
+   * @param {number} x2
+   * @param {number} y2
+   * @param {number} w
+   * @return {*}
+   */
+  conicTo (
+    x1: number, 
+    y1: number, 
+    x2: number, 
+    y2: number, 
+    w: number
+  ) {
+    this.skia?.conicTo(x1, y1, x2, y2, w)
+  }
+
+  /**
+   * @description: 
+   * @param {Matrix4} matrix4
+   * @return {*}
+   */
+  transform (matrix4: Matrix4) {
+    const skia = this.skia?.copy()
+    const m = toSkiaMatrix(matrix4)
+    
+    skia?.transform(
+      m[0],
+      m[1],
+      m[2],
+      m[3],
+      m[4],
+      m[5],
+      m[6],
+      m[7],
+      m[8],
+    )
+    return Path.fromSkia(skia!, this.fillType)
+  }
+
+  /**
+   * @description: 
+   * @param {Offset} offset
+   * @return {*}
+   */
+  shift (offset: Offset) {
+    const skia = this.skia?.copy()
+    skia?.transform(
+      1.0, 0.0, offset.dx,
+      0.0, 1.0, offset.dy,
+      0.0, 0.0, 1.0,
+    )
+    return Path.fromSkia(skia!, this.fillType)
+  }
+
+  /**
+   * @description: 
+   * @return {*}
+   */
+  close () {
+    this.skia?.close()
+  }
+
+  /**
+   * @description: 
+   * @return {*}
+   */
+  reset () {
+    this._fileType = Skia.FillType.Winding
+    this.skia?.close()
+  }
+
+  /**
+   * @description: 
+   * @return {*}
+   */
+  toSVGString (): string | null {
+    return this.skia?.toSVGString() ?? null
+  }
+
+  /**
+   * @description: 
+   * @return {*}
+   */
+  resurrect(): IPath {
     const path = Skia.MakeFromCmds(this.cachedCommands as Float32Array)
     path?.setFillType(this.fillType)
-    return path as SkiaPath
-  }
-
-  toSvgString (): string {
-    return this.skia.toSVGString()
+    return path as IPath
   }
 }
+
+

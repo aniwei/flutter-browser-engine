@@ -2,7 +2,7 @@ import { invariant } from 'ts-invariant'
 import { Color } from '@internal/Color'
 import { Offset } from '@internal/Geometry'
 import { CubicResampler, FilterOptions } from 'canvaskit-wasm'
-import { SkiaFilterQuality, Skia } from './Skia'
+import { SkiaFilterQuality, Skia } from './binding'
 
 const kMatrixIndexToMatrix4Index = [
   0, 4, 12, // Row 1
@@ -188,7 +188,7 @@ export function toFlatColors (colors: Color[]) {
   return result
 }
 
-export function matrix4IsValid (matrix4: Float32Array) {
+export function matrix4IsValid (matrix4: Float64Array) {
   invariant(matrix4 !== null, 'Matrix4 argument was null.')
   invariant(matrix4.length === 16, 'Matrix4 must have 16 entries.')
   return true

@@ -4,17 +4,20 @@
  */
 import { PaintingBinding, PaintingBindingOptions } from '@painting/PaintingBinding'
 import { PlatformBinding, PlatformBindingOptions } from '@platform/PlatformBinding'
-import { SkiaBinding, SkiaBindingOptions } from '@skia/SkiaBinding'
+import { Skia, SkiaOptions } from '@skia/binding'
 
 export type AppOptions = {
 
-} & PlatformBindingOptions & PaintingBindingOptions & SkiaBindingOptions
+} & PlatformBindingOptions & PaintingBindingOptions & SkiaOptions
 
 class ApplicationBinding {
   static async ensureInitialized (options: AppOptions) {
     await PlatformBinding.initInstances(options)
     await PaintingBinding.initInstances(options)
-    await SkiaBinding.initInstances(options)
+    await Skia.init(
+      options.baseURI as string, 
+      options
+    )
   }
 }
 
