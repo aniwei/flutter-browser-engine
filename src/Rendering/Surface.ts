@@ -13,7 +13,7 @@ export class Surface {
 
   get canvas () {
     invariant(!this.isDisposed, 'Attempting to use the canvas of a disposed surface')
-    return Canvas.malloc(this.surface.getCanvas())
+    return new Canvas(this.surface.getCanvas())
   }
 
   get context () {

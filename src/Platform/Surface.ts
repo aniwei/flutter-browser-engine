@@ -4,10 +4,11 @@
  */
 import { invariant } from 'ts-invariant'
 import { Size } from '@internal/Geometry'
-import { Surface as RSurface } from '@rendering/Surface'
+import { Surface as SurfaceRender } from '@rendering/Surface'
 import { CanvasKitError } from '@internal/CanvasKitError'
 import { PlatformDispatcher } from '@platform/PlatformDispatcher'
-import { Skia, SkiaGrDirectContext, SkiaSurface } from '@skia/Skia'
+import { Skia } from '@skia/binding'
+import { GrDirectContext, ISurface } from '@skia'
 import { SurfaceFactory } from './SurfaceFactory'
 import { PlatformBinding } from './PlatformBinding'
 import { WebGLVersion } from './Configuration'
@@ -17,7 +18,7 @@ import { window } from '@ui/Window'
 export type SubmitCallback = { (): boolean } 
 
 export class SurfaceFrame {
-  public skia: RSurface
+  public skia: SurfaceRender
   public submitCallback: SubmitCallback
   public submitted: boolean
   
@@ -26,7 +27,7 @@ export class SurfaceFrame {
   }
 
   constructor (
-    skia: RSurface,
+    skia: SurfaceRender,
     onSubmit: SubmitCallback
   ) {
     invariant(skia !== null)
@@ -49,13 +50,13 @@ export class SurfaceFrame {
 export abstract class AbstractSurface {
   static didWarnAboutWebGlInitializationFailure = false
 
-  public surface: RSurface | null = null
+  public surface: SurfaceRender | null = null
   public forceNewContext: boolean = true
   
   public contextLost: boolean = false
 
   public skiaCacheBytes: number | null = null
-  public grContext: SkiaGrDirectContext | null = null
+  public grContext: GrDirectContext | null = null
   public glContext: number | null = null
 
   public pixelWidth: number = -1
@@ -78,7 +79,7 @@ export abstract class AbstractSurface {
   }
 
   acquireFrame (size: Size): SurfaceFrame {
-    const surface: RSurface = this.createOrUpdateSurface(size)
+    const surface: SurfaceRender = this.createOrUpdateSurface(size)
 
     const submitCallback: SubmitCallback = () => {
       return this.presentSurface()
@@ -88,8 +89,8 @@ export abstract class AbstractSurface {
   }
 
   addToScene () {}
-  abstract createOrUpdateSurface (size: Size): RSurface 
-  abstract createNewSurface (size: Size): RSurface 
+  abstract createOrUpdateSurface (size: Size): SurfaceRender 
+  abstract createNewSurface (size: Size): SurfaceRender 
 
   presentSurface () {
     this.surface!.flush()
@@ -143,9 +144,9 @@ export class BrowserSurface extends AbstractSurface {
   makeSoftwareCanvasSurface (
     canvas: HTMLCanvasElement,
     reason?: string |  null
-  ): RSurface {
-    return RSurface.malloc(
-      Skia.MakeSWCanvasSurface(canvas) as SkiaSurface,
+  ): SurfaceRender {
+    return new SurfaceRender(
+      Skia.binding.MakeSWCanvasSurface(canvas) as ISurface,
       null
     )
   }
@@ -157,7 +158,7 @@ export class BrowserSurface extends AbstractSurface {
     this.canvas!.style.transform = `translate(0, -${offset}px)`
   }
 
-  createOrUpdateSurface (size: Size): RSurface {
+  createOrUpdateSurface (size: Size): SurfaceRender {
     if (size.isEmpty) {
       throw new CanvasKitError('Cannot create surfaces of empty size.')
     }
@@ -259,7 +260,7 @@ export class BrowserSurface extends AbstractSurface {
       v !== WebGLVersion.Unknown && 
       !PlatformBinding.instance?.configuration.forceCPUOnly
     ) {
-      const glContext = Skia.GetWebGLContext(canvas,{
+      const glContext = Skia.binding.GetWebGLContext(canvas,{
         antialias: 0,
         majorVersion: v,
       })
@@ -267,7 +268,7 @@ export class BrowserSurface extends AbstractSurface {
       this.glContext = glContext
 
       if (this.glContext !== 0) {
-        this.grContext = Skia.MakeGrContext(this.glContext)
+        this.grContext = Skia.binding.MakeGrContext(this.glContext)
         if (this.grContext === null) {
           throw new CanvasKitError('Failed to initialize CanvasKit.\nCanvasKit.MakeGrContext returned null.')
         }
@@ -279,7 +280,7 @@ export class BrowserSurface extends AbstractSurface {
     this.root.appendChild(this.canvas)
   }
 
-  createNewSurface (size: Size): RSurface {
+  createNewSurface (size: Size): SurfaceRender {
     invariant(this.canvas !== null)
     const v = PlatformBinding.instance?.configuration.WebGLVersion
     if (v === WebGLVersion.Unknown) {
@@ -298,11 +299,11 @@ export class BrowserSurface extends AbstractSurface {
         'Failed to initialize WebGL context'
       )
     } else {
-      const surface = Skia.MakeOnScreenGLSurface(
+      const surface = Skia.binding.MakeOnScreenGLSurface(
         this.grContext!,
         Math.ceil(size.width),
         Math.ceil(size.height),
-        Skia.ColorSpace.SRGB,
+        Skia.binding.ColorSpace.SRGB,
       )
 
       if (surface === null) {
@@ -312,7 +313,7 @@ export class BrowserSurface extends AbstractSurface {
         )
       }
 
-      return RSurface.malloc(surface, this.glContext)
+      return new SurfaceRender(surface, this.glContext)
     }
   }
 
@@ -344,9 +345,7 @@ export class BrowserSurface extends AbstractSurface {
 }
 
 export class ServerSurface extends AbstractSurface {
-
-
-  createOrUpdateSurface(size: Size): RSurface {
+  createOrUpdateSurface(size: Size): SurfaceRender {
     if (size.isEmpty) {
       throw new CanvasKitError('Cannot create surfaces of empty size.')
     }
@@ -389,17 +388,17 @@ export class ServerSurface extends AbstractSurface {
     return this.surface = this.createNewSurface(size)
   }
 
-  createNewSurface(size: Size): RSurface {
+  createNewSurface(size: Size): SurfaceRender {
     return this.makeSoftwareCanvasSurface(size, 'Run in node')
   }
 
   makeSoftwareCanvasSurface(
     size: Size, 
     reason?: string | null
-  ): RSurface {
+  ): SurfaceRender {
     
-    return RSurface.malloc(
-      Skia.MakeSurface(
+    return new SurfaceRender(
+      Skia.binding.MakeSurface(
         Math.ceil(size.width),
         Math.ceil(size.height)
       )!,

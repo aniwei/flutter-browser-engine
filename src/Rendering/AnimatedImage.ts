@@ -1,5 +1,6 @@
 import { invariant } from 'ts-invariant'
-import { Skia, SkiaAnimatedImage } from '@skia/Skia'
+import { Skia } from '@skia/binding'
+import { IAnimatedImage } from '@skia'
 import { ManagedSkiaObject } from '@skia/ManagedSkiaObject'
 import { ImageCodecError } from '@internal/ImageCodecError'
 import { Image } from './Image'
@@ -12,7 +13,7 @@ export type AnimatedImageInitOptions = {
   src: string
 }
 
-export class AnimatedImage extends ManagedSkiaObject<SkiaAnimatedImage> implements Codec {
+export class AnimatedImage extends ManagedSkiaObject<IAnimatedImage> implements Codec {
   /**
    * @description: 
    * @param {Uint8Array} bytes
@@ -30,7 +31,7 @@ export class AnimatedImage extends ManagedSkiaObject<SkiaAnimatedImage> implemen
   }
 
   static malloc(options: AnimatedImageInitOptions): AnimatedImage {
-    const skia = Skia.MakeAnimatedImageFromEncoded(options.bytes)
+    const skia = Skia.binding.MakeAnimatedImageFromEncoded(options.bytes)
 
     if (skia === null) {
       throw new ImageCodecError(`Failed to decode image data.\nImage source: ${options.src},`)
@@ -61,7 +62,7 @@ export class AnimatedImage extends ManagedSkiaObject<SkiaAnimatedImage> implemen
   public disposed = false
 
   constructor (
-    skia: SkiaAnimatedImage,
+    skia: IAnimatedImage,
     bytes: Uint8Array,
     src: string
   ) {
@@ -72,11 +73,11 @@ export class AnimatedImage extends ManagedSkiaObject<SkiaAnimatedImage> implemen
   }
 
   async getNextFrame () {
-    const skia = this.skia
+    const skia = this.skia!
 
     const currentFrame: FrameInfo = {
       duration: skia.currentFrameDuration(),
-      image: Image.malloc(skia.makeImageAtCurrentFrame()!)
+      image: new Image(skia!.makeImageAtCurrentFrame()!)
     }
     
     skia.decodeNextFrame()
@@ -85,8 +86,8 @@ export class AnimatedImage extends ManagedSkiaObject<SkiaAnimatedImage> implemen
     return currentFrame
   }
 
-  resurrect (): SkiaAnimatedImage {
-    const image = Skia.MakeAnimatedImageFromEncoded(this.bytes)
+  resurrect (): IAnimatedImage {
+    const image = Skia.binding.MakeAnimatedImageFromEncoded(this.bytes)
 
     if (image === null) {
       throw new Error(`Failed to decode image data.\nImage source: ${this.src}`)
