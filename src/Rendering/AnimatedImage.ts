@@ -24,60 +24,56 @@ export class AnimatedImage extends ManagedSkiaObject<IAnimatedImage> implements 
     bytes: Uint8Array, 
     src: string
   ) {
-    return AnimatedImage.malloc({
+    return new AnimatedImage({
       bytes,
       src
     })
   }
 
-  static malloc(options: AnimatedImageInitOptions): AnimatedImage {
+  public frameCount: number = 0
+  public repetitionCountt: number = -1
+  public currentFrameIndex: number = 0
+  
+  public src: string
+  public bytes: Uint8Array
+  public disposed = false
+
+  /**
+   * @description: 
+   * @param {AnimatedImageInitOptions} options
+   * @return {AnimatedImage}
+   */  
+  constructor (options: AnimatedImageInitOptions) {
     const skia = Skia.binding.MakeAnimatedImageFromEncoded(options.bytes)
 
     if (skia === null) {
       throw new ImageCodecError(`Failed to decode image data.\nImage source: ${options.src},`)
     }
 
-    const image = new AnimatedImage(
-      skia,
-      options.bytes,
-      options.src
-    )
+    super(skia)
 
-    image.frameCount = skia.getFrameCount()
-    image.repetitionCount = skia.getRepetitionCount()
+    this.frameCount = skia.getFrameCount()
+    this.repetitionCount = skia.getRepetitionCount()
 
-    for (let i = 0; i < image.currentFrameIndex; i++) {
+    for (let i = 0; i < this.currentFrameIndex; i++) {
       skia.decodeNextFrame()
     }
 
-    return image
+    this.bytes = options.bytes
+    this.src = options.src
   }
+  repetitionCount: number
 
-  public frameCount = 0
-  public repetitionCount = -1
-  public currentFrameIndex = 0
-  
-  public src: string
-  public bytes: Uint8Array
-  public disposed = false
-
-  constructor (
-    skia: IAnimatedImage,
-    bytes: Uint8Array,
-    src: string
-  ) {
-    super(skia)
-
-    this.bytes = bytes
-    this.src = src
-  }
-
+  /**
+   * @description: 
+   * @return {Promise<FrameInfo>}
+   */
   async getNextFrame () {
     const skia = this.skia!
 
     const currentFrame: FrameInfo = {
       duration: skia.currentFrameDuration(),
-      image: new Image(skia!.makeImageAtCurrentFrame()!)
+      image: new Image(skia.makeImageAtCurrentFrame()!)
     }
     
     skia.decodeNextFrame()
@@ -86,6 +82,10 @@ export class AnimatedImage extends ManagedSkiaObject<IAnimatedImage> implements 
     return currentFrame
   }
 
+  /**
+   * @description: 
+   * @return {*}
+   */  
   resurrect (): IAnimatedImage {
     const image = Skia.binding.MakeAnimatedImageFromEncoded(this.bytes)
 
@@ -103,6 +103,10 @@ export class AnimatedImage extends ManagedSkiaObject<IAnimatedImage> implements 
     return image
   }
 
+  /**
+   * @description: 
+   * @return {*}
+   */  
   dispose () {
     invariant(!this.dispose, `Cannot dispose a codec that has already been disposed.`)
     this.disposed = true

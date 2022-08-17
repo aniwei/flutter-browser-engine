@@ -1,121 +1,116 @@
 import { Color } from '@internal/Color'
-import { Skia, SkiaFilterQuality } from '@skia/Skia'
+import { Skia } from '@skia/binding'
+import { FilterQuality } from '@skia'
 import { ManagedSkiaObject } from '@skia/ManagedSkiaObject'
 import { ManagedSkiaColorFilter, ComposeColorFilter, MatrixColorFilter, ColorFilter } from './ColorFilter'
-import { MaskFilter } from './MaskFilter'
 
-import type { SkiaPaint, SkiaImageFilter, SkiaBlendMode, SkiaPaintStyle, SkiaStrokeCap, SkiaStrokeJoin } from '@skia/Skia'
-import type { ManagedSkImageFilterConvertible } from './ImageFilter'
+import type { IPaint, IImageFilter, BlendMode, PaintStyle, StrokeCap, StrokeJoin } from '@skia'
+import type { ManagedSkiaImageFilterConvertible } from './ImageFilter'
+import type { MaskFilter } from './MaskFilter'
 import type { Shader } from './Shader'
 
-function property<T> (
-  getter: { (v: T, k?: string): T } = function (v, k) { return v as T },
-  setter: { (v: T, k: string): void } = function (this, v: T, k) { this[k] = v }
-) {
-  return function (
-    target,
-    key: string
-  ) {
-    const k = `_${key}` 
 
-    Reflect.defineProperty(target, key, {
-      get () {
-        return Reflect.apply(getter, this, [this[k], k])
-      },
-      set (value: T) {
-        return Reflect.apply(setter, this, [value, k])
-      }
-    })
+
+let kInvertColorFilter: ManagedSkiaColorFilter | null = null
+const kInvertColorMatrix = Float64Array.from([
+  -1.0, 0, 0, 1.0, 0, // row
+  0, -1.0, 0, 1.0, 0, // row
+  0, 0, -1.0, 1.0, 0, // row
+  1.0, 1.0, 1.0, 1.0, 0
+])
+
+const kDefaultPaintColor = new Color(0xFF000000)
+
+export class Paint extends ManagedSkiaObject<IPaint> {
+  // ===> blendMode
+  public get blendMode () {
+    return this._blendMode
   }
-}
-
-export class Paint extends ManagedSkiaObject<SkiaPaint> {
-  static get kDefaultPaintColor () {
-    return new Color(0xFF000000)
-  } 
-  static get kInvertColorMatrix () {
-    return Float32Array.from([
-      -1.0, 0, 0, 1.0, 0, // row
-      0, -1.0, 0, 1.0, 0, // row
-      0, 0, -1.0, 1.0, 0, // row
-      1.0, 1.0, 1.0, 1.0, 0
-    ])
-  }
-
-  static get kInvertColorFilter () {
-    return ManagedSkiaColorFilter.malloc(MatrixColorFilter.malloc(Paint.kInvertColorMatrix))
-  } 
-
-  static malloc () {
-    return new Paint(new Skia.Paint())
-  }
-
-  @property<SkiaBlendMode>(function (value) {
-    return value
-  }, function (this, blendMode: SkiaBlendMode) {
+  public set blendMode (blendMode: BlendMode) {
     if (this.blendMode !== blendMode) {
       this._blendMode = blendMode
-      this.skia.setBlendMode(blendMode)
+      this.skia?.setBlendMode(blendMode)
     }
-  }) public blendMode: SkiaBlendMode = Skia.BlendMode.SrcOver
+  }
+  private _blendMode: BlendMode = Skia.binding.BlendMode.SrcOver
 
-  @property<SkiaPaintStyle>(function (value) {
-    return value
-  }, function (this, style: SkiaPaintStyle) {
+  // ===> style
+  public get style () {
+    return this._style
+  }
+  public set style (style: PaintStyle) {
     if (this.style !== style) {
       this._style = style
-      this.skia.setStyle(style)
+      this.skia?.setStyle(style)
     }
-  }) public style: SkiaPaintStyle = Skia.PaintStyle.Fill
+  }
+  private _style: PaintStyle = Skia.binding.PaintStyle.Fill
 
-  @property<number>(function (value) {
-    return value
-  }, function (this, strokeWidth: number) {
+  // ===> strokeWidth
+  public get strokeWidth () {
+    return this._strokeWidth
+  }
+  public set (strokeWidth: number) {
     if (this._strokeWidth !== strokeWidth) {
       this._strokeWidth = strokeWidth
-      this.skia.setStrokeWidth(strokeWidth)
+      this.skia?.setStrokeWidth(strokeWidth)
     }
-  }) public strokeWidth: number = 0.0
+  }
+  private _strokeWidth: number = 0.0
 
-  @property<SkiaStrokeCap>(function (value) {
-    return value
-  }, function (this, strokeCap: SkiaStrokeCap) {
+  // ===> strokeCap
+  public get strokeCap () {
+    return this._strokeCap
+  }
+  public set strokeCap (strokeCap: StrokeCap) {
     if (this._strokeCap !== strokeCap) {
       this._strokeCap = strokeCap
-      this.skia.setStrokeCap(strokeCap)
+      this.skia?.setStrokeCap(strokeCap)
     }
-  }) public strokeCap: SkiaStrokeCap = Skia.StrokeCap.Butt
+  }
+  private _strokeCap: StrokeCap = Skia.binding.StrokeCap.Butt
 
-  @property<SkiaStrokeJoin>(function (value) {
-    return value
-  }, function (this, strokeJoin: SkiaStrokeJoin) {
+  // ===> strokeJoin
+  public get strokeJoin () {
+    return this._strokeJoin
+  }
+  public set strokeJoin (strokeJoin: StrokeJoin) {
     if (this.strokeJoin !== strokeJoin) {
       this._strokeJoin = strokeJoin
-      this.skia.setStrokeJoin(strokeJoin)
+      this.skia?.setStrokeJoin(strokeJoin)
     }
-  }) public strokeJoin: SkiaStrokeJoin = Skia.StrokeJoin.Miter
+  }
+  private _strokeJoin: StrokeJoin = Skia.binding.StrokeJoin.Miter
 
-  @property<boolean>(function (value) {
-    return value
-  }, function (this, isAntiAlias: boolean) {
+  // ===> isAntiAlias
+  public get isAntiAlias () {
+    return this._isAntiAlias
+  }
+  public set isAntiAlias (isAntiAlias: boolean) {
     if (this.isAntiAlias !== isAntiAlias) {
       this._isAntiAlias = isAntiAlias
-      this.skia.setAntiAlias(isAntiAlias)
+      this.skia?.setAntiAlias(isAntiAlias)
     }
-  }) public isAntiAlias: boolean = true
+  }
+  private _isAntiAlias: boolean = true
 
-  @property<Color>(function (value) {
-    return value
-  }, function (this, color: Color) {
+  // ===> color
+  public get color () {
+    return this._color
+  }
+  public set color (color: Color) {
     if (this.color !== color) {
       this._color = color
-      this.skia.setColorInt(color.value)
+      this.skia?.setColorInt(color.value)
     }
-  }) public color: Color = Paint.kDefaultPaintColor
-
-  @property<boolean>(function (value) {
-    return value
-  }, function (this, invertColors: boolean) {
+  }
+  private _color: Color = kDefaultPaintColor
+  
+  // ===> invertColors
+  public get invertColors () {
+    return this._invertColors
+  }
+  public set invertColors (invertColors: boolean) {
     if (this.invertColors !== invertColors) {
       if (!invertColors) {
         this.effectiveColorFilter = this.originalColorFilter
@@ -123,73 +118,92 @@ export class Paint extends ManagedSkiaObject<SkiaPaint> {
       } else {
         this.originalColorFilter = this.effectiveColorFilter
         if (this.effectiveColorFilter === null) {
-          this.effectiveColorFilter = Paint.kInvertColorFilter
+          this.effectiveColorFilter = kInvertColorFilter ?? createInverColorFilter()
         } else {
-          this.effectiveColorFilter = ManagedSkiaColorFilter.malloc(
-            ComposeColorFilter.malloc({
-              outer: Paint.kInvertColorFilter,
+          this.effectiveColorFilter = new ManagedSkiaColorFilter(
+            new ComposeColorFilter({
+              outer: kInvertColorFilter ?? createInverColorFilter(),
               inner: this.effectiveColorFilter
             })
           )
         }
       }
-    }
-  }) public invertColors: boolean = false
 
-  @property<Shader>(function (value) {
-    return value
-  }, function (this, shader: Shader) {
+      if (this.effectiveColorFilter !== null) {
+        this.skia?.setColorFilter(this.effectiveColorFilter.skia!)
+      }
+      this.invertColors = invertColors
+    }
+  }
+  private _invertColors: boolean = false
+
+  // ===> shader
+  public get shader () {
+    return this._shader
+  }
+  public set shader (shader: Shader | null) {
     if (this.shader !== shader) {
       this._shader = shader
       
       if (this.shader !== null) {
-        this.skia.setShader((this.shader as Shader).withQuality(this.filterQuality))
+        this.skia?.setShader((this.shader as Shader).withQuality(this.filterQuality)!)
       }
     }
-  }) public shader: Shader | null = null
+  }
+  private _shader: Shader | null = null
 
-  @property<MaskFilter>(function (value) {
-    return value
-  }, function (this, maskFilter: MaskFilter) {
-    if (maskFilter && this.maskFilter !== maskFilter) {
+  // ===> maskFilter
+  public get maskFilter () {
+    return this._maskFilter
+  }
+  public set maskFilter (maskFilter: MaskFilter | null) {
+    if (this.maskFilter !== maskFilter) {
+
       this._maskFilter = maskFilter
-      this.skia.setMaskFilter(maskFilter.skia!)
+      if (this._maskFilter !== null) {
+        this.skia?.setMaskFilter(this._maskFilter.skia!)
+      }
     }
-  }) public maskFilter: MaskFilter | null = null
+  }
+  private _maskFilter: MaskFilter | null = null
 
-  // @TODO
-  @property<SkiaFilterQuality>(function (value) {
-    return value
-  }, function (this, filterQuality: SkiaFilterQuality) {
+  // ===> filterQuality
+  public get filterQuality () {
+    return this._filterQuality
+  }
+  public set filterQuality (filterQuality: FilterQuality) {
     if (this.filterQuality !== filterQuality) {
       this._filterQuality = filterQuality
       if (this.shader !== null) {
-        this.skia.setShader((this.shader as Shader).withQuality(this.filterQuality))
+        this.skia?.setShader((this.shader as Shader).withQuality(this.filterQuality)!)
       }
     }
-  }) public filterQuality: SkiaFilterQuality = SkiaFilterQuality.None
+  }
+  private _filterQuality: FilterQuality = FilterQuality.None
 
-  @property<ColorFilter>(function (value) {
-    return value
-  }, function (this, colorFilter: ColorFilter) {
+  // ===> colorFilter
+  public get colorFilter () {
+    return this._colorFilter
+  }
+  public set colorFilter (colorFilter: ColorFilter | null) {
     if (this.colorFilter !== colorFilter) {
       this.originalColorFilter = null
 
       if (colorFilter === null) {
         this.effectiveColorFilter = null
       } else {
-        this.effectiveColorFilter = ManagedSkiaColorFilter.malloc(colorFilter)
+        this.effectiveColorFilter = new ManagedSkiaColorFilter(colorFilter)
       }
 
       if (this.invertColors) {
         this.originalColorFilter = this.effectiveColorFilter
 
         if (this.effectiveColorFilter === null) {
-          this.effectiveColorFilter = Paint.kInvertColorFilter
+          this.effectiveColorFilter = kInvertColorFilter ?? createInverColorFilter()
         } else {
-          this.effectiveColorFilter = ManagedSkiaColorFilter.malloc(
-            ComposeColorFilter.malloc({
-              inner: Paint.kInvertColorFilter,
+          this.effectiveColorFilter = new ManagedSkiaColorFilter(
+            new ComposeColorFilter({
+              inner: kInvertColorFilter ?? createInverColorFilter(),
               outer: this.effectiveColorFilter
             })
           )
@@ -197,46 +211,62 @@ export class Paint extends ManagedSkiaObject<SkiaPaint> {
       } 
       
       if (this.effectiveColorFilter !== null) {
-        this.skia.setColorFilter(this.effectiveColorFilter.skia)
+        this.skia?.setColorFilter(this.effectiveColorFilter.skia!)
       }
     }
-  }) public colorFilter: ColorFilter | null = null
+  }
+  private _colorFilter: ColorFilter | null = null
 
-  @property<number>(function (value) {
-    return value
-  }, function (this, strokeMiterLimit: number) {
+  // ===> strokeMiterLimit
+  public get strokeMiterLimit () {
+    return this._strokeMiterLimit
+  }
+  public set strokeMiterLimit (strokeMiterLimit: number) {
     if (this.strokeMiterLimit !== strokeMiterLimit) {
       this._strokeMiterLimit = strokeMiterLimit
-      this.skia.setStrokeMiter(strokeMiterLimit)
+      this.skia?.setStrokeMiter(strokeMiterLimit)
     }
-  }) public strokeMiterLimit: number = 0
+  }
+  private _strokeMiterLimit: number = 0
 
-  @property<ManagedSkImageFilterConvertible>(function (value) {
-    return value
-  }, function (this, imageFilter: ManagedSkImageFilterConvertible) {
+  // ===> imageFilter
+  public get imageFilter () {
+    return this._imageFilter
+  }
+  public set imageFilter (imageFilter: ManagedSkiaImageFilterConvertible | null) {
     if (this.imageFilter !== imageFilter) {
       this._imageFilter = imageFilter
 
       if (imageFilter !== null) {
         this.managedImageFilter = imageFilter.imageFilter
-        this.skia.setImageFilter(this.managedImageFilter.skia)
+        this.skia?.setImageFilter(this.managedImageFilter!.skia!)
       }
     }
-  }) public imageFilter: ManagedSkImageFilterConvertible | null = null
+  }
+  private _imageFilter: ManagedSkiaImageFilterConvertible | null = null
 
   public originalColorFilter: ManagedSkiaColorFilter | null = null
   public effectiveColorFilter: ManagedSkiaColorFilter | null = null
-  public managedImageFilter: ManagedSkiaObject<SkiaImageFilter> | null = null
+  public managedImageFilter: ManagedSkiaObject<IImageFilter> | null = null
 
-  constructor (skia: SkiaPaint) {
+  /**
+   * @description: 
+   * @param {IPaint} skia
+   * @return {Paint}
+   */  
+  constructor (skia: IPaint) {
     super(skia)
 
-    this.skia.setAntiAlias(this.isAntiAlias)
-    this.skia.setColorInt(this.color.value)
+    this.skia?.setAntiAlias(this.isAntiAlias)
+    this.skia?.setColorInt(this.color.value)
   }
 
-  resurrect (): SkiaPaint {
-    const paint = new Skia.Paint()
+  /**
+   * @description: 
+   * @return {IPaint}
+   */  
+  resurrect (): IPaint {
+    const paint = new Skia.binding.Paint()
     paint.setBlendMode(this.blendMode)
     paint.setStyle(this.style)
     paint.setStrokeWidth(this.strokeWidth)
@@ -245,15 +275,15 @@ export class Paint extends ManagedSkiaObject<SkiaPaint> {
     paint.setShader(this.shader!.withQuality(this.filterQuality)) 
     paint.setMaskFilter(this.maskFilter!.skia)
     paint.setColorFilter(this.effectiveColorFilter?.skia!)
-    paint.setImageFilter((this.managedImageFilter as ManagedSkiaObject<SkiaImageFilter>).skia)
+    paint.setImageFilter((this.managedImageFilter as ManagedSkiaObject<IImageFilter>).skia)
     paint.setStrokeCap(this.strokeCap)
     paint.setStrokeJoin(this.strokeJoin)
     paint.setStrokeMiter(this.strokeMiterLimit)
 
     return paint
   }
+}
 
-  delete () {
-    this.skia.delete()
-  }
+function createInverColorFilter() {
+  return kInvertColorFilter = new ManagedSkiaColorFilter(new MatrixColorFilter(kInvertColorMatrix))
 }

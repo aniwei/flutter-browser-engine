@@ -2,7 +2,21 @@
  * @Author: Aniwei
  * @Date: 2022-08-16 16:33:07
  */
+import { EmbindObject } from 'canvaskit-wasm'
 export * from 'canvaskit-wasm'
+
+export const kShadowFlags = {
+  kNoneShadowFlag: 0x00,
+  kTransparentOccluderShadowFlag: 0x01,
+  kDirectionalLightShadowFlag: 0x04,
+  get kDefaultShadowFlags () {
+    return this.kDirectionalLightShadowFlag | this.kNoneShadowFlag
+  },
+  get kTransparentOccluderShadowFlags () {
+    return  this.kDirectionalLightShadowFlag | this.kTransparentOccluderShadowFlag
+  }
+}
+
 
 export enum FilterQuality {
   None,
@@ -10,6 +24,8 @@ export enum FilterQuality {
   Medium,
   High,
 }
+
+export interface IColorFilter extends EmbindObject<IColorFilter> { }
 
 export type {
   Canvas as ICanvas,
@@ -31,5 +47,8 @@ export type {
   StrutStyle as IStrutStyle,
   FontStyle as IFontStyle,
   TextStyle as ITextStyle,
-  Surface as ISurface
+  Surface as ISurface,
+  ParagraphBuilder as IParagraphBuilder,
+  Paragraph as IParagraph,
+  LineMetrics as ILineMetrics
 } from 'canvaskit-wasm'

@@ -1,11 +1,16 @@
 import { invariant } from 'ts-invariant'
-import { ManagedSkiaObject } from '@skia/ManagedSkiaObject'
 import { Skia } from '@skia/binding'
-import { ColorFilter, ImageFilter, BlendMode } from '@skia'
+import { ManagedSkiaObject } from '@skia/ManagedSkiaObject'
+import { IColorFilter, ImageFilter, BlendMode } from '@skia'
 import { ColorFilterImageFilter } from './ImageFilter'
+import { listEquals } from '@helper/listEquals'
 import type { Color } from '@internal/Color'
 
-export abstract class AbstractColorFilter {
+export abstract class ColorFilter {
+  /**
+   * @description: 
+   * @return {*}
+   */  
   static mode (
     color: Color,
     blendMode: BlendMode
@@ -14,37 +19,43 @@ export abstract class AbstractColorFilter {
   }
 
   public get imageFilter (): ManagedSkiaObject<ImageFilter> {
-    return ColorFilterImageFilter.malloc({ colorFilter: this })
+    return new ColorFilterImageFilter({ colorFilter: this })
   }
   
   initRawImageFilter (): ImageFilter  {
     return Skia.binding.ImageFilter.MakeColorFilter(this.initRawColorFilter(), null)
   }
 
-  abstract initRawColorFilter (): ColorFilter
+  abstract initRawColorFilter (): IColorFilter
 }
 
-export class ManagedSkiaColorFilter extends ManagedSkiaObject<ColorFilter> {
-  static malloc (colorFilter: ColorFilter): ManagedSkiaColorFilter {
-    const managedSkiaColorFilter = new ManagedSkiaColorFilter(
-      colorFilter.initRawColorFilter(), 
-      colorFilter,
-    )
-
-    return managedSkiaColorFilter
-  }
-
+export class ManagedSkiaColorFilter extends ManagedSkiaObject<IColorFilter> {
   public colorFilter: ColorFilter
 
-  constructor (skia, colorFilter: ColorFilter) {
+  /**
+   * @description: 
+   * @param {ColorFilter} colorFilter
+   * @return {*}
+   */  
+  constructor (colorFilter: ColorFilter) {
+    const skia = colorFilter.initRawColorFilter()
     super(skia)
     this.colorFilter = colorFilter
   }
 
+  /**
+   * @description: 
+   * @return {IColorFilter}
+   */  
   resurrect () {
     return this.colorFilter.initRawColorFilter()
   }
   
+  /**
+   * @description: 
+   * @param {ManagedSkiaColorFilter} other
+   * @return {boolean}
+   */  
   eq (other: ManagedSkiaColorFilter) {
     if (other instanceof ManagedSkiaColorFilter) {
       return this.colorFilter === other.colorFilter
@@ -53,6 +64,10 @@ export class ManagedSkiaColorFilter extends ManagedSkiaObject<ColorFilter> {
     return false
   }
 
+  /**
+   * @description: 
+   * @return {string}
+   */  
   toString () {
     return this.colorFilter.toString()
   }
@@ -63,15 +78,15 @@ export type BlendModeColorFilterOptions = {
   blendMode: BlendMode
 }
 
-export class BlendModeColorFilter extends AbstractColorFilter {
-  static init (options: BlendModeColorFilterOptions) {
-    const blendModeColorFilter = new BlendModeColorFilter(options)
-    return blendModeColorFilter
-  }
-
+export class BlendModeColorFilter extends ColorFilter {
   public color: Color
   public blendMode: BlendMode
 
+  /**
+   * @description: 
+   * @param {BlendModeColorFilterOptions} options
+   * @return {BlendModeColorFilter}
+   */  
   constructor (options: BlendModeColorFilterOptions) {
     super()
 
@@ -79,6 +94,10 @@ export class BlendModeColorFilter extends AbstractColorFilter {
     this.blendMode = options.blendMode
   }
 
+  /**
+   * @description: 
+   * @return {ColorFilterSkiaObject}
+   */  
   initRawColorFilter () {
     return Skia.binding.ColorFilter.MakeBlend(
       this.color,
@@ -86,66 +105,96 @@ export class BlendModeColorFilter extends AbstractColorFilter {
     )
   }
 
+  /**
+   * @description: 
+   * @param {BlendModeColorFilter} other
+   * @return {boolean}
+   */  
   eq (other: BlendModeColorFilter) {
-    if (other instanceof BlendModeColorFilter) {
-      return (
-        other.color === this.color &&
-        other.blendMode === this.blendMode
-      )
-    }
-
-    return false
+    return (
+      other instanceof BlendModeColorFilter &&
+      other.color === this.color &&
+      other.blendMode === this.blendMode
+    )
   }
 
+  /**
+   * @description: 
+   * @return {string}
+   */  
   toString () {
     return `ColorFilter.mode(${this.color}, ${this.blendMode})`
   }
 }
 
+export class MatrixColorFilter extends ColorFilter {
+  public matrix: Float64Array
 
-export class MatrixColorFilter extends AbstractColorFilter {
-  static malloc (matrix: Float32Array) {
-    const matrixColorFilter = new MatrixColorFilter(matrix)
-    return matrixColorFilter
-  }
-
-  public matrix: Float32Array
-
-  constructor (matrix: Float32Array) {
+  /**
+   * @description: 
+   * @param {Float64Array} matrix
+   * @return {*}
+   */  
+  constructor (matrix: Float64Array) {
     super()
 
     this.matrix = matrix
   }
 
+  /**
+   * @description: 
+   * @return {ColorFilterSkiaObject}
+   */  
   initRawColorFilter () {
     invariant(this.matrix.length === 20, 'Color Matrix must have 20 entries.')
 
     return Skia.binding.ColorFilter.MakeMatrix(this.matrix)
   }
 
-  eq () {
-
+  /**
+   * @description: 
+   * @param {MatrixColorFilter} other
+   * @return {boolean}
+   */  
+  eq (other: MatrixColorFilter) {
+    return (
+      other instanceof MatrixColorFilter &&
+      listEquals(this.matrix, other.matrix)
+    )
   }
 
+  /**
+   * @description: 
+   * @return {string}
+   */  
   toString () {
     return `ColorFilter.matrix(${this.matrix})`
   }
 }
 
 
-export class CkLinearToSrgbGammaColorFilter extends AbstractColorFilter {
-  static init () {
-    return new CkLinearToSrgbGammaColorFilter()
-  }
-
+export class LinearToSrgbGammaColorFilter extends ColorFilter {
+  /**
+   * @description: 
+   * @return {ColorFilterSkiaObject}
+   */  
   initRawColorFilter () {
     return Skia.binding.ColorFilter.MakeLinearToSRGBGamma()
   }
 
-  eq (other: CkLinearToSrgbGammaColorFilter) {
-    return other instanceof CkLinearToSrgbGammaColorFilter
+  /**
+   * @description: 
+   * @param {LinearToSrgbGammaColorFilter} other
+   * @return {boolean}
+   */  
+  eq (other: LinearToSrgbGammaColorFilter) {
+    return other instanceof LinearToSrgbGammaColorFilter
   }
 
+  /**
+   * @description: 
+   * @return {string}
+   */  
   toString () {
     return `ColorFilter.linearToSrgbGamma()`
   }
@@ -157,29 +206,38 @@ export type ComposeColorFilterOptions = {
   inner: ManagedSkiaColorFilter
 }
 
-export class ComposeColorFilter extends AbstractColorFilter {
-  static malloc (options: ComposeColorFilterOptions) {
-    const composeColorFilter = new ComposeColorFilter(options)
-    return composeColorFilter
-  }
-
-  public outer: ManagedSkiaColorFilter
+export class ComposeColorFilter extends ColorFilter {
+  public outer: ManagedSkiaColorFilter | null = null
   public inner: ManagedSkiaColorFilter
 
+  /**
+   * @description: 
+   * @param {ComposeColorFilterOptions} options
+   * @return {ComposeColorFilter}
+   */  
   constructor (options: ComposeColorFilterOptions) {
     super()
 
-    this.outer = options.outer
+    this.outer = options.outer ?? null
     this.inner = options.inner
   }
 
+  /**
+   * @description: 
+   * @return {ColorFilterSkiaObject}
+   */
   initRawColorFilter () {
     return Skia.binding.ColorFilter.MakeCompose(
-      this.outer.skia,
+      this.outer?.skia,
       this.inner.skia
     )
   }
 
+  /**
+   * @description: 
+   * @param {ComposeColorFilter} other
+   * @return {boolean}
+   */
   eq (other: ComposeColorFilter) {
     if (other instanceof ComposeColorFilter) {
       return (
@@ -191,6 +249,10 @@ export class ComposeColorFilter extends AbstractColorFilter {
     return false
   }
 
+  /**
+   * @description: 
+   * @return {*}
+   */  
   toString () {
     return `ColorFilter.compose(${this.outer}, ${this.inner})`
   }

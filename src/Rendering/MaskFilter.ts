@@ -1,36 +1,53 @@
-import { Skia, SkiaBlurStyle, SkiaMaskFilter } from '@skia/Skia'
+/*
+ * @Author: Aniwei
+ * @Date: 2022-06-13 09:47:07
+ */
+import { Skia } from '@skia/binding'
+import { BlurStyle, MaskFilter as MaskFilterSkiaObject } from '@skia'
 import { ManagedSkiaObject } from '@skia/ManagedSkiaObject'
 
 
 export type MaskFilterOptions = {
-  blurStyle: SkiaBlurStyle,
+  blurStyle: BlurStyle,
   sigma: number
 }
 
-export class MaskFilter extends ManagedSkiaObject<SkiaMaskFilter> {
+export class MaskFilter extends ManagedSkiaObject<MaskFilterSkiaObject> {
+  /**
+   * @description: 
+   * @param {MaskFilterOptions} options
+   * @return {MaskFilter}
+   */  
   static blur(options: MaskFilterOptions) {
-    return new MaskFilter(Skia.MaskFilter.MakeBlur(
+    return new MaskFilter(options)
+  }
+
+  public blurStyle: BlurStyle
+  public sigma: number
+
+  /**
+   * @description: 
+   * @param {MaskFilterOptions} options
+   * @return {MaskFilter}
+   */  
+  constructor (options: MaskFilterOptions) {
+    const skia = Skia.binding.MaskFilter.MakeBlur(
       options.blurStyle,
       options.sigma,
       true
-    ), options)
-  }
-
-  public blurStyle: SkiaBlurStyle
-  public sigma: number
-
-  constructor (
-    skia: SkiaMaskFilter,
-    options: MaskFilterOptions,
-  ) {
+    )
     super(skia)
 
     this.blurStyle = options.blurStyle
     this.sigma = options.sigma
   }
 
-  resurrect (): SkiaMaskFilter {
-    return Skia.MaskFilter.MakeBlur(
+  /**
+   * @description: 
+   * @return {MaskFilterSkiaObject}
+   */  
+  resurrect (): MaskFilterSkiaObject {
+    return Skia.binding.MaskFilter.MakeBlur(
       this.blurStyle,
       this.sigma,
       true

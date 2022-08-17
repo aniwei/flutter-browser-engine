@@ -1,3 +1,6 @@
+import { invariant } from 'ts-invariant'
+import type { Offset } from '@internal/Geometry'
+
 /*
  * @Author: Aniwei
  * @Date: 2022-08-12 10:25:11
@@ -14,3 +17,4 @@ export const isWindow = (
   Object.prototype.toString.call(process) === '[object process]' &&
   process.platform === 'win32'
 )
+

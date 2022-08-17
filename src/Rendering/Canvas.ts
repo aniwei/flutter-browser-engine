@@ -1,21 +1,21 @@
 import { invariant } from 'ts-invariant'
+import { Skia } from '@skia/binding'
 import { ArgumentError } from '@internal/ArgumentError'
 import { RRect, Rect, Offset  } from '@internal/Geometry'
+import { FilterQuality, kShadowFlags } from '@skia'
 import { offsetIsValid, rectIsValid, rrectIsValid } from '@helper/validators'
-import { Skia, SkiaClipOp, SkiaPointMode, SkiaFilterQuality, SkiaPicture, SkiaPictureRecorder } from '@skia/binding'
-import { toMatrix32, toMallocedSkiaPoints, makeFreshSkColor } from '@skia/SkiaFormat'
-import { SkiaShadowFlags } from '@skia/SkiaShadowFlags'
+import { makeFreshSkiaColor, toMallocedSkiaPoints, toMatrix32 } from '@helper/skia'
 
-import type { SkiaBlendMode, SkiaCanvas } from '@skia/binding'
+import type { Color } from '@internal/Color'
+import type { ICanvas, ClipOp, PointMode, IPicture, IPictureRecorder,BlendMode  } from '@skia'
 import type { Picture } from './Picture'
-import type { PictureRecorder } from './PictureRecorder'
 import type { Image } from './Image'
 import type { Paint } from './Paint'
 import type { Path } from './Path'
-import type { ImageFilter, ManagedSkImageFilterConvertible } from './ImageFilter'
 import type { Vertices } from './Vertices'
-import type { Color } from '@internal/Color'
-import { ICanvas } from '@skia'
+import type { PictureRecorder } from './PictureRecorder'
+import type { ImageFilter, ManagedSkiaImageFilterConvertible } from './ImageFilter'
+
 
 type Methods<T> = { 
   [K in keyof T as (T[K] extends Function ? K : never)]: T[K] 
@@ -23,9 +23,6 @@ type Methods<T> = {
 
 const kMitchellNetravaliB = 1.0 / 3.0
 const kMitchellNetravaliC = 1.0 / 3.0
-const kNoneShadowFlag = 0x00
-const kTransparentOccluderShadowFlag = 0x01
-const kDirectionalLightShadowFlag = 0x04
 
 function command (Command: { new (type, ...rest: unknown[]): PaintCommand } = PaintCommand) {
   return function (
@@ -63,17 +60,6 @@ export const kShadowLightXOffset = 0
 export const kShadowLightYOffset = -450
 export const kShadowLightXTangent = kShadowLightXOffset / kShadowLightHeight
 export const kShadowLightYTangent = kShadowLightYOffset / kShadowLightHeight
-
-export enum PointMode {
-  Points,
-  Lines,
-  Polygon
-}
-
-export enum ClipOp {
-  Difference,
-  Intersect
-}
 
 export enum VertexMode {
   Triangles,
@@ -133,10 +119,19 @@ export class Canvas {
 
   public skia: ICanvas
   
-  constructor (skia: SkiaCanvas) {
+  /**
+   * @description: 
+   * @param {ICanvas} skia
+   * @return {Canvas}
+   */  
+  constructor (skia: ICanvas) {
     this.skia = skia
   }
 
+  /**
+   * @description: 
+   * @return {number}
+   */  
   getSaveCount () {
     return this.saveCount
   }
@@ -160,7 +155,13 @@ export class Canvas {
     )
   }
 
-  clipRRect(
+  /**
+   * @description: 
+   * @param {RRect} rrect
+   * @param {boolean} doAntiAlias
+   * @return {void}
+   */
+  clipRRect (
     rrect: RRect, 
     doAntiAlias: boolean
   ) {
@@ -174,9 +175,16 @@ export class Canvas {
     )
   }
 
+  /**
+   * @description: 
+   * @param {Rect} rect
+   * @param {ClipOp} clipOp
+   * @param {boolean} doAntiAlias
+   * @return {void}
+   */
   clipRect (
     rect: Rect, 
-    clipOp: SkiaClipOp = Skia.ClipOp.Intersect, 
+    clipOp: ClipOp = Skia.binding.ClipOp.Intersect, 
     doAntiAlias: boolean = true
   ) {
     invariant(clipOp !== null)
@@ -212,18 +220,26 @@ export class Canvas {
     rstTransforms: Float32Array,
     rects: Float32Array,
     colors: Uint32Array,
-    blendMode: SkiaBlendMode
+    blendMode: BlendMode
   ) {
     this.skia.drawAtlas(
       atlas.skImage,
       rects,
       rstTransforms,
-      paint.skia,
+      paint.skia!,
       blendMode,
       colors
     )
   }
 
+  
+  /**
+   * @description: 
+   * @param {Float32Array} offset
+   * @param {number} radius
+   * @param {*} paint
+   * @return {*}
+   */
   drawCircle (
     offset: Float32Array, // 
     radius: number,
@@ -239,7 +255,7 @@ export class Canvas {
 
   drawColor (
     color: Color, 
-    blendMode: SkiaBlendMode
+    blendMode: BlendMode
   ) {
     invariant(color !== null)
     invariant(blendMode !== null)
@@ -260,10 +276,17 @@ export class Canvas {
     this.skia.drawDRRect(
       outer,
       inner,
-      paint.skia,
+      paint.skia!,
     )
   }
 
+  /**
+   * @description: 
+   * @param {Image} image
+   * @param {Offset} offset
+   * @param {Paint} paint
+   * @return {*}
+   */
   drawImage ( // 
     image: Image, 
     offset: Offset, 
@@ -275,13 +298,13 @@ export class Canvas {
 
     const filterQuality = paint.filterQuality
     
-    if (filterQuality == SkiaFilterQuality.High) {
+    if (filterQuality === FilterQuality.High) {
       this.skia.drawImageCubic(
         image.skia,
         offset.dx,
         offset.dy,
-        Canvas.kMitchellNetravaliB,
-        Canvas.kMitchellNetravaliC,
+        kMitchellNetravaliB,
+        kMitchellNetravaliC,
         paint.skia,
       )
     } else {
@@ -289,16 +312,26 @@ export class Canvas {
         image.skia,
         offset.dx,
         offset.dy,
-        filterQuality === SkiaFilterQuality.None ?
-          Skia.FilterMode.Nearest : Skia.FilterMode.Linear,
-        filterQuality === SkiaFilterQuality.Medium ? 
-          Skia.MipmapMode.Linear : Skia.MipmapMode.None,
+        filterQuality === FilterQuality.None 
+          ? Skia.binding.FilterMode.Nearest 
+          : Skia.binding.FilterMode.Linear,
+        filterQuality === FilterQuality.Medium 
+          ? Skia.binding.MipmapMode.Linear 
+          : Skia.binding.MipmapMode.None,
         paint.skia,
       )
     }
   }
 
-  drawImageRect ( // 
+  /**
+   * @description: 
+   * @param {Image} image
+   * @param {Rect} src
+   * @param {Rect} dst
+   * @param {Paint} paint
+   * @return {*}
+   */
+  drawImageRect (
     image: Image, 
     src: Rect, 
     dst: Rect, 
@@ -310,13 +343,13 @@ export class Canvas {
     invariant(paint !== null)
 
     const filterQuality = paint.filterQuality
-    if (filterQuality == SkiaFilterQuality.High) {
+    if (filterQuality === FilterQuality.High) {
       this.skia.drawImageRectCubic(
         image.skia,
         src,
         dst,
-        Canvas.kMitchellNetravaliB,
-        Canvas.kMitchellNetravaliC,
+        kMitchellNetravaliB,
+        kMitchellNetravaliC,
         paint.skia,
       )
     } else {
@@ -324,15 +357,25 @@ export class Canvas {
         image.skia,
         src,
         dst,
-        filterQuality === SkiaFilterQuality.None ?
-          Skia.FilterMode.Nearest : Skia.FilterMode.Linear,
-        filterQuality === SkiaFilterQuality.Medium ? 
-          Skia.MipmapMode.Linear : Skia.MipmapMode.None,
+        filterQuality === FilterQuality.None 
+          ? Skia.binding.FilterMode.Nearest 
+          : Skia.binding.FilterMode.Linear,
+        filterQuality === FilterQuality.Medium 
+          ? Skia.binding.MipmapMode.Linear 
+          : Skia.binding.MipmapMode.None,
         paint.skia,
       )
     }
   }
 
+  /**
+   * @description: 
+   * @param {Image} image
+   * @param {Rect} center
+   * @param {Rect} dist
+   * @param {Paint} paint
+   * @return {*}
+   */
   drawImageNine (
     image: Image, 
     center: Rect, 
@@ -348,14 +391,21 @@ export class Canvas {
       image.skia,
       center as unknown as Int32Array,
       dist,
-      paint.filterQuality === SkiaFilterQuality.None 
-        ? Skia.FilterMode.Nearest 
-        : Skia.FilterMode.Linear,
+      paint.filterQuality === FilterQuality.None 
+        ? Skia.binding.FilterMode.Nearest 
+        : Skia.binding.FilterMode.Linear,
       paint.skia,
     )
   }
 
-  drawLine ( // @TODO
+  /**
+   * @description: 
+   * @param {*} pointA
+   * @param {*} pointB
+   * @param {Paint} paint
+   * @return {*}
+   */
+  drawLine (
     pointA, 
     pointB, 
     paint: Paint
@@ -365,26 +415,43 @@ export class Canvas {
       pointA.dy,
       pointB.dx,
       pointB.dy,
-      paint.skia,
+      paint.skia!,
     )
   }
 
-  drawOval ( // 
+  /**
+   * @description: 
+   * @param {Rect} rect
+   * @param {Paint} paint
+   * @return {*}
+   */
+  drawOval ( 
     rect: Rect, 
     paint: Paint
   ) {
     this.skia.drawOval(
       rect,
-      paint.skia,
+      paint.skia!,
     )
   }
 
+  /**
+   * @description: 
+   * @param {Paint} paint
+   * @return {*}
+   */
   drawPaint (paint: Paint) {
-    this.skia.drawPaint(paint.skia)
+    this.skia.drawPaint(paint.skia!)
   }
 
+  /**
+   * @description: 
+   * @param {*} paragraph
+   * @param {Offset} offset
+   * @return {*}
+   */
   drawParagraph (
-    paragraph, // @TODO
+    paragraph, // TODO
     offset: Offset
   ) {
     invariant(paragraph !== null)
@@ -397,39 +464,64 @@ export class Canvas {
     paragraph.markUsed()
   }
 
+  /**
+   * @description: 
+   * @param {Path} path
+   * @param {Paint} paint
+   * @return {*}
+   */
   drawPath (
     path: Path, 
     paint: Paint
   ) {
-    this.skia.drawPath(path.skia, paint.skia)
+    this.skia.drawPath(path.skia!, paint.skia!)
   }
 
+  /**
+   * @description: 
+   * @param {Picture} picture
+   * @return {*}
+   */
   drawPicture (picture: Picture) { 
     invariant(picture !== null)
-    this.skia.drawPicture(picture.skia)
+    this.skia.drawPicture(picture.skia!)
   }
 
+  /**
+   * @description: 
+   * @param {Paint} paint
+   * @param {PointMode} pointMode
+   * @param {Offset} points
+   * @return {*}
+   */
   drawPoints (
     paint: Paint,
-    pointMode: SkiaPointMode, 
+    pointMode: PointMode, 
     points: Offset[]
   ) {
     invariant(pointMode !== null)
     invariant(points !== null)
     invariant(paint !== null)
-    const skiaPoints = toMallocedSkiaPoints(points)
+    const sk = toMallocedSkiaPoints(points)
 
     this.skia.drawPoints(
       pointMode,
-      skiaPoints,
-      paint.skia,
+      sk,
+      paint.skia!,
     )
 
-    Skia.Free(skiaPoints)
+    Skia.binding.Free(sk)
   }
 
+  /**
+   * @description: 
+   * @param {PointMode} pointMode
+   * @param {Float32Array} points
+   * @param {Paint} paint
+   * @return {*}
+   */
   drawRawPoints(
-    pointMode: SkiaPointMode, 
+    pointMode: PointMode, 
     points: Float32Array, 
     paint: Paint
   ) {
@@ -443,10 +535,16 @@ export class Canvas {
     this.skia.drawPoints(
       pointMode,
       points,
-      paint.skia,
+      paint.skia!,
     );
   }
 
+  /**
+   * @description: 
+   * @param {RRect} rrect
+   * @param {Paint} paint
+   * @return {*}
+   */
   drawRRect (
     rrect: RRect, 
     paint: Paint 
@@ -455,19 +553,33 @@ export class Canvas {
     invariant(paint !== null)
     this.skia.drawRRect(
       rrect,
-      paint.skia,
+      paint.skia!,
     )
   }
 
+  /**
+   * @description: 
+   * @param {Rect} rect
+   * @param {Paint} paint
+   * @return {*}
+   */
   drawRect (
     rect: Rect, 
     paint: Paint 
   ) {
     invariant(rectIsValid(rect))
     invariant(paint !== null)
-    this.skia.drawRect(rect, paint.skia)
+    this.skia.drawRect(rect, paint.skia!)
   }
 
+  /**
+   * @description: 
+   * @param {Path} path
+   * @param {Color} color
+   * @param {number} elevation
+   * @param {boolean} transparentOccluder
+   * @return {*}
+   */
   drawShadow (
     path: Path, 
     color: Color, 
@@ -484,12 +596,22 @@ export class Canvas {
       color, 
       elevation, 
       transparentOccluder,
-      Skia.DevicePixelRatio
+      Skia.binding.devicePixelRatio
     )
   }
 
+  /**
+   * @description: 
+   * @param {ICanvas} skiaCanvas
+   * @param {Path} path
+   * @param {Color} color
+   * @param {number} elevation
+   * @param {boolean} transparentOccluder
+   * @param {number} devicePixelRatio
+   * @return {*}
+   */
   drawSkiaShadow (
-    skiaCanvas: SkiaCanvas,
+    skiaCanvas: ICanvas,
     path: Path,
     color: Color,
     elevation: number,
@@ -497,18 +619,18 @@ export class Canvas {
     devicePixelRatio: number,
   ) {
     const flags = transparentOccluder
-      ? SkiaShadowFlags.kTransparentOccluderShadowFlag
-      : SkiaShadowFlags.kDefaultShadowFlags
+      ? kShadowFlags.kTransparentOccluderShadowFlag
+      : kShadowFlags.kDefaultShadowFlags
 
     const inAmbient = color.withAlpha(Math.round((color.alpha * kShadowAmbientAlpha)))
     const inSpot = color.withAlpha(Math.round((color.alpha * kShadowSpotAlpha)))
 
     const inTonalColors = {
-      ambient: makeFreshSkColor(inAmbient),
-      spot: makeFreshSkColor(inSpot),
+      ambient: makeFreshSkiaColor(inAmbient),
+      spot: makeFreshSkiaColor(inSpot),
     }
 
-    const tonalColors = Skia.computeTonalColors(inTonalColors)
+    const tonalColors = Skia.binding.computeTonalColors(inTonalColors)
     const zPlaneParams = new Float32Array(3)
     zPlaneParams[2] = devicePixelRatio * elevation
 
@@ -519,7 +641,7 @@ export class Canvas {
 
 
     skiaCanvas.drawShadow(
-      path.skia,
+      path.skia!,
       zPlaneParams,
       lightPos,
       devicePixelRatio * kShadowLightRadius,
@@ -529,9 +651,16 @@ export class Canvas {
     )
   }
 
+  /**
+   * @description: 
+   * @param {Vertices} vertices
+   * @param {BlendMode} blendMode
+   * @param {Paint} paint
+   * @return {*}
+   */
   drawVertices  (
     vertices: Vertices, 
-    blendMode: SkiaBlendMode, 
+    blendMode: BlendMode, 
     paint: Paint
   ) {
     invariant(vertices !== null)
@@ -539,9 +668,9 @@ export class Canvas {
     invariant(blendMode !== null)
 
     this.skia.drawVertices(
-      vertices.skia,
+      vertices.skia!,
       blendMode,
-      paint.skia,
+      paint.skia!,
     )
   }
 
@@ -565,6 +694,12 @@ export class Canvas {
     this.skia.clear(color)
   }
 
+  /**
+   * @description: 
+   * @param {Rect} bounds
+   * @param {Paint} paint
+   * @return {*}
+   */
   saveLayer (
     bounds: Rect | null, 
     paint: Paint
@@ -572,31 +707,44 @@ export class Canvas {
     invariant(paint !== null)
 
     if (bounds === null) {
-      this.skia.saveLayer(paint?.skia, null, null)
+      this.skia.saveLayer(paint?.skia!, null, null)
     } else {
       this.skia.saveLayer(
-        paint?.skia,
+        paint?.skia!,
         bounds,
         null
       )
     }
   }
 
+  /**
+   * @description: 
+   * @param {Rect} bounds
+   * @param {ImageFilter} filter
+   * @param {Paint} paint
+   * @return {*}
+   */
   saveLayerWithFilter (
     bounds: Rect, 
     filter: ImageFilter, 
     paint: Paint
   ) {
     // TODO
-    const convertible: ManagedSkImageFilterConvertible = filter
+    const convertible: ManagedSkiaImageFilterConvertible = filter
     return this.skia.saveLayer(
-      paint?.skia,
+      paint?.skia!,
       bounds,
       convertible.imageFilter.skia,
       0,
     )
   }
 
+  /**
+   * @description: 
+   * @param {number} sx
+   * @param {number} sy
+   * @return {*}
+   */
   scale (
     sx: number, 
     sy: number = sx
@@ -604,6 +752,12 @@ export class Canvas {
     this.skia.scale(sx, sy)
   }
 
+  /**
+   * @description: 
+   * @param {number} sx
+   * @param {number} sy
+   * @return {*}
+   */
   skew (
     sx: number, 
     sy: number
@@ -611,6 +765,11 @@ export class Canvas {
     this.skia.skew(sx, sy)
   }
 
+  /**
+   * @description: 
+   * @param {Float64Array} matrix4
+   * @return {*}
+   */
   transform (matrix4: Float64Array) {
     invariant(matrix4 !== null)
 
@@ -621,6 +780,10 @@ export class Canvas {
     this.skia.concat(toMatrix32(matrix4))
   }
 
+  /**
+   * @description: 
+   * @return {*}
+   */
   translate (
     dx: number, 
     dy: number
@@ -633,7 +796,7 @@ export class RecordingCanvas extends Canvas {
   public snapshot: PictureSnapshot
 
   constructor (
-    canvas: SkiaCanvas, 
+    canvas: ICanvas, 
     bounds: Rect
   ) {
     super(canvas)
@@ -693,14 +856,14 @@ export class PictureSnapshot {
   }
 
   toPicture () {
-    const recorder: SkiaPictureRecorder = new Skia.PictureRecorder()
-    const canvas: Canvas = Canvas.malloc(recorder.beginRecording(this.bounds))
+    const recorder: IPictureRecorder = new Skia.binding.PictureRecorder()
+    const canvas: Canvas = new Canvas(recorder.beginRecording(this.bounds))
     
     for (const command of this.commands) {
       command.apply(canvas)
     }
 
-    const picture: SkiaPicture = recorder.finishRecordingAsPicture()
+    const picture: IPicture = recorder.finishRecordingAsPicture()
     recorder.delete()
 
     return picture

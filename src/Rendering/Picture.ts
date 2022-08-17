@@ -4,87 +4,97 @@
  */
 import { invariant } from 'ts-invariant'
 import { Rect } from '@internal/Geometry'
-import { property } from '@helper/property'
 import { ManagedSkiaObject } from '@skia/ManagedSkiaObject'
 import { kSupportsFinalizationRegistry } from '@platform/Platform'
-import { Skia, SkiaImage, SkiaPicture, SkiaSurface } from '@skia/Skia'
+import { Skia } from '@skia/binding'
+
 import { Image } from './Image'
 import { PictureSnapshot } from './Canvas'
 
+import type { IImage, IPicture, ISurface } from '@skia'
 
-export type PictureInitOptions = {
-  picture: SkiaPicture,
+
+export type PictureOptions = {
+  picture: IPicture,
   cullRect: Rect | null,
   snapshot: PictureSnapshot | null
 }
-export class Picture extends ManagedSkiaObject<SkiaPicture> {
-  static malloc (options: PictureInitOptions) {
-    return new Picture(
-      options.picture,
-      options.cullRect,
-      options.snapshot
-    )
-  }
-
-  @property<boolean>(function (this) {
-    return this.isDisposed
-  }) public debugIsDisposed!: boolean
-
+export class Picture extends ManagedSkiaObject<IPicture> {
   public isResurrectionExpensive: boolean = true
   public approximateBytesUsed: number = 0
   public isDisposed: boolean = false
   public cullRect: Rect | null = null
   public snapshot: PictureSnapshot | null = null
 
-  constructor (
-    picture: SkiaPicture, 
-    cullRect: Rect | null, 
-    snapshot: PictureSnapshot | null
-  ) {    
+  /**
+   * @description: 
+   * @param {PictureOptions} options
+   * @return {*}
+   */  
+  constructor (options: PictureOptions) {    
     invariant(
-      kSupportsFinalizationRegistry && snapshot === null || snapshot != null,
+      kSupportsFinalizationRegistry && 
+      options.snapshot === null || 
+      options.snapshot !== null,
       'If the browser does not support FinalizationRegistry (WeakRef), then we must have a picture snapshot to be able to resurrect it.',
     )
 
-    super(picture)
+    const skia = options.snapshot!.toPicture()
+    super(skia)
 
-    this.cullRect = cullRect
-    this.snapshot = snapshot
+    this.cullRect = options.cullRect
+    this.snapshot = options.snapshot
   }
 
+  /**
+   * @description: 
+   * @return {void}
+   */  
   dispose () {
     invariant(!this.isDisposed, 'Object has been disposed.')
     
     this.isDisposed = true
     this.snapshot?.dispose()
     
-    this.rawSkia?.delete();
-    this.rawSkia = null
+    this.delete()
   }
 
+  /**
+   * @description: 
+   * @param {number} width
+   * @param {number} height
+   * @return {Image}
+   */
   toImage (
     width: number, 
     height: number
   ): Image {
     invariant(!this.isDisposed)
-    const surface: SkiaSurface = Skia.MakeSurface(width, height) as SkiaSurface
+    const surface: ISurface = Skia.binding.MakeSurface(width, height) as ISurface
     const canvas = surface.getCanvas()
-    canvas.drawPicture(this.skia)
+    canvas.drawPicture(this.skia!)
     
-    const skImage: SkiaImage = surface.makeImageSnapshot()
+    const skImage: IImage = surface.makeImageSnapshot()
     surface.dispose()
-    return Image.malloc(skImage)
+    return new Image(skImage)
   }
 
-
+  /**
+   * @description: 
+   * @return {IPicture}
+   */  
   resurrect () {
     invariant(!this.isDisposed)
     return this.snapshot!.toPicture()
   }
 
+  /**
+   * @description: 
+   * @return {void}
+   */  
   delete () {
     if (!this.isDisposed) {
-      this.skia?.delete()
+      super.delete()
     }
   }
 }

@@ -3,12 +3,12 @@
  * @Date: 2022-06-29 17:18:02
  */
 import { ManagedSkiaObject } from '@skia/ManagedSkiaObject'
-import { Offset, Radius, Rect, RRect } from '@internal/Geometry'
-import { PathOp, IPath, FillType } from '@skia'
-import { Skia } from '@skia/Skia'
+import { Skia } from '@skia/binding'
 import { Matrix4 } from '@math/Matrix4'
+import { Offset, Radius, Rect, RRect } from '@internal/Geometry'
 import { toMallocedSkiaPoints, toSkiaMatrix } from '@helper/skia'
 
+import type { PathOp, IPath, FillType } from '@skia'
 /**
  * @description: 路径类
  * @return {*}
@@ -24,7 +24,6 @@ export class Path extends ManagedSkiaObject<IPath> {
     path.fillType = other.fillType
     return path
   }
-
   
   /**
    * @description: 
@@ -54,7 +53,7 @@ export class Path extends ManagedSkiaObject<IPath> {
     pathA: Path,
     pathB: Path,
   ) {
-    const skia = Skia.Path.MakeFromOp(
+    const skia = Skia.binding.Path.MakeFromOp(
       pathA.skia!,
       pathB.skia!,
       operation,
@@ -65,7 +64,7 @@ export class Path extends ManagedSkiaObject<IPath> {
   /**
    * @description: 填充类型
    */  
-  public _fileType: FillType = Skia.FillType.Winding 
+  public _fileType: FillType = Skia.binding.FillType.Winding 
   public set fillType (fillType: FillType) {
     this.skia?.setFillType(fillType)
     this._fileType = fillType
@@ -529,7 +528,7 @@ export class Path extends ManagedSkiaObject<IPath> {
    * @return {*}
    */
   reset () {
-    this._fileType = Skia.FillType.Winding
+    this._fileType = Skia.binding.FillType.Winding
     this.skia?.close()
   }
 
@@ -546,7 +545,7 @@ export class Path extends ManagedSkiaObject<IPath> {
    * @return {*}
    */
   resurrect(): IPath {
-    const path = Skia.MakeFromCmds(this.cachedCommands as Float32Array)
+    const path = Skia.binding.Path.MakeFromCmds(this.cachedCommands as Float32Array)
     path?.setFillType(this.fillType)
     return path as IPath
   }

@@ -2,46 +2,24 @@ import { invariant } from 'ts-invariant'
 import { Offset } from '@internal/Geometry'
 import { ArgumentError } from '@internal/ArgumentError'
 import { ManagedSkiaObject, } from '@skia/ManagedSkiaObject'
-import { Skia, SkiaVertexMode, SkiaVertices } from '@skia/Skia'
-import { toFlatColors, toFlatSkiaPoints, toUint16Array } from '@skia/SkiaFormat'
-import { Color } from './Painting'
+import { Skia } from '@skia/binding'
 
+import { toFlatColors, toFlatSkiaPoints, toUint16Array } from '@helper/skia'
+import { Color } from '@internal/Color'
 
-export type VerticesInitOptions = {
-  mode: SkiaVertexMode,
+import type { VertexMode, IVertices } from '@skia'
+
+export type VerticesOptions = {
+  mode: VertexMode,
   positions: Offset[], 
   textureCoordinates?: Offset[] | null,
   colors?: Color[] | null,
   indices?: number[] | null,
 }
 
-export class Vertices extends ManagedSkiaObject<SkiaVertices> {
-  static malloc (options: VerticesInitOptions): Vertices {
-    options.textureCoordinates ??= null
-    options.colors ??= null
-    options.indices ??= null
-
-    const skia = Skia.MakeVertices(
-      options.mode,
-      toFlatSkiaPoints(options.positions),
-      toFlatSkiaPoints(options.textureCoordinates),
-      toFlatColors(options.colors),
-      options.indices,
-    )
-
-    const vertices = new Vertices(
-      skia,
-      options.mode,
-      options.positions,
-      options.colors,
-      options.indices
-    )
-
-    return vertices
-  }
-
+export class Vertices extends ManagedSkiaObject<IVertices> {
   static raw(
-    mode: SkiaVertexMode,
+    mode: VertexMode,
     positions: Float32Array,
     textureCoordinates?: Float32Array | null,
     colors: Int32Array | null,
@@ -69,7 +47,7 @@ export class Vertices extends ManagedSkiaObject<SkiaVertices> {
       throw new ArgumentError('"indices" values must be valid indices in the positions list.')
     }
 
-    return Vertices.malloc({
+    return new Vertices({
       mode,
       positions,
       textureCoordinates,
@@ -78,61 +56,66 @@ export class Vertices extends ManagedSkiaObject<SkiaVertices> {
     })
   }
 
-  constructor (
-    skia: SkiaVertices,
-    mode: SkiaVertexMode,
-    positions: Offset[], 
-    textureCoordinates: Offset[] | null = null,
-    colors: Color[] | null = null,
-    indices: number[] | null = null,
-  ) {
+  constructor (options: VerticesOptions) {
+    options.textureCoordinates ??= null
+    options.colors ??= null
+    options.indices ??= null
+
+    const skia = Skia.binding.MakeVertices(
+      options.mode,
+      toFlatSkiaPoints(options.positions),
+      toFlatSkiaPoints(options.textureCoordinates),
+      toFlatColors(options.colors),
+      options.indices,
+    )
+    invariant(options.mode !== null)
+    invariant(options.positions !== null)
+
     super(skia)
-    invariant(mode !== null)
-    invariant(positions !== null)
 
     if (
-      textureCoordinates &&
-      textureCoordinates.length !== positions.length
+      options.textureCoordinates &&
+      options.textureCoordinates.length !== options.positions.length
     ) {
       throw new ArgumentError('"positions" and "textureCoordinates" lengths must match.')
     }
 
     if (
-      colors && 
-      colors.length !== positions.length
+      options.colors && 
+      options.colors.length !== options.positions.length
     ) {
       throw new ArgumentError('"positions" and "colors" lengths must match.')
     }
 
     if (
-      indices &&
-      indices.every((i: number) => i < 0 || i >= positions.length)
+      options.indices &&
+      options.indices.every((i: number) => i < 0 || i >= options.positions.length)
     ) {
       throw new ArgumentError('"indices" values must be valid indices in the positions list.')
     }
 
-    this.mode = mode
-    this.positions = toFlatSkiaPoints(positions)
+    this.mode = options.mode
+    this.positions = toFlatSkiaPoints(options.positions)
     
-    this.textureCoordinates = textureCoordinates !== null 
-      ? toFlatSkiaPoints(textureCoordinates) 
+    this.textureCoordinates = options.textureCoordinates !== null 
+      ? toFlatSkiaPoints(options.textureCoordinates) 
       : null
-    this.colors = colors !== null 
-      ? toFlatColors(colors)
+    this.colors = options.colors !== null 
+      ? toFlatColors(options.colors)
       : null
-    this.indices = indices !== null 
-      ? toUint16Array(indices) 
+    this.indices = options.indices !== null 
+      ? toUint16Array(options.indices) 
       : null
   }
 
-  public mode: SkiaVertexMode
+  public mode: VertexMode
   public positions: Float32Array
   public textureCoordinates: Float32Array | null = null
   public colors: Uint32Array | null = null
   public indices: Uint16Array | null = null
 
-  resurrect (): SkiaVertices {
-    return Skia.MakeVertices(
+  resurrect (): IVertices {
+    return Skia.binding.MakeVertices(
       this.mode,
       this.positions,
       this.textureCoordinates,

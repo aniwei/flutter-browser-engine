@@ -1,39 +1,19 @@
-import { SkiaImage, Skia } from '@skia/Skia'
+import { Skia } from '@skia/binding'
+import { IImage } from '@skia'
 import { SkiaObjectBox } from '@skia/SkiaObjectBox'
 
-import { ImageByteFormat } from '@basic/Painting'
+import { ImageByteFormat, VideoFrame } from '@basic/Painting'
 
-export interface IImage {
-  width: number
-  height: number
-  toByteData (format: ImageByteFormat): Promise<any>
-  dispose ()
-  clone (): Image
-  isCloneOf (other: Image ): boolean
-}
 
-export type VideoFrame = {
-  format: string | null
-  duration: number | null
-  codedWidth: number
-  codedHeight: number
-  displayWidth: number
-  displayHeight: number
-  allocationSize (): number
-  copyTo (destination: Uint8Array): Promise<VideoFrame>
-  close (): void
-}
-
-export class Image implements IImage {
-  static malloc (skia: SkiaImage, frame?: VideoFrame) {
-    const box = new SkiaObjectBox<Image, SkiaImage>(skia)
-    const image = new Image(box, frame)
-    box.ref(image)
-
-    return image
-  }
-
-  static cloneOf (box: SkiaObjectBox<Image, SkiaImage>) {
+export class Image {
+ 
+  /**
+   * @description: 
+   * @param {SkiaObjectBox<Image, IImage>} box
+   * @param {*} IImage
+   * @return {Image}
+   */  
+  static cloneOf (box: SkiaObjectBox<Image, IImage>): Image {
     const image = new Image(box)
     box.ref(image)
     return image
@@ -51,7 +31,7 @@ export class Image implements IImage {
     return this.skia!.height()
   }
 
-  public box: SkiaObjectBox<Image, SkiaImage>
+  public box: SkiaObjectBox<Image, IImage>
   public disposed: boolean
   public videoFrame: VideoFrame | null = null
   
@@ -59,12 +39,30 @@ export class Image implements IImage {
     return this.box.skia
   }
 
-  constructor (box: SkiaObjectBox<Image, SkiaImage>, frame?) {
-    this.box = box
+  /**
+   * @description: 
+   * @param {SkiaObjectBox<Image, IImage>} box
+   * @return {Image}
+   */  
+  constructor (
+    skia: IImage | SkiaObjectBox<Image, IImage>, 
+    frame?: VideoFrame
+  ) {
+    if (skia instanceof SkiaObjectBox) {
+      this.box = skia as SkiaObjectBox<Image, IImage >
+    } else {
+      this.box = new SkiaObjectBox(skia)
+    }
+
     this.disposed = false
-    this.videoFrame = frame
+    this.videoFrame = frame ?? null
   }
   
+  /**
+   * @description: 
+   * @param {ImageByteFormat} format
+   * @return {*}
+   */  
   async toByteData (format: ImageByteFormat = ImageByteFormat.RawRGBA) {
     if (this.videoFrame !== null) {
       // return this.readPixelsFromVideoFrame()
@@ -80,37 +78,50 @@ export class Image implements IImage {
    */
   readPixelsFromSkiaImage (format: ImageByteFormat) {
     const alphaType = ImageByteFormat.RawStraightRGBA 
-      ? Skia.AlphaType.Unpremul 
-      : Skia.AlphaType.Premul
+      ? Skia.binding.AlphaType.Unpremul 
+      : Skia.binding.AlphaType.Premul
 
     let bytes: Uint8Array
     if (
       format === ImageByteFormat.RawRGBA ||
       format === ImageByteFormat.RawStraightRGBA
     ) {
-      bytes = this.skiaImage?.readPixels(0, 0, {
+      bytes = this.skia?.readPixels(0, 0, {
         width: this.width,
         height: this.height,
         alphaType,
-        colorType: Skia.ColorType.RGBA_8888,
-        colorSpace: Skia.ColorSpace.SRGB
+        colorType: Skia.binding.ColorType.RGBA_8888,
+        colorSpace: Skia.binding.ColorSpace.SRGB
       }) as Uint8Array
     } else {
-      bytes = this.skiaImage?.encodeToBytes() as Uint8Array
+      bytes = this.skia?.encodeToBytes() as Uint8Array
     }
 
     return bytes.buffer
   }
 
+  /**
+   * @description: 
+   * @return {void}
+   */  
   dispose () {
     this.disposed = true
     this.box.unref(this)
   }
 
+  /**
+   * @description: 
+   * @return {Image}
+   */  
   clone (): Image  {
     return Image.cloneOf(this.box)
   }
 
+  /**
+   * @description: 
+   * @param {Image} other
+   * @return {boolean}
+   */  
   isCloneOf (other: Image) {
     return (
       other instanceof Image && 
@@ -118,6 +129,10 @@ export class Image implements IImage {
     )
   }
 
+  /**
+   * @description: 
+   * @return {string}
+   */  
   toString (): string {
     return `[${this.width}, ${this.height}]`
   }

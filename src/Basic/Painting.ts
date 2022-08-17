@@ -23,6 +23,18 @@ export enum Clip {
   AntiAliasWithSaveLayer,
 }
 
+export type VideoFrame = {
+  format: string | null
+  duration: number | null
+  codedWidth: number
+  codedHeight: number
+  displayWidth: number
+  displayHeight: number
+  allocationSize (): number
+  copyTo (destination: Uint8Array): Promise<VideoFrame>
+  close (): void
+}
+
 export type FrameInfo = {
   duration: number
   image: Image

@@ -207,7 +207,7 @@ export class MutatorsStack extends Array<Mutator> {
 
     return (
       other instanceof MutatorsStack &&
-      listEquals<Mutator>(other, this)
+      listEquals<Mutator[]>(other, this)
     )
   }
 }

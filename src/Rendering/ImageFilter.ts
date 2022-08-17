@@ -1,77 +1,73 @@
-import { UnimplementedError } from '@internal/UnimplementedError'
+import { Skia } from '@skia/binding'
 import { ManagedSkiaObject } from '@skia/ManagedSkiaObject'
-import { toFilterQuality, toSkiaMatrixFromFloat64 } from '@skia/SkiaFormat'
-import { Skia, SkiaFilterQuality, SkiaImageFilter, SkiaTileMode } from '@skia/Skia'
+import { FilterQuality, IImageFilter, TileMode } from '@skia'
+import { toSkiaFilterQuality, toSkiaMatrix } from '@helper/skia'
+import { listEquals } from '@helper/listEquals'
+
 import type { ColorFilter } from './ColorFilter'
 
-export abstract class ManagedSkImageFilterConvertible {
-  abstract imageFilter: ManagedSkiaObject<SkiaImageFilter>
+export abstract class ManagedSkiaImageFilterConvertible {
+  abstract imageFilter: ManagedSkiaObject<IImageFilter>
 }
 
-export abstract class ImageFilter extends ManagedSkiaObject<SkiaImageFilter> implements ManagedSkImageFilterConvertible {
+export abstract class ImageFilter extends ManagedSkiaObject<IImageFilter> implements ManagedSkiaImageFilterConvertible {
   static blur (options: BlurImageFilterOptions) {
-    return BlurImageFilter.malloc(options)
+    return new BlurImageFilter(options)
   }
 
   static color (options: ColorFilterImageFilterOptions) {
-    return ColorFilterImageFilter.malloc(options)
+    return new ColorFilterImageFilter(options)
   }
   
   static matrix (options: MatrixImageFilterOptions) {
-    return MatrixImageFilter.malloc(options)
+    return new MatrixImageFilter(options)
   }
 
-  static malloc (options?): ImageFilter {
-    throw new UnimplementedError()
-  } 
-
-  public get imageFilter (): ManagedSkiaObject<SkiaImageFilter> {
+  public get imageFilter (): ManagedSkiaObject<IImageFilter> {
     return this
   }
 
-  abstract resurrect (): SkiaImageFilter
+  abstract resurrect (): IImageFilter
 }
 
 
 export type BlurImageFilterOptions = {
   sigmaX: number,
   sigmaY: number,
-  tileMode: SkiaTileMode
+  tileMode: TileMode
 }
 
 export class BlurImageFilter extends ImageFilter {
-  static malloc (options: BlurImageFilterOptions): ImageFilter {
-    const blurImageFilter = new BlurImageFilter(Skia.ImageFilter.MakeBlur(
-      options.sigmaX,
-      options.sigmaY,
-      options.tileMode,
-      null
-    ), options)
-    
-    return blurImageFilter
-  }
-
   get modeString () {
     switch (this.tileMode) {
-      case Skia.TileMode.Clamp:
+      case Skia.binding.TileMode.Clamp:
         return 'clamp'
-      case Skia.TileMode.Mirror:
+      case Skia.binding.TileMode.Mirror:
         return 'mirror'
-      case Skia.TileMode.Repeat:
+      case Skia.binding.TileMode.Repeat:
         return 'repeated'
-      case Skia.TileMode.Decal:
+      case Skia.binding.TileMode.Decal:
         return 'decal'
     }
   }
 
-  public sigmaX!: number
-  public sigmaY!: number 
-  public tileMode!: SkiaTileMode
+  public sigmaX: number
+  public sigmaY: number 
+  public tileMode: TileMode
 
-  constructor (
-    skia: SkiaImageFilter, 
-    options: BlurImageFilterOptions
-  ) {
+  /**
+   * @description: 
+   * @param {BlurImageFilterOptions} options
+   * @return {BlurImageFilter}
+   */  
+  constructor (options: BlurImageFilterOptions) {
+    const skia = Skia.binding.ImageFilter.MakeBlur(
+      options.sigmaX,
+      options.sigmaY,
+      options.tileMode,
+      null
+    )
+
     super(skia)
 
     this.sigmaX = options.sigmaX
@@ -79,6 +75,11 @@ export class BlurImageFilter extends ImageFilter {
     this.tileMode = options.tileMode
   }
 
+  /**
+   * @description: 
+   * @param {BlurImageFilter} other
+   * @return {boolean}
+   */  
   eq (other: BlurImageFilter) {
     if (other instanceof BlurImageFilter) {
       return (
@@ -91,8 +92,12 @@ export class BlurImageFilter extends ImageFilter {
     return false
   }
 
-  resurrect (): SkiaImageFilter {
-    return Skia.ImageFilter.MakeBlur(
+  /**
+   * @description: 
+   * @return {IImageFilter}
+   */  
+  resurrect (): IImageFilter {
+    return Skia.binding.ImageFilter.MakeBlur(
       this.sigmaX,
       this.sigmaY,
       this.tileMode,
@@ -107,40 +112,30 @@ export class BlurImageFilter extends ImageFilter {
 
 export type MatrixImageFilterOptions = {
   matrix: Float64Array, 
-  filterQuality: SkiaFilterQuality
+  filterQuality: FilterQuality
 }
 
 export class MatrixImageFilter extends ImageFilter {
-  static malloc (options: MatrixImageFilterOptions): MatrixImageFilter {
-    const matrixImageFilter = new MatrixImageFilter(
-      Skia.ImageFilter.MakeMatrixTransform(
-        toSkiaMatrixFromFloat64(options.matrix),
-        toFilterQuality(options.filterQuality),
-        null,
-      ), 
-      options
+  public matrix: Float64Array
+  public filterQuality: FilterQuality
+
+  constructor (options: MatrixImageFilterOptions) {
+    const skia = Skia.binding.ImageFilter.MakeMatrixTransform(
+      toSkiaMatrix(options.matrix),
+      toSkiaFilterQuality(options.filterQuality),
+      null,
     )
 
-    return matrixImageFilter
-  }
-
-  public matrix: Float64Array
-  public filterQuality: SkiaFilterQuality
-
-  constructor (
-    skia: SkiaImageFilter, 
-    options: MatrixImageFilterOptions
-  ) {
     super(skia)
 
     this.matrix = options.matrix
     this.filterQuality = options.filterQuality
   }
 
-  resurrect (): SkiaImageFilter {
-    return Skia.ImageFilter.MakeMatrixTransform(
-      toSkiaMatrixFromFloat64(this.matrix),
-      toFilterQuality(this.filterQuality),
+  resurrect (): IImageFilter {
+    return Skia.binding.ImageFilter.MakeMatrixTransform(
+      toSkiaMatrix(this.matrix),
+      toSkiaFilterQuality(this.filterQuality),
       null,
     )
   }
@@ -148,8 +143,8 @@ export class MatrixImageFilter extends ImageFilter {
   eq (other: MatrixImageFilter) {
     if (other instanceof MatrixImageFilter) {
       return (
-        this.filterQuality === other.filterQuality
-        // @TODO
+        this.filterQuality === other.filterQuality &&
+        listEquals<Float64Array>(other.matrix, this.matrix)
       )
     }
   }
@@ -164,26 +159,33 @@ export type ColorFilterImageFilterOptions = {
 }
 
 export class ColorFilterImageFilter extends ImageFilter {
-  static malloc(options: ColorFilterImageFilterOptions): ImageFilter {
-    const colorFilterImageFilter = new ColorFilterImageFilter(
-      options.colorFilter.initRawImageFilter(),
-      options
-    )
-
-    return colorFilterImageFilter
-  }
-
   public colorFilter: ColorFilter
   
-  constructor (skia: SkiaImageFilter, options: ColorFilterImageFilterOptions) {
+  /**
+   * @description: 
+   * @param {ColorFilterImageFilterOptions} options
+   * @return {ColorFilterImageFilter}
+   */  
+  constructor (options: ColorFilterImageFilterOptions) {
+    const skia = options.colorFilter.initRawImageFilter()
+
     super(skia)
     this.colorFilter = options.colorFilter
   }
 
-  resurrect(): SkiaImageFilter {
+  /**
+   * @description: 
+   * @return {IImageFilter}
+   */  
+  resurrect(): IImageFilter {
     return this.colorFilter.initRawImageFilter()
   }
 
+  /**
+   * @description: 
+   * @param {ColorFilterImageFilter} other
+   * @return {boolean}
+   */  
   eq (other: ColorFilterImageFilter) {
     if (other instanceof ColorFilterImageFilter) {
       return this.colorFilter === other.colorFilter
@@ -192,6 +194,10 @@ export class ColorFilterImageFilter extends ImageFilter {
     return false
   }
   
+  /**
+   * @description: 
+   * @return {string}
+   */  
   toString () {
     return this.colorFilter.toString()
   } 

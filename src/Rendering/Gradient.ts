@@ -4,13 +4,12 @@
  */
 import { invariant } from 'ts-invariant'
 import { validateColorStops } from '@helper/validators'
-import { Skia, SkiaTileMode } from '@skia/Skia'
-import { toMatrix32 } from '@skia/SkiaFormat'
-import { Offset } from '@internal/Geometry'
+import { Skia } from '@skia/binding'
 import { Color } from '@internal/Color'
+import { Offset } from '@internal/Geometry'
 
 import { GradientConical, GradientLinear, GradientRadial, GradientSweep } from './Shader'
-
+import type { TileMode } from '@skia'
 
 export abstract class Gradient {
   static linear(
@@ -18,18 +17,16 @@ export abstract class Gradient {
     to: Offset ,
     colors: Color[], 
     colorStops: number[] | null,
-    tileMode: SkiaTileMode = Skia.TileMode.Clamp,
+    tileMode: TileMode = Skia.binding.TileMode.Clamp,
     matrix4: Float64Array | null = null,
   ) {
-    const matrix = matrix4 === null ? null : toMatrix32(matrix4)
-
-    return GradientLinear.malloc({
+    return new GradientLinear({
       from, 
       to, 
       colors, 
       colorStops, 
       tileMode, 
-      matrix4: matrix
+      matrix4
     })
   }
 
@@ -38,26 +35,23 @@ export abstract class Gradient {
     radius: number,
     colors: Color[], 
     colorStops: number[] | null,
-    tileMode: SkiaTileMode = Skia.TileMode.Clamp,
+    tileMode: TileMode = Skia.binding.TileMode.Clamp,
     matrix4: Float64Array | null,
     focal: Offset | null,
     focalRadius: number = 0.0,
   ) {
     validateColorStops(colors, colorStops)
-    // If focal is null or focal radius is null, this should be treated as a regular radial gradient
-    // If focal == center and the focal radius is 0.0, it's still a regular radial gradient
-    const matrix32 = matrix4 !== null ? toMatrix32(matrix4) : null
     if (
       focal === null || 
       (focal === center && focalRadius === 0.0)
     ) {
-      return GradientRadial.malloc({
+      return new GradientRadial({
         center, 
         radius, 
         colors, 
         colorStops, 
         tileMode, 
-        matrix4: matrix32
+        matrix4
       })
     } else {
       invariant(
@@ -65,7 +59,7 @@ export abstract class Gradient {
         focal !== Offset.zero
       )
       
-      return GradientConical.malloc({
+      return new GradientConical({
         focal, 
         focalRadius, 
         center, 
@@ -73,7 +67,7 @@ export abstract class Gradient {
         colors,
         colorStops, 
         tileMode, 
-        matrix4: matrix32
+        matrix4
       })
     }
   }
@@ -82,19 +76,19 @@ export abstract class Gradient {
     center: Offset,
     colors: Color[], 
     colorStops: number[] | null,
-    tileMode: SkiaTileMode = Skia.TileMode.Clamp,
+    tileMode: TileMode = Skia.binding.TileMode.Clamp,
     startAngle: number = 0.0,
     endAngle: number = Math.PI * 2,
     matrix4: Float64Array | null,
   ) {
-      return GradientSweep.malloc({
+      return new GradientSweep({
         center,
         colors,
         colorStops,
         tileMode,
         startAngle,
         endAngle,
-        matrix4: matrix4 !== null ? toMatrix32(matrix4) : null
+        matrix4
       })    
     }
 }
