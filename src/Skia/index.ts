@@ -18,6 +18,8 @@ export const kShadowFlags = {
 }
 
 
+
+
 export enum FilterQuality {
   None,
   Low,
@@ -50,5 +52,9 @@ export type {
   Surface as ISurface,
   ParagraphBuilder as IParagraphBuilder,
   Paragraph as IParagraph,
-  LineMetrics as ILineMetrics
+  LineMetrics as ILineMetrics,
+  TextShadow as ITextShadow,
+  TextFontFeatures as ITextFontFeatures,
+  PositionWithAffinity as IPositionWithAffinity,
+  
 } from 'canvaskit-wasm'

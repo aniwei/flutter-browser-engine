@@ -3,9 +3,11 @@
  * @Date: 2022-08-16 17:20:55
  */
 import { Skia } from '@skia/binding'
-import { FilterQuality } from '@skia'
+import { FilterQuality, FontSlant, FontWeight as FontWeightSkiaObject } from '@skia'
 import type { Offset } from '@internal/Geometry'
 import type { Color } from '@internal/Color'
+import type { TextHeightBehavior as TextHeightBehaviorSkiaObject } from '@skia'
+import type { TextHeightBehavior } from '@rendering/Text'
 
 // 矩阵对应索引
 const kMatrixIndexToMatrix4Index = [
@@ -178,4 +180,22 @@ export function toUint16Array (ints: number[]) {
     result[i] = ints[i]
   }
   return result
+}
+
+let kSkiaTextHeightBehaviors: TextHeightBehaviorSkiaObject[] | null = null
+
+export function toSkiaTextHeightBehavior (behavior: TextHeightBehavior) {
+  kSkiaTextHeightBehaviors ??= [
+    Skia.binding.TextHeightBehavior.All,
+    Skia.binding.TextHeightBehavior.DisableFirstAscent,
+    Skia.binding.TextHeightBehavior.DisableLastDescent,
+    Skia.binding.TextHeightBehavior.DisableAll,
+  ]
+
+  const index = (
+    (behavior.applyHeightToFirstAscent ? 0 : 1 << 0) |
+    (behavior.applyHeightToLastDescent ? 0 : 1 << 1)
+  )
+  
+  return kSkiaTextHeightBehaviors[index]
 }

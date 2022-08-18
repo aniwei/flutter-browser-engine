@@ -4,7 +4,6 @@
  */
 import CanvasKitInit, { CanvasKit } from 'canvaskit-wasm'
 import type { CanvasKitInitOptions } from 'canvaskit-wasm'
-import { FilterQuality } from '@skia'
 
 export type SkiaOptions = {
   devicePixelRatio?: number

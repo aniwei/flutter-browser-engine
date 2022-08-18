@@ -8,6 +8,7 @@ import type { IPaint, IImageFilter, BlendMode, PaintStyle, StrokeCap, StrokeJoin
 import type { ManagedSkiaImageFilterConvertible } from './ImageFilter'
 import type { MaskFilter } from './MaskFilter'
 import type { Shader } from './Shader'
+import invariant from 'ts-invariant'
 
 
 
@@ -254,7 +255,8 @@ export class Paint extends ManagedSkiaObject<IPaint> {
    * @param {IPaint} skia
    * @return {Paint}
    */  
-  constructor (skia: IPaint) {
+  constructor () {
+    const skia = new Skia.binding.Paint()
     super(skia)
 
     this.skia?.setAntiAlias(this.isAntiAlias)
@@ -287,3 +289,4 @@ export class Paint extends ManagedSkiaObject<IPaint> {
 function createInverColorFilter() {
   return kInvertColorFilter = new ManagedSkiaColorFilter(new MatrixColorFilter(kInvertColorMatrix))
 }
+

@@ -1,35 +1,20 @@
 import { invariant } from 'ts-invariant'
-import { clampInt } from '@helper/clamp'
-import { lerpDouble } from '@helper/lerp'
 import { listEquals } from '@helper/listEquals'
-import { Rect } from '@internal/Geometry'
+import { Offset, Rect } from '@internal/Geometry'
 import { Skia } from '@skia/binding'
+import { makeFreshSkiaColor, toSkiaPoint, toSkiaTextHeightBehavior } from '@helper/skia'
 
-import { SkiaObject } from '@skia/ManagedSkiaObject'
+import { fromPositionWithAffinity } from '@helper/text'
 
-import type { TextDirection, IFontStyle, IParagraphBuilder, IParagraphStyle, IStrutStyle, ITextStyle, TextBaseline, PlaceholderAlignment, IParagraph, ILineMetrics, IPaint } from '@skia'
-import { Color } from '@internal/Color'
-import { makeFreshSkiaColor } from '@helper/skia'
-
-export enum BoxHeightStyle {
-  Tight,
-  Max,
-  IncludeLineSpacingMiddle,
-  IncludeLineSpacingTop,
-  IncludeLineSpacingBottom,
-  Strut,
-}
+import type { TextDirection, IFontStyle, IParagraphBuilder, IParagraphStyle, IStrutStyle, ITextStyle, TextBaseline, PlaceholderAlignment, IParagraph, ILineMetrics, IPaint, TextAlign, FontWeight, FontStyle, DecorationStyle, FontSlant, TextShadow, ITextShadow, TextFontFeatures, ITextFontFeatures, Affinity, RectHeightStyle } from '@skia'
+import type { Color } from '@internal/Color'
+import type { Shadow } from './Shadow'
+import type { Paint } from './Paint'
 
 export enum BoxWidthStyle {
   Tight,
   Max,
 }
-
-export enum FontStyle {
-  Normal,
-  Italic,
-}
-
 
 export enum ParagraphCommandType {
   AddText,
@@ -46,47 +31,11 @@ export type ParagraphPlaceholder = {
   offset: number, 
 }
 
-export type ParagraphStyleOptions = {
-  textAlign?: TextAlign | null,
-  textDirection?: TextDirection | null,
-  maxLines?: number | null,
-  fontFamily?: string | null,
-  fontSize?: number | null,
-  height?: number | null,
-  textHeightBehavior?: TextHeightBehavior | null,
-  fontWeight?: FontWeight | null,
-  fontStyle?: FontStyle | null,
-  strutStyle?: StrutStyle | null,
-  ellipsis?: string | null,
-  locale?: Locale | null,
-}
-
 export enum TextLeadingDistribution {
   Proportional,
   Even,
 }
 
-export enum TextAlign {
-  Left,
-  Right,
-  Center,
-  Justify,
-  Start,
-  End,
-}
-
-export enum TextDecorationStyle { 
-  Solid, 
-  Double, 
-  Dotted, 
-  Dashed, 
-  Wavy 
-}
-
-export enum TextAffinity {
-  Upstream,
-  Downstream,
-}
 
 export type TextHeightBehaviorOptions = {
   applyHeightToFirstAscent?: boolean
@@ -123,94 +72,87 @@ export class TextHeightBehavior {
   }
 }
 
-export class FontWeight {
-  static w100: FontWeight = new FontWeight(0)
-  static w200: FontWeight = new FontWeight(1)
-  static w300: FontWeight = new FontWeight(2)
-  static w400: FontWeight = new FontWeight(3)
-  static w500: FontWeight = new FontWeight(4)
-  static w600: FontWeight = new FontWeight(5)
-  static w700: FontWeight = new FontWeight(6)
-  static w800: FontWeight = new FontWeight(7)
-  static w900: FontWeight = new FontWeight(8)
-  static normal: FontWeight = FontWeight.w400
-  static bold: FontWeight = FontWeight.w700
-
-  static values: FontWeight[] = [
-    FontWeight.w100,
-    FontWeight.w200,
-    FontWeight.w300,
-    FontWeight.w400,
-    FontWeight.w500,
-    FontWeight.w600,
-    FontWeight.w700,
-    FontWeight.w800,
-    FontWeight.w900
-  ]
-  
-  static lerp(
-    a?: FontWeight | null, 
-    b?: FontWeight | null, 
-    t: number
-  ): FontWeight | null {
-    invariant(t !== null)
-    if (a === null && b === null) {
-      return null
-    }
-
-    const index = clampInt(Math.round(lerpDouble(
-      a?.index ?? FontWeight.normal.index, 
-      b?.index ?? FontWeight.normal.index, 
-      t
-    )!), 0, 8)
-
-    return FontWeight.values[index]
-  }
-
-  public index: number
-
-  constructor (index: number) {
-    this.index = index
-  }
+export type ParagraphStyleOptions = {
+  textAlign?: TextAlign | null,
+  textDirection?: TextDirection | null,
+  maxLines?: number | null,
+  fontFamily?: string | null,
+  fontSize?: number | null,
+  height?: number | null,
+  textHeightBehavior?: TextHeightBehavior | null,
+  fontWeight?: FontWeight | null,
+  fontStyle?: FontSlant | null,
+  strutStyle?: StrutStyle | null,
+  ellipsis?: string | null,
+  // TODO
+  // locale?: Locale | null,
 }
 
 export class ParagraphStyle {
+  /**
+   * @description: 
+   * @param {ParagraphStyleOptions} options
+   * @return {*}
+   */  
   constructor (options: ParagraphStyleOptions) {
     options.textDirection ??= Skia.binding.TextDirection.LTR
 
-    this.skia = 
-    this.textDirection = options.textDirection
-    this.fontFamily = options.fontFamily
-    this.fontSize = options.fontSize
-    this.height = options.height
-    this.fontWeight = options.fontWeight
-    this.fontStyle = options.fontStyle
-    this.leadingDistribution = options.leadingDistribution
+    this.skia = ParagraphStyle.toSkiaParagraphStyle(
+      options.textAlign,
+      options.textDirection,
+      options.maxLines,
+      options.fontFamily,
+      options.fontSize,
+      options.height,
+      options.textHeightBehavior,
+      options.fontWeight,
+      options.fontStyle,
+      options.strutStyle,
+      options.ellipsis,
+    )
+    this.textDirection = options.textDirection ?? null
+    this.fontFamily = options.fontFamily ?? null
+    this.fontSize = options.fontSize ?? null
+    this.height = options.height ?? null
+    this.fontWeight = options.fontWeight ?? null
+    this.fontStyle = options.fontStyle ?? null
+    this.leadingDistribution = options.textHeightBehavior?.leadingDistribution ?? null 
+      
   } 
 
-  public skia: SkiaParagraphStyle | null = null
-  public textDirection: SkiaTextDirection | null = null
-  public fontFamily: string | null = null
-  public fontSize: number | null = null
-  public height: number | null = null
-  public fontWeight: FontWeight | null = null
-  public fontStyle: FontStyle | null = null
-  public leadingDistribution: TextHeightBehavior  | null = null
+  public skia: IParagraphStyle | null
+  public textDirection: TextDirection | null
+  public fontFamily: string | null
+  public fontSize: number | null
+  public height: number | null
+  public fontWeight: FontWeight | null
+  public fontStyle: FontSlant | null
+  public leadingDistribution: TextLeadingDistribution | null
 
-  static toSkTextStyleProperties(
-    fontFamily?: string | null,
-    fontSize?: number | null,
-    height?: number | null,
-    fontWeight?: FontWeight | null,
-    fontStyle?: FontStyle | null,
-  ): SkiaTextStyleProperties {
-    const properties: SkiaTextStyleProperties = {}
+  
+  /**
+   * @description: 
+   * @param {string} fontFamily
+   * @param {number} fontSize
+   * @param {number} height
+   * @param {FontWeight} fontWeight
+   * @param {FontSlant} fontStyle
+   * @return {*}
+   */
+  static toSkiaTextStyleProperties(
+    fontFamily: string | null = null,
+    fontSize: number | null = null,
+    height: number | null = null,
+    fontWeight: FontWeight | null = null,
+    fontStyle: FontSlant | null = null,
+  ): ITextStyle {
+    const properties: ITextStyle = {}
     
     if (
       fontWeight !== null || 
       fontStyle !== null
     ) {
-      properties.fontStyle = toSkFontStyle(fontWeight, fontStyle)
+      properties.fontStyle = toSkiaFontStyle(fontWeight, fontStyle)
     }
 
     if (fontSize !== null) {
@@ -226,11 +168,17 @@ export class ParagraphStyle {
     return properties
   }
 
-  static toSkStrutStyleProperties(
+  /**
+   * @description: 
+   * @param {StrutStyle} style
+   * @param {TextHeightBehavior} paragraphHeightBehavior
+   * @return {*}
+   */
+  static toSkiaStrutStyleProperties(
     style: StrutStyle, 
     paragraphHeightBehavior?: TextHeightBehavior | null
-  ): SkiaStrutStyleProperties {
-    const properties: SkiaStrutStyleProperties = {
+  ): IStrutStyle {
+    const properties: IStrutStyle = {
       fontFamilies: getEffectiveFontFamilies(
         style.fontFamily,
         style.fontFamilyFallback
@@ -266,7 +214,7 @@ export class ParagraphStyle {
       style.fontWeight !== null || 
       style.fontStyle !== null
     ) {
-      properties.fontStyle = toSkFontStyle(
+      properties.fontStyle = toSkiaFontStyle(
         style.fontWeight, 
         style.fontStyle
       )
@@ -281,31 +229,47 @@ export class ParagraphStyle {
     return properties
   }
 
-  static toSkParagraphStyle(
-    textAlign?: TextAlign | null,
-    textDirection?: TextDirection | null,
-    maxLines?: number | null,
-    String? fontFamily,
-    double? fontSize,
-    double? height,
-    TextHeightBehavior? textHeightBehavior,
-    FontWeight? fontWeight,
-    FontStyle? fontStyle,
-    StrutStyle? strutStyle,
-    String? ellipsis,
-    Locale? locale,
+  /**
+   * @description: 
+   * @param {TextAlign} textAlign
+   * @param {TextDirection} textDirection
+   * @param {number} maxLines
+   * @param {string} fontFamily
+   * @param {number} fontSize
+   * @param {number} height
+   * @param {TextHeightBehavior} textHeightBehavior
+   * @param {FontWeight} fontWeight
+   * @param {FontSlant} fontStyle
+   * @param {StrutStyle} strutStyle
+   * @param {string} ellipsis
+   * @param {Locale} locale
+   * @return {*}
+   */
+  static toSkiaParagraphStyle(
+    textAlign: TextAlign | null = null,
+    textDirection: TextDirection | null = null,
+    maxLines: number | null = null,
+    fontFamily: string | null = null,
+    fontSize: number | null = null,
+    height: number | null = null,
+    textHeightBehavior: TextHeightBehavior | null = null,
+    fontWeight: FontWeight | null = null,
+    fontStyle: FontSlant | null = null,
+    strutStyle: StrutStyle | null = null,
+    ellipsis: string | null = null,
+    // locale: Locale? ,
   ) {
-    const properties: SkiaParagraphStyleProperties = {}
+    const properties: IParagraphStyle = {}
 
     if (
       textAlign !== null && 
       textAlign !== undefined
     ) {
-      properties.textAlign = toSkTextAlign(textAlign)
+      properties.textAlign = textAlign
     }
 
     if (textDirection !== null) {
-      properties.textDirection = toSkTextDirection(textDirection)
+      properties.textDirection = textDirection
     }
 
     if (maxLines !== null) {
@@ -317,8 +281,7 @@ export class ParagraphStyle {
     }
 
     if (textHeightBehavior !== null) {
-      properties.textHeightBehavior =
-          toSkTextHeightBehavior(textHeightBehavior);
+      properties.textHeightBehavior = toSkiaTextHeightBehavior(textHeightBehavior)
     }
 
     if (ellipsis !== null) {
@@ -326,16 +289,29 @@ export class ParagraphStyle {
     }
 
     if (strutStyle !== null) {
-      properties.strutStyle = toSkStrutStyleProperties(strutStyle, textHeightBehavior)
+      properties.strutStyle = ParagraphStyle.toSkiaStrutStyleProperties(
+        strutStyle, 
+        textHeightBehavior
+      )
     }
 
-    properties.textStyle = toSkTextStyleProperties(fontFamily, fontSize, height, fontWeight, fontStyle)
+    properties.textStyle = ParagraphStyle.toSkiaTextStyleProperties(
+      fontFamily, 
+      fontSize, 
+      height, 
+      fontWeight, 
+      fontStyle
+    )
 
-    return Skia.ParagraphStyle(properties)
+    return new Skia.binding.ParagraphStyle(properties)
   }
 
+   /**
+    * @description: 
+    * @return {*}
+    */
    getTextStyle () {
-    return TextStyle.malloc({
+    return new TextStyle({
       fontFamily: this.fontFamily,
       fontSize: this.fontSize,
       height: this.height,
@@ -352,24 +328,43 @@ export type FontFeatureOptions = {
 }
 
 export class FontFeature {
+  /**
+   * @description: 
+   * @param {string} feature
+   * @return {*}
+   */
   static enable (feature: string) {
     return new FontFeature({
       feature,
       value: 1
     })
   }
+  /**
+   * @description: 
+   * @param {string} feature
+   * @return {*}
+   */
   static disable (feature: string) {
     return new FontFeature({
       feature,
       value: 0
     })
   }
+  /**
+   * @description: 
+   * @param {*} value
+   * @return {*}
+   */
   static alternative (value) {
     return new FontFeature({
       feature: 'aalt',
       value,
     })
   }
+  /**
+   * @description: 
+   * @return {*}
+   */
   static alternativeFractions () {
     return new FontFeature({
       value: 1,
@@ -377,6 +372,10 @@ export class FontFeature {
     })
   }
   
+  /**
+   * @description: 
+   * @return {*}
+   */
   static contextualAlternates () {
     return new FontFeature({
       feature: 'calt',
@@ -384,6 +383,10 @@ export class FontFeature {
     })
   }
      
+  /**
+   * @description: 
+   * @return {*}
+   */
   static caseSensitiveForms () {
     return new FontFeature({
       feature: 'case',
@@ -391,14 +394,23 @@ export class FontFeature {
     })
   }
       
+  /**
+   * @description: 
+   * @param {number} value
+   * @return {*}
+   */
   static characterVariant (value: number) {
     invariant(value >= 1)
     invariant(value <= 0)
 
     return new FontFeature({
-      feature: `cv${value.toString().padLeft(2, "0")}`
+      feature: `cv00${value}`
     })
   }
+  /**
+   * @description: 
+   * @return {*}
+   */
   static denominator () {
     return new FontFeature({
       feature: 'dnom',
@@ -406,36 +418,62 @@ export class FontFeature {
     })
   }
       
+  /**
+   * @description: 
+   * @return {*}
+   */
   static fractions () {
     return new FontFeature({
       feature: 'frac',
       value: 1
     })
   }
+  /**
+   * @description: 
+   * @return {*}
+   */
   static historicalForms () {
     return new FontFeature({
       feature: 'hist',
       value: 1
     })
   }
+  /**
+   * @description: 
+   * @return {*}
+   */
   static historicalLigatures () {
     return new FontFeature({
       feature: 'hlig',
       value: 1
     })
   }
+  /**
+   * @description: 
+   * @return {*}
+   */
   static liningFigures () {
     return new FontFeature({
       feature: 'lnum',
       value: 1
     })
   }
+  /**
+   * @description: 
+   * @param {boolean} enable
+   * @return {*}
+   */
   static localeAware (enable: boolean = true) {
     return new FontFeature({
       feature: 'locl',
       value: enable ? 1 : 0
     })
   }
+  /**
+   * @description: 
+   * @param {number} value
+   * @return {*}
+   */
   static notationalForms (value: number = 1) {
     return new FontFeature({
       feature: 'nalt',
@@ -443,30 +481,50 @@ export class FontFeature {
     })
   }
   
+  /**
+   * @description: 
+   * @return {*}
+   */
   static numerators () {
     return new FontFeature({
       feature: 'numr',
       value: 1
     })
   }
+  /**
+   * @description: 
+   * @return {*}
+   */
   static oldstyleFigures () {
     return new FontFeature({
       feature: 'onum',
       value: 1
     })
   }
+  /**
+   * @description: 
+   * @return {*}
+   */
   static ordinalForms () {
     return new FontFeature({
       feature: 'ordn',
       value: 1
     })
   }
+  /**
+   * @description: 
+   * @return {*}
+   */
   static proportionalFigures () {
     return new FontFeature({
       feature: 'pnum',
       value: 1
     })
   }
+  /**
+   * @description: 
+   * @return {*}
+   */
   static randomize () {
     return new FontFeature({
       feature: 'rand',
@@ -474,6 +532,10 @@ export class FontFeature {
     })
   }
       
+  /**
+   * @description: 
+   * @return {*}
+   */
   static stylisticAlternates () {
     return new FontFeature({
       feature: 'salt',
@@ -481,6 +543,10 @@ export class FontFeature {
     })
   }
       
+  /**
+   * @description: 
+   * @return {*}
+   */
   static scientificInferiors () {
     return new FontFeature({
       feature: 'sinf',
@@ -488,16 +554,25 @@ export class FontFeature {
     })
   }
       
+  /**
+   * @description: 
+   * @param {number} value
+   * @return {*}
+   */
   static stylisticSet (value: number) {
     invariant(value >= 1)
     invariant(value <= 20)
 
     return new FontFeature({
-      feature: `ss${value.toString().padLeft(2, "0")}`,
+      feature: `ss00${value}`,
       value
     })
   }
 
+  /**
+   * @description: 
+   * @return {*}
+   */
   static subscripts() {
     return new FontFeature({
       feature: 'subs',
@@ -505,6 +580,10 @@ export class FontFeature {
     })
   }
 
+  /**
+   * @description: 
+   * @return {*}
+   */
   static superscripts () {
     return new FontFeature({
       feature: 'sups',
@@ -512,6 +591,11 @@ export class FontFeature {
     })
   }
       
+  /**
+   * @description: 
+   * @param {number} value
+   * @return {*}
+   */
   static swash (value: number = 1) {
     invariant(value >= 0)
     return new FontFeature({
@@ -520,6 +604,10 @@ export class FontFeature {
     })
   }
      
+  /**
+   * @description: 
+   * @return {*}
+   */
   static tabularFigures () {
     return new FontFeature({
       feature: 'tnum',
@@ -527,6 +615,10 @@ export class FontFeature {
     })
   }
       
+  /**
+   * @description: 
+   * @return {*}
+   */
   static slashedZero () {
     return new FontFeature({
       feature: 'zero',
@@ -537,6 +629,11 @@ export class FontFeature {
   public feature: string
   public value: number | null
 
+  /**
+   * @description: 
+   * @param {FontFeatureOptions} options
+   * @return {*}
+   */
   constructor (options: FontFeatureOptions) {
     options.value ??= null
     invariant(options.feature !== null)
@@ -551,14 +648,19 @@ export class FontFeature {
     this.value = options.value
   }
 
+  /**
+   * @description: 
+   * @param {FontFeature} other
+   * @return {*}
+   */
   eq (other: FontFeature): boolean {
     if (other === this) {
       return true
     }
     return (
       other instanceof FontFeature &&
-      other.feature === feature &&
-      other.value === valu
+      other.feature === this.feature &&
+      other.value === this.value
     )
   }
 
@@ -589,14 +691,29 @@ export class TextDecoration {
 
   public mask: number
 
+  /**
+   * @description: 
+   * @param {number} mask
+   * @return {*}
+   */
   constructor (mask: number) {
     this.mask = mask
   }
 
+  /**
+   * @description: 
+   * @param {TextDecoration} other
+   * @return {*}
+   */
   contains (other: TextDecoration) {
     return (this.mask | other.mask) === this.mask
   }
   
+  /**
+   * @description: 
+   * @param {TextDecoration} other
+   * @return {*}
+   */
   eq (other: TextDecoration) {
     return (
       other instanceof TextDecoration && 
@@ -604,6 +721,10 @@ export class TextDecoration {
     )
   }
 
+  /**
+   * @description: 
+   * @return {*}
+   */
   toString () {
     if (this.mask === 0) {
       return 'TextDecoration.none'
@@ -629,32 +750,7 @@ export class TextDecoration {
   }
 }
 
-
-
-abstract class LineMetrics {
-  factory LineMetrics({
-    required bool hardBreak,
-    required double ascent,
-    required double descent,
-    required double unscaledAscent,
-    required double height,
-    required double width,
-    required double left,
-    required double baseline,
-    required int lineNumber,
-  }) = engine.EngineLineMetrics;
-  bool get hardBreak;
-  double get ascent;
-  double get descent;
-  double get unscaledAscent;
-  double get height;
-  double get width;
-  double get left;
-  double get baseline;
-  int get lineNumber;
-}
-
-class Paragraph extends SkiaObject<IParagraph> {
+export class Paragraph {
   // TODO
   // static SynchronousSkiaObjectCache _paragraphCache =
   //     SynchronousSkiaObjectCache(500);
@@ -689,8 +785,6 @@ class Paragraph extends SkiaObject<IParagraph> {
     paragraphStyle?: ParagraphStyle | null, 
     paragraphCommands?: ParagraphCommand[] | null
   ) {
-    super()
-
     this.paragraph = paragraph ?? null
     this.paragraphStyle = paragraphStyle ?? null
     this.paragraphCommands = paragraphCommands ?? []
@@ -706,7 +800,7 @@ class Paragraph extends SkiaObject<IParagraph> {
 
     let didRebuildSkiaObject = false
     if (paragraph === null) {
-      const builder = new ParagraphBuilder(this.paragraphStyle)
+      const builder = new ParagraphBuilder(this.paragraphStyle!)
       
       for (const command of this.paragraphCommands) {
         switch (command.type) {
@@ -720,7 +814,8 @@ class Paragraph extends SkiaObject<IParagraph> {
             builder.pushStyle(command.style!)
             break
           case ParagraphCommandType.AddPlaceholder:
-            builder.addPlaceholder(command.placeholderStyle!)
+            // TODO
+            // builder.addPlaceholder(command.placeholderStyle!)
             break
         }
       }
@@ -748,7 +843,7 @@ class Paragraph extends SkiaObject<IParagraph> {
         this.maxIntrinsicWidth = paragraph.getMaxIntrinsicWidth()
         this.minIntrinsicWidth = paragraph.getMinIntrinsicWidth()
         this.width = paragraph.getMaxWidth()
-        this.boxesForPlaceholders = skiaRectsToTextBoxes(paragraph.getRectsForPlaceholders())
+        this.boxesForPlaceholders = this.skiaRectsToTextBoxes(paragraph.getRectsForPlaceholders())
       } catch (e) {
         throw new Error(`CanvasKit threw an exception while laying out the paragraph. The font was "${this.paragraphStyle.fontFamily}". `)
       }
@@ -758,43 +853,60 @@ class Paragraph extends SkiaObject<IParagraph> {
   }
 
   markUsed () {
-    
-    if (!this.paragraphCache.markUsed(this)) {
-      this.paragraphCache.add(this);
-    }
+    // TODO
+    // if (!this.paragraphCache.markUsed(this)) {
+    //   this.paragraphCache.add(this);
+    // }
   }
 
+  /**
+   * @description: 
+   * @return {*}
+   */
   delete () {
     this.paragraph!.delete()
     this.paragraph = null
   }
 
   
+  /**
+   * @description: 
+   * @return {*}
+   */
   getBoxesForPlaceholders () {
     return this.boxesForPlaceholders!
   }
   
+  /**
+   * @description: 
+   * @return {*}
+   */
   getBoxesForRange (
     start: number,
     end: number, 
-    boxHeightStyle: BoxHeightStyle  = BoxHeightStyle.Tight,
-    boxWidthStyle: BoxWidthStyle = BoxWidthStyle.Tight,
+    boxHeightStyle: RectHeightStyle = Skia.binding.RectHeightStyle.Tight,
+    boxWidthStyle: RectHeightStyle = Skia.binding.RectWidthStyle.Tight,
   ): TextBox[] {
     if (start < 0 || end < 0) {
       return []
     }
 
     const paragraph = this.ensureInitialized(this.lastLayoutConstraints!)
-    const rects: number[][] = paragraph.getRectsForRange(
+    const rects: Float32Array = paragraph.getRectsForRange(
       start,
       end,
-      toSkiaRectHeightStyle(boxHeightStyle),
-      toSkiaRectWidthStyle(boxWidthStyle),
+      boxHeightStyle,
+      boxWidthStyle,
     )
 
-    return skiaRectsToTextBoxes(rects)
+    return this.skiaRectsToTextBoxes(rects)
   }
 
+  /**
+   * @description: 
+   * @param {number} rects
+   * @return {*}
+   */
   skiaRectsToTextBoxes (rects: number[][]): TextBox[] {
     const result: TextBox[] = []
 
@@ -805,50 +917,64 @@ class Paragraph extends SkiaObject<IParagraph> {
         rect[1],
         rect[2],
         rect[3],
-        this.paragraphStyle.textDirection!,
+        this.paragraphStyle?.textDirection!,
       ))
     }
 
     return result
   }
 
-  
-  TextPosition getPositionForOffset(Offset offset) {
-    final SkParagraph paragraph = _ensureInitialized(_lastLayoutConstraints!);
-    final SkTextPosition positionWithAffinity =
+  /**
+   * @description: 
+   * @param {Offset} offset
+   * @return {*}
+   */  
+  getPositionForOffset (offset: Offset): TextPosition {
+    const paragraph = this.ensureInitialized(this.lastLayoutConstraints!)
+    const positionWithAffinity =
         paragraph.getGlyphPositionAtCoordinate(
       offset.dx,
       offset.dy,
-    );
-    return fromPositionWithAffinity(positionWithAffinity);
+    )
+    
+    return fromPositionWithAffinity(positionWithAffinity)
+  }
+  /**
+   * @description: 
+   * @param {TextPosition} position
+   * @return {*}
+   */  
+  getWordBoundary (position: TextPosition ): TextRange {
+    const paragraph = this.ensureInitialized(this.lastLayoutConstraints!)
+    const range = paragraph.getWordBoundary(position.offset)
+    return new TextRange(range.start, range.end)
   }
 
-  
-  TextRange getWordBoundary(TextPosition position) {
-    final SkParagraph paragraph = _ensureInitialized(_lastLayoutConstraints!);
-    final SkTextRange skRange = paragraph.getWordBoundary(position.offset);
-    return TextRange(start: skRange.start, end: skRange.end);
-  }
-
-  
-  void layout(ParagraphConstraints constraints) {
-    if (_lastLayoutConstraints == constraints) {
-      return;
+  /**
+   * @description: 
+   * @param {ParagraphConstraints} constraints
+   * @return {*}
+   */  
+  layout (constraints: ParagraphConstraints) {
+    if (this.lastLayoutConstraints === constraints) {
+      return
     }
-    _ensureInitialized(constraints);
 
-    // See class-level and _paragraphCache doc comments for why we're releasing
-    // the paragraph immediately after layout.
-    markUsed();
+    this.ensureInitialized(constraints)
+    this.markUsed()
   }
 
-  
+  /**
+   * @description: 
+   * @param {TextPosition} position
+   * @return {*}
+   */  
   getLineBoundary (position: TextPosition): TextRange {
     const paragraph = this.ensureInitialized(this.lastLayoutConstraints!)
     const metrics: ILineMetrics[] = paragraph.getLineMetrics()
     const offset: number = position.offset
 
-    for (const metric in metrics) {
+    for (const metric of metrics) {
       if (offset >= metric.startIndex && offset <= metric.endIndex) {
         return new TextRange(
           metric.startIndex, 
@@ -859,24 +985,55 @@ class Paragraph extends SkiaObject<IParagraph> {
     return new TextRange(-1, -1)
   }
 
-  
+  /**
+   * @description: 
+   * @return {*}
+   */  
   computeLineMetrics (): LineMetrics[] {
     const paragraph = this.ensureInitialized(this.lastLayoutConstraints!)
     const sks: ILineMetrics[] = paragraph.getLineMetrics()
     const result: LineMetrics[] = []
-    for (const metric in sks) {
+    for (const metric of sks) {
       result.push(new LineMetrics(metric))
     }
     return result
   }
 }
 
+export class ParagraphBuilder {
+  
+  /**
+   * @description: 
+   * @param {number} width
+   * @param {number} height
+   * @param {PlaceholderAlignment} alignment
+   * @param {number} offset
+   * @param {TextBaseline} baseline
+   * @return {*}
+   */
+  static toSkiaPlaceholderStyle (
+    width: number,
+    height: number,
+    alignment: PlaceholderAlignment,
+    offset: number,
+    baseline: TextBaseline,
+  ) {
 
-class ParagraphBuilder {
-  public paragraphBuilder: IParagraphBuilder
-  public  style: ParagraphStyle
-  public commands: ParagraphCommand[]
+    const properties: ParagraphPlaceholder = {
+      width,
+      height,
+      alignment,
+      offset,
+      baseline
+    }
+
+    return properties
+  }
+
+  public style: ParagraphStyle
   public placeholderCount: number
+  public paragraphBuilder: IParagraphBuilder
+  public commands: ParagraphCommand[]
   public placeholderScales: number[]
   public styleStack: TextStyle[]
 
@@ -891,13 +1048,25 @@ class ParagraphBuilder {
     this.placeholderCount = 0
     this.placeholderScales = []
     this.styleStack = []
+     // TODO
     this.paragraphBuilder = Skia.binding.ParagraphBuilder.MakeFromFontProvider(
-      style.skParagraphStyle,
-      skiaFontCollection.fontProvider,
+      style.skia,
+      // TODO
+      // skiaFontCollection.fontProvider,
     ) 
     this.styleStack.push(this.style.getTextStyle())
   }
-
+  
+  /**
+   * @description: 
+   * @param {number} width
+   * @param {number} height
+   * @param {PlaceholderAlignment} alignment
+   * @param {number} scale
+   * @param {number} baselineOffset
+   * @param {TextBaseline} baseline
+   * @return {*}
+   */
   addPlaceholder (
     width: number,
     height: number,
@@ -920,21 +1089,15 @@ class ParagraphBuilder {
 
     this.placeholderCount++
     this.placeholderScales.push(scale)
-    const placeholderStyle: ParagraphPlaceholder = toSkiaPlaceholderStyle(
+    const placeholderStyle: ParagraphPlaceholder = ParagraphBuilder.toSkiaPlaceholderStyle(
       width * scale,
       height * scale,
       alignment,
       (baselineOffset ?? height) * scale,
-      baseline ?? Skia.binding.TextBaseline.
-      Alphabetic,
+      baseline ?? Skia.binding.TextBaseline.Alphabetic,
     )
 
-    this.addPlaceholder(placeholderStyle)
-  }
-
-  addPlaceholder (placeholderStyle: ParagraphPlaceholder) {
     this.commands.push(ParagraphCommand.addPlaceholder(placeholderStyle))
-    
     this.paragraphBuilder.addPlaceholder(
       placeholderStyle.width,
       placeholderStyle.height,
@@ -944,28 +1107,14 @@ class ParagraphBuilder {
     )
   }
 
-  static toSkiaPlaceholderStyle (
-    width: number,
-    height: number,
-    alignment: PlaceholderAlignment,
-    baselineOffset: number,
-    baseline: TextBaseline,
-  ) {
-
-    const properties: ParagraphPlaceholder = new ParagraphPlaceholder({
-      width: width,
-      height: height,
-      alignment: toSkiaPlaceholderAlignment(alignment),
-      offset: baselineOffset,
-      baseline: toSkiaTextBaseline(baseline),
-    })
-
-    return properties
-  }
-
+  /**
+   * @description: 
+   * @param {string} text
+   * @return {*}
+   */
   addText (text: string) {
     const fontFamilies: string[] = []
-    const style = this.peekStyle()
+    const style = this.peekStyle() as TextStyle
     
     if (style.fontFamily !== null) {
       fontFamilies.push(style.fontFamily!)
@@ -976,23 +1125,42 @@ class ParagraphBuilder {
         fontFamilies.push(fontFamily)
       }
     }
-    FontFallbackData.instance.ensureFontsSupportText(text, fontFamilies)
+
+    // TODO
+    // FontFallbackData.instance.ensureFontsSupportText(text, fontFamilies)
     
-    this.commands.add(ParagraphCommand.addText(text))
+    this.commands.push(ParagraphCommand.addText(text))
     this.paragraphBuilder.addText(text)
   }
 
+  /**
+   * @description: 
+   * @return {*}
+   */
   build () {
     const builtParagraph = this.buildSkiaParagraph()
-    return Paragraph(builtParagraph, this.style, this.commands)
+
+    return new Paragraph(
+      builtParagraph, 
+      this.style, 
+      this.commands
+    )
   }
 
-  buildSkParagraph () {
+  /**
+   * @description: 
+   * @return {*}
+   */
+  buildSkiaParagraph () {
     const result = this.paragraphBuilder.build()
     this.paragraphBuilder.delete()
     return result
   }
 
+  /**
+   * @description: 
+   * @return {*}
+   */
   pop () {
     if (this.styleStack.length <= 1) {
       return
@@ -1003,13 +1171,17 @@ class ParagraphBuilder {
     this.paragraphBuilder.pop()
   }
 
+  /**
+   * @description: 
+   * @return {*}
+   */
   peekStyle () {
     invariant(this.styleStack.length > 0)
     return this.styleStack[this.styleStack.length - 1]
   }
 
   static get defaultTextForeground () {
-    return this._defaultTextForeground ?? (this.defaultTextForeground = Skia.binding.Paint())
+    return this._defaultTextForeground ?? (this._defaultTextForeground = Skia.binding.Paint())
   }
 
   static get defaultTextBackground () {
@@ -1023,8 +1195,13 @@ class ParagraphBuilder {
   static _defaultTextForeground: IPaint
   static _defaultTextBackground: IPaint
     
+  /**
+   * @description: 
+   * @param {TextStyle} style
+   * @return {*}
+   */
   pushStyle (style: TextStyle) {
-    const baseStyle = this.peekStyle()
+    const baseStyle = this.peekStyle() as TextStyle
     const sk = baseStyle.mergeWith(style)
     
     this.styleStack.push(sk)
@@ -1034,27 +1211,39 @@ class ParagraphBuilder {
       sk.foreground !== null || 
       sk.background !== null
     ) {
-      const foreground: IPaint | null = sk.foreground?.skiaObject
+      let foreground: IPaint | null = sk.foreground?.skia!
+
       if (foreground === null) {
-        this.defaultTextForeground.setColorInt(sk.color?.value ?? 0xFF000000)
-        foreground = this.defaultTextForeground
+        ParagraphBuilder.defaultTextForeground.setColorInt(sk.color?.value ?? 0xFF000000)
+        foreground = ParagraphBuilder.defaultTextForeground
       }
 
-      const background: IPaint = sk.background?.skiaObject ?? this.defaultTextBackground
-      this.paragraphBuilder.pushPaintStyle(sk.skTextStyle, foreground, background)
+      const background: IPaint = sk.background?.skia ?? ParagraphBuilder.defaultTextBackground
+      this.paragraphBuilder.pushPaintStyle(
+        sk.textStyle, 
+        foreground as IPaint, 
+        background
+      )
     } else {
-      this.paragraphBuilder.pushStyle(sk.skTextStyle)
+      this.paragraphBuilder.pushStyle(sk.textStyle)
     }
   }
 }
 
-
-class ParagraphCommand {
+export class ParagraphCommand {
   public type: ParagraphCommandType
   public text: string | null = null
   public style: TextStyle | null = null
   public placeholderStyle: ParagraphPlaceholder | null = null
 
+  /**
+   * @description: 
+   * @param {ParagraphCommandType} type
+   * @param {string} text
+   * @param {TextStyle} style
+   * @param {ParagraphPlaceholder} placeholderStyle
+   * @return {*}
+   */
   constructor (
     type: ParagraphCommandType,
     text?: string | null,
@@ -1067,6 +1256,11 @@ class ParagraphCommand {
     this.placeholderStyle = placeholderStyle ?? null
   }
 
+  /**
+   * @description: 
+   * @param {string} text
+   * @return {*}
+   */
   static addText (text: string) {
     return new ParagraphCommand(
       ParagraphCommandType.AddText, 
@@ -1076,6 +1270,10 @@ class ParagraphCommand {
     )
   }
 
+  /**
+   * @description: 
+   * @return {*}
+   */
   static pop () {
     return new ParagraphCommand(
       ParagraphCommandType.Pop, 
@@ -1085,6 +1283,11 @@ class ParagraphCommand {
     )
   }
 
+  /**
+   * @description: 
+   * @param {TextStyle} style
+   * @return {*}
+   */
   static pushStyle (style: TextStyle) {
     return new ParagraphCommand(
       ParagraphCommandType.PushStyle, 
@@ -1094,6 +1297,11 @@ class ParagraphCommand {
     )
   }
 
+  /**
+   * @description: 
+   * @param {ParagraphPlaceholder} placeholderStyle
+   * @return {*}
+   */
   static addPlaceholder (placeholderStyle: ParagraphPlaceholder) {
     return new ParagraphCommand(
       ParagraphCommandType.AddPlaceholder, 
@@ -1104,15 +1312,24 @@ class ParagraphCommand {
   }
 }
 
-
-class ParagraphConstraints {
+export class ParagraphConstraints {
   public width: number
 
+  /**
+   * @description: 
+   * @param {number} width
+   * @return {*}
+   */
   constructor (width: number,) {
     invariant(width !== null)
     this.width = width
   }
   
+  /**
+   * @description: 
+   * @param {ParagraphConstraints} other
+   * @return {*}
+   */
   eq (other:ParagraphConstraints) {
     if (other === this) {
       return true
@@ -1124,13 +1341,26 @@ class ParagraphConstraints {
     )
   }
   
+  /**
+   * @description: 
+   * @return {*}
+   */
   toString () {
     return `ParagraphConstraints(width: ${this.width})`
   }
 }
 
-class TextBox {
-  static fromLTRBD(
+export class TextBox {
+  /**
+   * @description: 
+   * @param {number} left
+   * @param {number} top
+   * @param {number} right
+   * @param {number} bottom
+   * @param {TextDirection} direction
+   * @return {*}
+   */
+  static fromLTRBD (
     left: number,
     top: number,
     right: number,
@@ -1151,6 +1381,15 @@ class TextBox {
   public bottom: number
   public direction: TextDirection
 
+  /**
+   * @description: 
+   * @param {number} left
+   * @param {number} top
+   * @param {number} right
+   * @param {number} bottom
+   * @param {TextDirection} direction
+   * @return {*}
+   */
   constructor (
     left: number,
     top: number,
@@ -1176,7 +1415,10 @@ class TextBox {
       : this.left
   }
 
-
+  /**
+   * @description: 
+   * @return {*}
+   */
   toRect (): Rect {
     return Rect.fromLTRB(
       this.left, 
@@ -1185,7 +1427,11 @@ class TextBox {
       this.bottom
     )
   }
-
+  /**
+   * @description: 
+   * @param {TextBox} other
+   * @return {*}
+   */
   eq (other: TextBox) {
     if (other === this) {
       return true
@@ -1202,25 +1448,10 @@ class TextBox {
   }
 }
 
-class TextRange {
+export class TextRange {
   static empty: TextRange = new TextRange(-1, -1)
 
-  public start: number
-  public end: number
 
-  constructor (
-    start: number,
-    end: number,
-  ) {
-    invariant(start >= -1)
-    invariant(end >= -1)
-
-    this.start = start
-    this.end = end
-  }
-  
-  
-  
   get isValid () {
     return  this.start >= 0 && this.end >= 0
   }
@@ -1233,22 +1464,62 @@ class TextRange {
     return this.end >= this.start
   }
 
+  public start: number
+  public end: number
+
+  /**
+   * @description: 
+   * @param {number} start
+   * @param {number} end
+   * @return {*}
+   */
+  constructor (
+    start: number,
+    end: number,
+  ) {
+    invariant(start >= -1)
+    invariant(end >= -1)
+
+    this.start = start
+    this.end = end
+  }
+
+  /**
+   * @description: 
+   * @param {string} text
+   * @return {*}
+   */
   textBefore (text: string): string {
     invariant(this.isNormalized)
     return text.substring(0, this.start)
   }
 
+  /**
+   * @description: 
+   * @param {string} text
+   * @return {*}
+   */
   textAfter (text: string): string {
     invariant(this.isNormalized)
     return text.substring(this.end)
   }
 
+  /**
+   * @description: 
+   * @param {string} text
+   * @return {*}
+   */
   textInside (text: string): string {
     invariant(this.isNormalized)
     return text.substring(this.start, this.end)
   }
 
   
+  /**
+   * @description: 
+   * @param {TextRange} other
+   * @return {*}
+   */
   eq (other: TextRange) {
     if (other === this) {
       return this
@@ -1260,18 +1531,28 @@ class TextRange {
     )
   }
 
+  /**
+   * @description: 
+   * @return {*}
+   */
   toString () {
     return `TextRange(start: ${this.start}, end: ${this.end})`
   }
 }
 
-class TextPosition {
+export class TextPosition {
   public offset: number
-  public affinity: TextAffinity
+  public affinity: Affinity
 
+  /**
+   * @description: 
+   * @param {number} offset
+   * @param {Affinity} affinity
+   * @return {*}
+   */
   constructor (
     offset: number,
-    affinity: TextAffinity = TextAffinity.Downstream,
+    affinity: Affinity = Skia.binding.Affinity.Downstream,
   ) {
     invariant(offset !== null) 
     invariant(affinity !== null)
@@ -1279,8 +1560,12 @@ class TextPosition {
     this.offset = offset
     this.affinity = affinity
   }
-
   
+  /**
+   * @description: 
+   * @param {TextPosition} other
+   * @return {*}
+   */
   eq (other: TextPosition) {
     if (other === this) {
       return true
@@ -1298,16 +1583,16 @@ class TextPosition {
   }
 }
 
-type TextStyleOptions = {
+export type TextStyleOptions = {
   color?: Color | null
   decoration?: TextDecoration | null
   decorationColor?: Color | null
-  decorationStyle?: TextDecorationStyle | null
+  decorationStyle?: DecorationStyle | null
   decorationThickness?: number | null
   fontWeight?: FontWeight | null
-  fontStyle?: FontStyle | null
+  fontStyle?: FontSlant | null
   textBaseline?: TextBaseline | null
-  fontFamily?: String | null
+  fontFamily?: string | null
   fontFamilyFallback?: string[] | null
   fontSize?: number | null
   letterSpacing?: number | null
@@ -1315,14 +1600,19 @@ type TextStyleOptions = {
   height?: number | null
   leadingDistribution?: TextLeadingDistribution | null
   locale?: number | null
-  background?: IPaint | null
-  foreground?: IPaint | null
+  background?: Paint | null
+  foreground?: Paint | null
   shadows?: Shadow[] | null
   fontFeatures?: FontFeature[] | null
 }
 
-class TextStyle {
+export class TextStyle {
+  static kTextStyle: ITextStyle | null = null
   get textStyle () {
+    if (TextStyle.kTextStyle) {
+      return TextStyle.kTextStyle
+    }
+
     const color = this.color
     const decoration = this.decoration
     const decorationColor = this.decorationColor
@@ -1335,7 +1625,8 @@ class TextStyle {
     const letterSpacing = this.letterSpacing
     const wordSpacing = this.wordSpacing
     const height = this.height
-    const locale = this.locale
+    // TODO
+    // const locale = this.locale
     const background = this.background
     const foreground = this.foreground
     const shadows = this.shadows
@@ -1374,11 +1665,11 @@ class TextStyle {
     }
 
     if (decorationStyle !== null) {
-      properties.decorationStyle = toSkiaTextDecorationStyle(decorationStyle)
+      properties.decorationStyle = decorationStyle
     }
 
     if (textBaseline != null) {
-      properties.textBaseline = toSkiaTextBaseline(textBaseline)
+      properties.textBaseline = textBaseline
     }
 
     if (fontSize !== null) {
@@ -1408,9 +1699,10 @@ class TextStyle {
         break
     }
 
-    if (locale !== null) {
-      properties.locale = locale.toLanguageTag()
-    }
+    // TODO
+    // if (locale !== null) {
+    //   properties.locale = locale.toLanguageTag()
+    // }
 
     properties.fontFamilies = this.effectiveFontFamilies
 
@@ -1423,54 +1715,61 @@ class TextStyle {
     }
 
     if (shadows !== null) {
-      final List<SkTextShadow> IShadows = []
-      for (final Shadow shadow in shadows) {
-        final SkTextShadow ckShadow = SkTextShadow();
-        ckShadow.color = makeFreshSkColor(shadow.color);
-        ckShadow.offset = toSkPoint(shadow.offset);
-        ckShadow.blurRadius = shadow.blurRadius;
-        ckShadows.add(ckShadow);
+      const sks: ITextShadow[] = []
+      for (const shadow of shadows) {
+        const sk: ITextShadow = {}
+        sk.color = makeFreshSkiaColor(shadow.color)
+        sk.offset = toSkiaPoint(shadow.offset)
+        sk.blurRadius = shadow.blurRadius;
+        sks.push(sk)
       }
-      properties.shadows = ckShadows
+      properties.shadows = sks
     }
 
     if (fontFeatures !== null) {
-      const sks: IFontFeature[] = []
+      const sks: ITextFontFeatures[] = []
       for (const fontFeature of fontFeatures) {
-        const sk: IFontFeature  = {}
-        sk.name = fontFeature.feature
-        sk.value = fontFeature.value
+        const sk: ITextFontFeatures  = {
+          name: fontFeature.feature,
+          value: fontFeature.value as number
+        }
+        
         sks.push(sk)
       }
       properties.fontFeatures = sks
     }
 
-    return new Skia.binding.TextStyle(properties)
-  }();
+    return TextStyle.kTextStyle = new Skia.binding.TextStyle(properties)
+  }
 
   public color: Color | null = null
   public decoration: TextDecoration | null = null
   public decorationColor: Color | null = null
-  public decorationStyle: TextDecorationStyle | null = null
+  public decorationStyle: DecorationStyle | null = null
   public decorationThickness: number | null = null
   public fontWeight: FontWeight | null = null
-  public fontStyle: FontStyle | null = null
+  public fontStyle: FontSlant | null = null
   public textBaseline: TextBaseline | null = null
-  public fontFamily: String | null = null
+  public fontFamily: string | null = null
   public fontFamilyFallback: string[] | null = null
   public fontSize: number | null = null
   public letterSpacing: number | null = null
   public wordSpacing: number | null = null
   public height: number | null = null
   public leadingDistribution: TextLeadingDistribution | null = null
-  public locale: Locale | null = null
-  public background: IPaint | null = null
-  public foreground: IPaint | null = null
+  // public locale: Locale | null = null
+  public background: Paint | null = null
+  public foreground: Paint | null = null
   public shadows: Shadow[] | null = null
   public fontFeatures: FontFeature[] | null = null
 
   public effectiveFontFamilies: string[] = getEffectiveFontFamilies(this.fontFamily, this.fontFamilyFallback)
 
+  /**
+   * @description: 
+   * @param {TextStyleOptions} options
+   * @return {*}
+   */
   constructor (options: TextStyleOptions) {
     this.color = options.color ?? null
     this.decoration = options.decoration ?? null
@@ -1487,14 +1786,19 @@ class TextStyle {
     this.wordSpacing = options.wordSpacing ?? null
     this.height = options.height ?? null
     this.leadingDistribution = options.leadingDistribution ?? null
-    this.locale = options.locale ?? null
+    // TODO
+    // this.locale = options.locale ?? null
     this.background = options.background ?? null
     this.foreground = options.foreground ?? null
     this.shadows = options.shadows ?? null
     this.fontFeatures = options.fontFeatures ?? null
   }
 
-
+  /**
+   * @description: 
+   * @param {TextStyle} other
+   * @return {*}
+   */
   mergeWith (other: TextStyle): TextStyle  {
     return new TextStyle({
       color: other.color ?? this.color,
@@ -1512,7 +1816,8 @@ class TextStyle {
       wordSpacing: other.wordSpacing ?? this.wordSpacing,
       height: other.height ?? this.height,
       leadingDistribution: other.leadingDistribution ?? this.leadingDistribution,
-      locale: other.locale ?? this.locale,
+      // TODO
+      // locale: other.locale ?? this.locale,
       background: other.background ?? this.background,
       foreground: other.foreground ?? this.foreground,
       shadows: other.shadows ?? this.shadows,
@@ -1521,15 +1826,59 @@ class TextStyle {
   }
 }
 
+export class LineMetrics {
+  public lineMetrics: ILineMetrics
 
+  get ascent () {
+    return this.lineMetrics.ascent
+  } 
+  get descent () {
+    return this.lineMetrics.descent
+  } 
+  get unscaledAscent () {
+    return this.lineMetrics.ascent
+  } 
+  get hardBreak () {
+    return this.lineMetrics.isHardBreak
+  } 
+  get baseline () {
+    return this.lineMetrics.baseline
+  } 
+  get height () {
+    return Math.round(this.lineMetrics.ascent + this.lineMetrics.descent)
+  } 
+  get left () {
+    return this.lineMetrics.left
+  } 
+  get width () {
+    return this.lineMetrics.width
+  } 
+  get lineNumber () {
+    return this.lineMetrics.lineNumber
+  } 
+  
+  /**
+   * @description: 
+   * @param {ILineMetrics} lineMetrics
+   * @return {*}
+   */
+  constructor (lineMetrics: ILineMetrics) {
+    this.lineMetrics = lineMetrics
+  }
+}
 
- export async function loadFontFromList (
+/**
+ * @description: 
+ * @param {Uint8Array} list
+ * @param {string} fontFamily
+ * @return {*}
+ */
+export async function loadFontFromList (
   list: Uint8Array,
   fontFamily?: string | null
 ) {
 
 }
-
 
 export type StrutStyleOptions = {
   fontFamily?: string | null
@@ -1539,33 +1888,43 @@ export type StrutStyleOptions = {
   leadingDistribution?: TextLeadingDistribution | null
   leading?: number | null
   fontWeight?: FontWeight | null
-  fontStyle?: FontStyle | null
+  fontStyle?: FontSlant | null
   forceStrutHeight?: boolean | null
 }
 
 export class StrutStyle {
-  public fontFamily: string
-  public fontFamilyFallback: string
-  public fontSize: string
-  public height: string
-  public leading: string
-  public fontWeight: string
-  public fontStyle: string
-  public forceStrutHeight: string
-  public leadingDistribution: string
+  public fontFamily: string | null = null
+  public fontFamilyFallback: string[] | null = null
+  public fontSize: number | null = null
+  public height: number | null = null
+  public leading: number | null = null
+  public fontWeight: FontWeight | null = null
+  public fontStyle: FontSlant | null = null
+  public forceStrutHeight: boolean | null = null
+  public leadingDistribution: TextLeadingDistribution | null = null
 
+  /**
+   * @description: 
+   * @param {StrutStyleOptions} options
+   * @return {*}
+   */
   constructor (options: StrutStyleOptions) {
-    this.fontFamily = options.fontFamily
-    this.fontFamilyFallback = options.fontFamilyFallback
-    this.fontSize = options.fontSize
-    this.height = options.height
-    this.leadingDistribution = options.leadingDistribution
-    this.leading = options.leading
-    this.fontWeight = options.fontWeight
-    this.fontStyle = options.fontStyle
-    this.forceStrutHeight = options.forceStrutHeight
+    this.fontFamily = options.fontFamily ?? null
+    this.fontFamilyFallback = options.fontFamilyFallback ?? null
+    this.fontSize = options.fontSize ?? null
+    this.height = options.height ?? null
+    this.leadingDistribution = options.leadingDistribution ?? null
+    this.leading = options.leading ?? null
+    this.fontWeight = options.fontWeight ?? null
+    this.fontStyle = options.fontStyle ?? null
+    this.forceStrutHeight = options.forceStrutHeight ?? null
   }  
 
+  /**
+   * @description: 
+   * @param {StrutStyle} other
+   * @return {*}
+   */
   eq (other: StrutStyle) {
     if (other === this) {
       return true
@@ -1581,14 +1940,20 @@ export class StrutStyle {
       other.fontWeight === this.fontWeight &&
       other.fontStyle === this.fontStyle &&
       other.forceStrutHeight === this.forceStrutHeight &&
-      listEquals<String>(other.fontFamilyFallback, this.fontFamilyFallback)
+      listEquals<string[]>(other.fontFamilyFallback ?? [], this.fontFamilyFallback ?? [])
     )
   }
 }
 
+/**
+ * @description: 
+ * @param {string} fontFamily
+ * @param {string} fontFamilyFallback
+ * @return {*}
+ */
 export function getEffectiveFontFamilies (
-  fontFamily?: string | null,
-  fontFamilyFallback?: string[] | null
+  fontFamily: string | null = null,
+  fontFamilyFallback: string[] | null = null
 ): string[] {
   const fontFamilies: string[] = []
 
@@ -1611,16 +1976,28 @@ export function getEffectiveFontFamilies (
 }
 
 
-export function toSkFontStyle (
-  fontWeight: FontWeight, 
-  fontStyle: FontStyle
+/**
+ * @description: 
+ * @param {FontWeight} fontWeight
+ * @param {FontSlant} fontStyle
+ * @return {*}
+ */
+/**
+ * @description: 
+ * @param {FontWeight} fontWeight
+ * @param {FontSlant} fontStyle
+ * @return {*}
+ */
+export function toSkiaFontStyle (
+  fontWeight: FontWeight | null, 
+  fontStyle: FontSlant | null
 ) {
-  const style: SkiaFontStyle = {}
+  const style: IFontStyle = {}
   if (fontWeight !== null) {
-    style.weight = toSkFontWeight(fontWeight)
+    style.weight = fontWeight
   }
-  if (fontStyle != null) {
-    style.slant = toSkFontSlant(fontStyle);
+  if (fontStyle !== null) {
+    style.slant = fontStyle
   }
   return style;
 }
