@@ -1,12 +1,19 @@
+/*
+ * @Author: Aniwei
+ * @Date: 2022-08-17 15:13:52
+ */
 import { invariant } from 'ts-invariant'
 import { ArgumentError } from '@internal/ArgumentError'
 
 import type { Offset } from '@internal/Geometry'
 import type { Color } from '@internal/Color'
 
-/*
- * @Author: Aniwei
- * @Date: 2022-08-17 15:13:52
+
+/**
+ * @description: 
+ * @param {Float64Array} matrix4
+ * @param {*} Matrix4
+ * @return {*}
  */
 export function matrix4IsValid (matrix4: Float64Array) {
   invariant(matrix4 !== null, 'Matrix4 argument was null.')
@@ -15,12 +22,24 @@ export function matrix4IsValid (matrix4: Float64Array) {
 }
 
 
+/**
+ * @description: 
+ * @param {Offset} offset
+ * @param {*} Offset
+ * @return {*}
+ */
 export function offsetIsValid (offset: Offset) {
   invariant(offset !== null, 'Offset argument was null.')
   invariant(!isNaN(offset.dx) && !isNaN(offset.dy), 'Offset argument contained a NaN value.')
   return true
 }
 
+/**
+ * @description: 
+ * @param {Color} colors
+ * @param {number} colorStops
+ * @return {*}
+ */
 export function validateColorStops (
   colors: Color[], 
   colorStops?: number[] | null,

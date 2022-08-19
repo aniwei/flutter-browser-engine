@@ -4,8 +4,9 @@ import { Color } from '@internal/Color'
 import { Offset, Rect } from '@internal/Geometry'
 import { listEquals } from '@helper/listEquals'
 import { lerpDouble, } from '@helper/lerp'
-import { SkiaTextDirection, SkiaTileMode } from '@skia/Skia'
-import * as UIGradient from '@rendering/Gradient'
+import { TextDirection, TileMode } from '@skia'
+
+import * as GradientRender from '@rendering/Gradient'
 
 import { Alignment, AlignmentGeometry } from './Alignment'
 
@@ -86,7 +87,7 @@ export class ColorsAndStops {
 export abstract class GradientTransform {
   abstract transform (
     bounds: Rect, 
-    textDirection?: SkiaTextDirection | null
+    textDirection?: TextDirection | null
   ): Matrix4 | null
 }
 
@@ -100,7 +101,7 @@ export class GradientRotation extends GradientTransform {
 
   transform (
     bounds: Rect, 
-    textDirection?: SkiaTextDirection | null
+    textDirection?: TextDirection | null
   ): Matrix4 {
     invariant(bounds !== null)
 
@@ -199,7 +200,7 @@ export abstract class Gradient {
   
   abstract createShader (
     rect: Rect, 
-    textDirection: SkiaTextDirection | null
+    textDirection: TextDirection | null
   ): Shader 
 
   
@@ -228,7 +229,7 @@ export abstract class Gradient {
 
   resolveTransform (
     bounds: Rect, 
-    textDirection?: SkiaTextDirection | null
+    textDirection?: TextDirection | null
   ): Float64Array | null {
     // @TOCHECK
     return this.transform?.transform(
@@ -243,7 +244,7 @@ export type LinearGradientInitOptions = {
   end?: AlignmentGeometry | null,
   colors: Color[],
   stops: number[] | null,
-  tileMode: SkiaTileMode,
+  tileMode: TileMode,
   transform: GradientTransform | null
 }
 
@@ -251,7 +252,7 @@ export class LinearGradient extends Gradient {
 
   public begin: AlignmentGeometry
   public end: AlignmentGeometry
-  public tileMode: SkiaTileMode
+  public tileMode: TileMode
 
   constructor (options: LinearGradientInitOptions) {
     options.begin = options.begin ?? Alignment.centerLeft
@@ -274,9 +275,9 @@ export class LinearGradient extends Gradient {
 
   createShader (
     rect: Rect, 
-    textDirection: SkiaTextDirection | null
+    textDirection: TextDirection | null
   ): Shader {
-    return UIGradient.Gradient.linear(
+    return GradientRender.Gradient.linear(
       this.begin.resolve(textDirection).withinRect(rect),
       this.end.resolve(textDirection).withinRect(rect),
       this.colors, 
@@ -363,8 +364,8 @@ export class LinearGradient extends Gradient {
       other.end === this.end &&
       other.tileMode === this.tileMode &&
       other.transform === this.transform &&
-      listEquals<Color>(other.colors, this.colors) &&
-      listEquals<number>(other.stops, this.stops) 
+      listEquals<Color[]>(other.colors, this.colors) &&
+      listEquals<number[]>(other.stops, this.stops) 
     )
   }
 
@@ -378,7 +379,7 @@ export type RadialGradientInitOptions = {
   radius: number | null,
   colors: Color[] | null,
   stops: number[] | null,
-  tileMode: SkiaTileMode | null,
+  tileMode: TileMode | null,
   focal,
   focalRadius: number | null,
   transform: GradientTransform | null
@@ -422,7 +423,7 @@ export class RadialGradient extends Gradient {
 
   public center: AlignmentGeometry
   public radius: number
-  public tileMode: SkiaTileMode
+  public tileMode: TileMode
   public focal: AlignmentGeometry
   public focalRadius: number
 
@@ -443,9 +444,9 @@ export class RadialGradient extends Gradient {
 
   createShader (
     rect: Rect, 
-    textDirection: SkiaTextDirection
+    textDirection: TextDirection
   ) {
-    return UIGradient.Gradient.radial(
+    return GradientRender.Gradient.radial(
       this.center.resolve(textDirection).withinRect(rect),
       this.radius * rect.shortestSide,
       this.colors, 
@@ -501,8 +502,8 @@ export class RadialGradient extends Gradient {
       other.focalRadius === this.focalRadius &&
       other.center.eq(this.center) &&
       other.focal.eq(this.focal) &&
-      listEquals<Color>(other.colors, this.colors) &&
-      listEquals<number>(other.stops, this.stops) 
+      listEquals<Color[]>(other.colors, this.colors) &&
+      listEquals<number[]>(other.stops, this.stops) 
     )
   }
 
@@ -517,7 +518,7 @@ export type SweepGradientInitOptions = {
   endAngle: number,
   colors: Color[],
   stops: number[] | null,
-  tileMode: SkiaTileMode,
+  tileMode: TileMode,
   transform: GradientTransform | null
 }
 
@@ -562,7 +563,7 @@ export class SweepGradient extends Gradient {
   public center: AlignmentGeometry
   public startAngle: number
   public endAngle: number
-  public tileMode: SkiaTileMode
+  public tileMode: TileMode
 
   constructor (options: SweepGradientInitOptions) {
     options.center = options.center ?? Alignment.center
@@ -579,9 +580,9 @@ export class SweepGradient extends Gradient {
 
   createShader (
     rect: Rect, 
-    textDirection: SkiaTextDirection
+    textDirection: TextDirection
   ): Shader {
-    return UIGradient.Gradient.sweep(
+    return GradientRender.Gradient.sweep(
       this.center.resolve(textDirection).withinRect(rect),
       this.colors, 
       this.impliedStops(), 
@@ -638,8 +639,8 @@ export class SweepGradient extends Gradient {
       other.endAngle === this.endAngle &&
       other.tileMode === this.tileMode &&
       other.transform === this.transform &&
-      listEquals<Color>(other.colors, this.colors) &&
-      listEquals<number>(other.stops, this.stops)
+      listEquals<Color[]>(other.colors, this.colors) &&
+      listEquals<number[]>(other.stops, this.stops)
     )
   }
 

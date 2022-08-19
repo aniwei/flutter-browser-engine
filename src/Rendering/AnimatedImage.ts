@@ -13,8 +13,6 @@ export type AnimatedImageInitOptions = {
   src: string
 }
 
-console.log(ManagedSkiaObject)
-debugger
 export class AnimatedImage extends ManagedSkiaObject<IAnimatedImage> implements Codec {
   /**
    * @description: 

@@ -6,9 +6,11 @@ import { Path } from '@rendering/Path'
 import { Paint } from '@rendering/Paint'
 import { listEquals } from '@helper/listEquals'
 import { lerpDouble } from '@helper/lerp'
-import { Skia, SkiaTextDirection } from '@skia/Skia'
+import { Skia } from '@skia/binding'
 import { EdgeInsets, EdgeInsetsDirectional, EdgeInsetsGeometry } from './EdgeInsets'
 import { BorderRadius } from './BorderRadius'
+
+import type { TextDirection } from '@skia'
 
 export enum BoxShape {
   Rectangle,
@@ -176,13 +178,13 @@ export class BorderSide {
   }
 
   toPaint (): Paint {
-    const paint = Paint.malloc()
+    const paint = new Paint()
 
     switch (this.style) {
       case BorderStyle.Solid: {
         paint.color = this.color
         paint.strokeWidth = this.width
-        paint.style = Skia.PaintStyle.Stroke
+        paint.style = Skia.binding.PaintStyle.Stroke
         
         break
       }
@@ -190,7 +192,7 @@ export class BorderSide {
       case BorderStyle.None: {
         paint.color = new Color(0x00000000)
         paint.strokeWidth = 0.0
-        paint.style = Skia.PaintStyle.Stroke
+        paint.style = Skia.binding.PaintStyle.Stroke
         break
       }
     }
@@ -243,18 +245,18 @@ export abstract class ShapeBorder {
   
   abstract getOuterPath(
     rect: Rect, 
-    textDirection: SkiaTextDirection | null
+    textDirection: TextDirection | null
   ): Path
   
   abstract getInnerPath(
     rect: Rect, 
-    textDirection: SkiaTextDirection | null
+    textDirection: TextDirection | null
   ): Path 
   
   abstract paint (
     canvas: Canvas, 
     rect: Rect, 
-    textDirection: SkiaTextDirection | null,
+    textDirection: TextDirection | null,
     BoxShape: BoxShape | null,
     borderRadius: BorderRadius | null
   ): void
@@ -427,10 +429,10 @@ export class CompoundBorder extends ShapeBorder {
 
   getInnerPath (
     rect: Rect, 
-    textDirection: SkiaTextDirection | null
+    textDirection: TextDirection | null
   ) {
     for (let index = 0; index < this.borders.length - 1; index += 1) {
-      rect = this.borders[index].dimensions.resolve(textDirection as SkiaTextDirection).deflateRect(rect)
+      rect = this.borders[index].dimensions.resolve(textDirection as TextDirection).deflateRect(rect)
     }
     
     return this.borders[this.borders.length - 1].getInnerPath(rect, textDirection)
@@ -438,7 +440,7 @@ export class CompoundBorder extends ShapeBorder {
 
   getOuterPath (
     rect: Rect, 
-    textDirection: SkiaTextDirection | null
+    textDirection: TextDirection | null
   ) {
     return this.borders[0].getOuterPath(rect, textDirection)
   }
@@ -446,11 +448,11 @@ export class CompoundBorder extends ShapeBorder {
   paint (
     canvas: Canvas, 
     rect: Rect, 
-    textDirection: SkiaTextDirection | null
+    textDirection: TextDirection | null
   ) {
     for (const border of this.borders) {
       border.paint(canvas, rect, textDirection, null, null)
-      rect = border.dimensions.resolve(textDirection as SkiaTextDirection).deflateRect(rect)
+      rect = border.dimensions.resolve(textDirection as TextDirection).deflateRect(rect)
     }
   }
 
@@ -461,7 +463,7 @@ export class CompoundBorder extends ShapeBorder {
     
     return (
       other instanceof CompoundBorder && 
-      listEquals<ShapeBorder>(other.borders, this.borders)
+      listEquals<ShapeBorder[]>(other.borders, this.borders)
     )
   }
 
@@ -478,13 +480,13 @@ export abstract class BoxBorder extends ShapeBorder {
     borderRadius
   ) {
     invariant(side.style !== BorderStyle.None)
-    const paint = Paint.malloc()
+    const paint = new Paint()
     paint.color = side.color
 
     const outer = borderRadius.toRRect(rect)
     const width = side.width
     if (width === 0.0) {
-      paint.style = Skia.PaintStyle.Stroke
+      paint.style = Skia.binding.PaintStyle.Stroke
       paint.strokeWidth = 0.0
       canvas.drawRRect(outer, paint)
     } else {
@@ -600,7 +602,7 @@ export abstract class BoxBorder extends ShapeBorder {
   abstract paint (
     canvas: Canvas,
     rect: Rect, 
-    textDirection: SkiaTextDirection | null,
+    textDirection: TextDirection | null,
     shape: BoxShape | null,
     borderRadius: BorderRadius | null
   ): void
@@ -615,15 +617,15 @@ export abstract class BoxBorder extends ShapeBorder {
   /**
    * @description: 
    * @param {Rect} rect
-   * @param {SkiaTextDirection} textDirection
+   * @param {TextDirection} textDirection
    * @return {Path}
    */
   getInnerPath (
     rect: Rect, 
-    textDirection: SkiaTextDirection | null
+    textDirection: TextDirection | null
   ): Path {
     invariant(textDirection !== null, 'The textDirection argument to $runtimeType.getInnerPath must not be null.')
-    const path = Path.malloc()
+    const path = new Path()
 
     path.addRect(this.dimensions.resolve(textDirection).deflateRect(rect))
 
@@ -633,15 +635,15 @@ export abstract class BoxBorder extends ShapeBorder {
   /**
    * @description: 
    * @param {Rect} rect
-   * @param {SkiaTextDirection} textDirection
+   * @param {TextDirection} textDirection
    * @return {Path}
    */
   getOuterPath (
     rect: Rect, 
-    textDirection: SkiaTextDirection | null
+    textDirection: TextDirection | null
   ): Path {
     invariant(textDirection !== null, 'The textDirection argument to $runtimeType.getOuterPath must not be null.')
-    const path = Path.malloc()
+    const path = new Path()
     path.addRect(rect)
     
     return path
@@ -842,7 +844,7 @@ export class Border extends BoxBorder {
   paint (
     canvas: Canvas, 
     rect: Rect, 
-    textDirection: SkiaTextDirection | null, 
+    textDirection: TextDirection | null, 
     shape: BoxShape | null = BoxShape.Rectangle, 
     borderRadius: BorderRadius | null
   ) {
@@ -1124,7 +1126,7 @@ export class BorderDirectional extends BoxBorder {
    * @description: 
    * @param {Canvas} canvas
    * @param {Rect} rect
-   * @param {SkiaTextDirection} textDirection
+   * @param {TextDirection} textDirection
    * @param {BoxShape} shape
    * @param {BorderRadius} borderRadius
    * @return {*}
@@ -1132,7 +1134,7 @@ export class BorderDirectional extends BoxBorder {
   paint (
     canvas: Canvas,
     rect: Rect,
-    textDirection: SkiaTextDirection | null,
+    textDirection: TextDirection | null,
     shape: BoxShape | null = BoxShape.Rectangle,
     borderRadius: BorderRadius | null,
   ) {
@@ -1181,11 +1183,11 @@ export class BorderDirectional extends BoxBorder {
     invariant(textDirection !== null, 'Non-uniform BorderDirectional objects require a TextDirection when painting.')
     
     switch (textDirection) {
-      case Skia.TextDirection.RTL:
+      case Skia.binding.TextDirection.RTL:
         left = this.end
         right = this.start
         break
-      case Skia.TextDirection.LTR:
+      case Skia.binding.TextDirection.LTR:
       default: 
         left = this.start
         right = this.end
@@ -1248,10 +1250,10 @@ export class BorderDirectional extends BoxBorder {
   invariant(bottom !== null)
   invariant(left !== null)
 
-  const paint = Paint.malloc()
+  const paint = new Paint()
   paint.strokeWidth = 0.0
 
-  const path = Path.malloc()
+  const path = new Path()
 
   switch (top.style) {
     case BorderStyle.Solid: {
@@ -1261,9 +1263,9 @@ export class BorderDirectional extends BoxBorder {
       path.lineTo(rect.right, rect.top)
 
       if (top.width == 0.0) {
-        paint.style = Skia.PaintStyle.Stroke
+        paint.style = Skia.binding.PaintStyle.Stroke
       } else {
-        paint.style =  Skia.PaintStyle.Fill
+        paint.style =  Skia.binding.PaintStyle.Fill
         path.lineTo(rect.right - right.width, rect.top + top.width)
         path.lineTo(rect.left + left.width, rect.top + top.width)
       }
@@ -1283,9 +1285,9 @@ export class BorderDirectional extends BoxBorder {
       path.lineTo(rect.right, rect.bottom)
       
       if (right.width === 0.0)  {
-        paint.style = Skia.PaintStyle.Stroke
+        paint.style = Skia.binding.PaintStyle.Stroke
       } else {
-        paint.style = Skia.PaintStyle.Fill
+        paint.style = Skia.binding.PaintStyle.Fill
         path.lineTo(rect.right - right.width, rect.bottom - bottom.width)
         path.lineTo(rect.right - right.width, rect.top + top.width)
       }
@@ -1304,9 +1306,9 @@ export class BorderDirectional extends BoxBorder {
       path.moveTo(rect.right, rect.bottom)
       path.lineTo(rect.left, rect.bottom)
       if (bottom.width == 0.0) {
-        paint.style = Skia.PaintStyle.Stroke
+        paint.style = Skia.binding.PaintStyle.Stroke
       } else {
-        paint.style = Skia.PaintStyle.Fill
+        paint.style = Skia.binding.PaintStyle.Fill
         path.lineTo(rect.left + left.width, rect.bottom - bottom.width)
         path.lineTo(rect.right - right.width, rect.bottom - bottom.width)
       }
@@ -1323,9 +1325,9 @@ export class BorderDirectional extends BoxBorder {
       path.moveTo(rect.left, rect.bottom)
       path.lineTo(rect.left, rect.top)
       if (left.width == 0.0) {
-        paint.style = Skia.PaintStyle.Stroke
+        paint.style = Skia.binding.PaintStyle.Stroke
       } else {
-        paint.style = Skia.PaintStyle.Fill
+        paint.style = Skia.binding.PaintStyle.Fill
         path.lineTo(rect.left + left.width, rect.top + top.width)
         path.lineTo(rect.left + left.width, rect.bottom - bottom.width)
       }

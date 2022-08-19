@@ -13,7 +13,7 @@ import { BorderRadius } from '@painting/BorderRadius'
 import { Canvas } from '@rendering/Canvas'
 import { Color } from '@internal/Color'
 import { Radius, Rect } from '@internal/Geometry'
-import { runApp } from 'src'
+import { runApp } from '../src'
 
 test(`Skia`, async () => {
   await runApp({ 

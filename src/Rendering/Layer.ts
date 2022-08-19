@@ -3,11 +3,12 @@ import { Matrix4 } from '@math/Matrix4'
 
 import { Color } from '@internal/Color'
 import { Clip } from '@basic/Painting'
+import { Skia } from '@skia/binding'
 import { property } from '@helper/property'
 import { transformRect } from '@helper/transformRect'
 import { computeSkiaShadowBounds } from '@helper/computeSkiaShadowBounds'
 import { Offset, RRect, Rect } from '@internal/Geometry'
-import { Skia, SkiaBlendMode, SkiaFilterQuality } from '@skia/Skia'
+import { BlendMode, FilterQuality } from '@skia'
 import { MutatorsStack, MutatorType } from './EmbeddedViews'
 import { RasterCache } from './RasterCache'
 import { Paint } from './Paint'
@@ -149,11 +150,11 @@ export class RootLayer extends ContainerLayer {
 
 export class BackdropFilterEngineLayer extends ContainerLayer {
   public filter: ImageFilter
-  public blendMode: SkiaBlendMode
+  public blendMode: BlendMode
 
   constructor (
     filter: ImageFilter, 
-    blendMode: SkiaBlendMode
+    blendMode: BlendMode
   ) {
     super()
     this.filter = filter
@@ -169,7 +170,7 @@ export class BackdropFilterEngineLayer extends ContainerLayer {
   }
 
   paint (paintContext: PaintContext) {
-    const paint = Paint.malloc()
+    const paint = new Paint()
     paint.blendMode = this.blendMode
     paintContext.internalNodesCanvas.saveLayerWithFilter(
       this.paintBounds, 
@@ -266,7 +267,7 @@ export class ClipRectEngineLayer extends ContainerLayer {
     paintContext.internalNodesCanvas.save()
     paintContext.internalNodesCanvas.clipRect(
       this.clipRect,
-      Skia.ClipOp.Intersect,
+      Skia.binding.ClipOp.Intersect,
       this.clipBehavior !== Clip.HardEdge,
     );
     if (this.clipBehavior === Clip.AntiAliasWithSaveLayer) {
@@ -358,7 +359,7 @@ export class OpacityEngineLayer extends ContainerLayer {
   paint (paintContext: PaintContext) {
     invariant(this.needsPainting)
 
-    const paint: Paint = Paint.malloc()
+    const paint: Paint = new Paint()
     paint.color = Color.fromARGB(this.alpha, 0, 0, 0)
 
     paintContext.internalNodesCanvas.save()
@@ -419,7 +420,7 @@ export class ImageFilterEngineLayer extends ContainerLayer {
 
   paint (paintContext: PaintContext) {
     invariant(this.needsPainting)
-    const paint: Paint = Paint.malloc()
+    const paint: Paint = new Paint()
     paint.imageFilter = this.filter
     paintContext.internalNodesCanvas.saveLayer(this.paintBounds, paint)
     this.paintChildren(paintContext)
@@ -430,14 +431,14 @@ export class ImageFilterEngineLayer extends ContainerLayer {
 export class ShaderMaskEngineLayer extends ContainerLayer {
   public shader: Shader
   public maskRect: Rect
-  public blendMode: SkiaBlendMode
-  public filterQuality: SkiaFilterQuality
+  public blendMode: BlendMode
+  public filterQuality: FilterQuality
 
   constructor (
     shader: Shader,
     maskRect: Rect,
-    blendMode: SkiaBlendMode,
-    filterQuality: SkiaFilterQuality
+    blendMode: BlendMode,
+    filterQuality: FilterQuality
   ) {
     super()
 
@@ -453,7 +454,7 @@ export class ShaderMaskEngineLayer extends ContainerLayer {
     paintContext.internalNodesCanvas.saveLayer(this.paintBounds, null)
     this.paintChildren(paintContext)
 
-    const paint: Paint = Paint.malloc()
+    const paint: Paint = new Paint()
     paint.shader = this.shader
     paint.blendMode = this.blendMode
     paint.filterQuality = this.filterQuality
@@ -571,7 +572,7 @@ export class PhysicalShapeEngineLayer extends ContainerLayer {
       )
     }
 
-    const paint: Paint = Paint.malloc()
+    const paint: Paint = new Paint()
     paint.color = this.color
     
     if (this.clipBehavior !== Clip.AntiAliasWithSaveLayer) {
@@ -616,7 +617,7 @@ export class ColorFilterEngineLayer extends ContainerLayer {
   paint (paintContext: PaintContext) {
     invariant(this.needsPainting)
 
-    const paint: Paint = Paint.malloc()
+    const paint: Paint = new Paint()
     paint.colorFilter = this.filter
 
     paintContext.internalNodesCanvas.saveLayer(this.paintBounds, paint)

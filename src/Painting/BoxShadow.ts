@@ -4,7 +4,8 @@ import { Paint } from '@rendering/Paint'
 import { Color } from '@internal/Color'
 import { lerpDouble } from '@helper/lerp'
 import { MaskFilter } from '@rendering/MaskFilter'
-import { Skia, SkiaBlurStyle } from '@skia/Skia'
+import { Skia } from '@skia/binding'
+import { BlurStyle } from '@skia'
 
 export interface IShadow {
   color: Color
@@ -101,10 +102,10 @@ export class Shadow implements IShadow {
   }
 
   toPaint (): Paint {
-    const paint = Paint.malloc()
+    const paint = new Paint()
     paint.color = this.color
     paint.maskFilter = MaskFilter.blur({
-      blurStyle: Skia.BlurStyle.Normal, 
+      blurStyle: Skia.binding.BlurStyle.Normal, 
       sigma: this.blurSigma
     })
 
@@ -161,7 +162,7 @@ export class BoxShadow extends Shadow {
       Offset.lerp(a.offset, b.offset, t)!,
       lerpDouble(a.blurRadius, b.blurRadius, t)!,
       lerpDouble(a.spreadRadius, b.spreadRadius, t)!,
-      a.blurStyle === Skia.BlurStyle.Normal ? b.blurStyle : a.blurStyle,
+      a.blurStyle === Skia.binding.BlurStyle.Normal ? b.blurStyle : a.blurStyle,
     )
   }  
   
@@ -182,14 +183,14 @@ export class BoxShadow extends Shadow {
   }
 
   public spreadRadius: number
-  public blurStyle: SkiaBlurStyle
+  public blurStyle: BlurStyle
 
   constructor (
     color: Color = new Color(0xFF000000),
     offset: Offset = Offset.zero,
     blurRadius: number = 0.0,
     spreadRadius: number = 0.0,
-    blurStyle: SkiaBlurStyle = Skia.BlurStyle.Normal,
+    blurStyle: BlurStyle = Skia.binding.BlurStyle.Normal,
   ) {
     super(
       color, 
@@ -202,7 +203,7 @@ export class BoxShadow extends Shadow {
   }
 
   toPaint (): Paint {
-    const result = Paint.malloc()
+    const result = new Paint()
     result.color = this.color
     result.maskFilter = MaskFilter.blur({
       blurStyle: this.blurStyle, 

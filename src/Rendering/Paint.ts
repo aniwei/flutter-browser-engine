@@ -51,8 +51,8 @@ export class Paint extends ManagedSkiaObject<IPaint> {
   public get strokeWidth () {
     return this._strokeWidth
   }
-  public set (strokeWidth: number) {
-    if (this._strokeWidth !== strokeWidth) {
+  public set strokeWidth (strokeWidth: number) {
+    if (this.strokeWidth !== strokeWidth) {
       this._strokeWidth = strokeWidth
       this.skia?.setStrokeWidth(strokeWidth)
     }
@@ -274,10 +274,10 @@ export class Paint extends ManagedSkiaObject<IPaint> {
     paint.setStrokeWidth(this.strokeWidth)
     paint.setAntiAlias(this.isAntiAlias)
     paint.setColorInt(this.color.value)
-    paint.setShader(this.shader!.withQuality(this.filterQuality)) 
-    paint.setMaskFilter(this.maskFilter!.skia)
+    paint.setShader(this.shader!.withQuality(this.filterQuality)!) 
+    paint.setMaskFilter(this.maskFilter!.skia!)
     paint.setColorFilter(this.effectiveColorFilter?.skia!)
-    paint.setImageFilter((this.managedImageFilter as ManagedSkiaObject<IImageFilter>).skia)
+    paint.setImageFilter((this.managedImageFilter as ManagedSkiaObject<IImageFilter>).skia!)
     paint.setStrokeCap(this.strokeCap)
     paint.setStrokeJoin(this.strokeJoin)
     paint.setStrokeMiter(this.strokeMiterLimit)

@@ -1,9 +1,9 @@
 import invariant from 'ts-invariant'
+import { TextDirection } from '@skia'
 import { Path } from '@rendering/Path'
 import { Canvas } from '@rendering/Canvas'
 import { UnsupportedError} from '@internal/UnsupportedError'
 import { Offset, Rect, Size } from '@internal/Geometry'
-import { TextDirection } from 'canvaskit-wasm'
 import { EdgeInsets, EdgeInsetsGeometry } from './EdgeInsets'
 import { ImageConfiguration } from './ImageProvider'
 

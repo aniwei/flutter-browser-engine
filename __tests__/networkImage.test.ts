@@ -3,7 +3,6 @@
  * @Date: 2022-06-13 09:47:07
  */
 import { resolve } from 'path'
-import { Skia } from '@skia/Skia'
 import { URI } from '@internal/URI'
 import { ImageConfiguration } from '@painting/ImageProvider'
 import { NetworkImage } from '@painting/NetworkImage'
@@ -20,7 +19,6 @@ test(`fetchImage`, async () => {
   
 
   const image = new NetworkImage(uri.toString())
-  const stream = image.resolve(new ImageConfiguration())
 
 
 })

@@ -58,7 +58,7 @@ export abstract class ManagedSkiaObject<T extends SkiaObject<T>> {
  * @description: Skia 对象回收
  * @return {*}
  */
-class ManagedSkiaFinalizationRegistry<T extends SkiaObject<T>> {
+export class ManagedSkiaFinalizationRegistry<T extends SkiaObject<T>> {
   static instance
 
   /**
@@ -72,6 +72,11 @@ class ManagedSkiaFinalizationRegistry<T extends SkiaObject<T>> {
     finalization.registry(watched, raw)
   }
 
+  static cleanup <T> (raw: T) {
+    const finalization = ManagedSkiaFinalizationRegistry.instance ?? new ManagedSkiaFinalizationRegistry()
+    finalization.cleanup(raw)
+  }
+
   public queue: T[] = []
   public timer: ReturnType<typeof setTimeout> | null = null
   
@@ -81,7 +86,6 @@ class ManagedSkiaFinalizationRegistry<T extends SkiaObject<T>> {
     ManagedSkiaFinalizationRegistry.instance = this
     this.finalization = new FinalizationRegistry(this.cleanup)
   }
-
 
   /**
    * @description: 

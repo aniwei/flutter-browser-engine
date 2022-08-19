@@ -3,11 +3,12 @@ import { Picture } from '@rendering/Picture'
 import { Image } from '@rendering/Image'
 import { Matrix4 } from '@math/Matrix4'
 import { Vector4 } from '@math/Vector4'
+import { Skia } from '@skia/binding'
 import { AbstractNode } from '@internal/AbstractNode'
-import { property, PropertySetter } from '@helper/property'
+import { property } from '@helper/property'
 import { LayerScene, LayerSceneBuilder } from '@rendering/LayerSceneBuilder'
 import { Offset, Rect, RRect, Size } from '@internal/Geometry'
-import { Skia, SkiaBlendMode, SkiaFilterQuality } from '@skia/Skia'
+import { BlendMode, FilterQuality } from '@skia'
 import { OpacityEngineLayer, OffsetEngineLayer, ImageFilterEngineLayer, ColorFilterEngineLayer } from '@rendering/Layer'
 
 import { Path } from '@rendering/Path'
@@ -17,7 +18,7 @@ import { ColorFilter } from '@rendering/ColorFilter'
 import { Color } from '@internal/Color'
 import { Clip } from '@basic/Painting'
 
-function scene <T> (setter?: PropertySetter<T>) {
+function scene <T> (setter?) {
   return property<T>(function get (this, value: T) {
     return value
   }, setter ?? function set (this, value: T, key) {
@@ -273,13 +274,13 @@ export class TextureLayer extends Layer {
   public rect: Rect
   public textureId: number
   public freeze: boolean
-  public filterQuality: SkiaFilterQuality
+  public filterQuality: FilterQuality
 
   constructor(
     rect: Rect,
     textureId: number,
     freeze: boolean = false,
-    filterQuality = SkiaFilterQuality.Low,
+    filterQuality = FilterQuality.Low,
   ) {
     invariant(rect !== null)
     invariant(textureId !== null)
@@ -505,18 +506,20 @@ export class ContainerLayer extends Layer {
 
 
 export class OffsetLayer extends ContainerLayer {
-  @property<Offset>(function (this, offset: Offset) {
-    return offset
-  }, function (this, offset: Offset, key) {
+  public get offset () {
+    return this._offset
+  }
+  public set offset (offset: Offset) {
     if (offset !== this.offset) {
       this.markNeedsAddToScene()
     }
-    this[key] = offset
-  }) public offset: Offset
+    this._offset = offset
+  }
+  private _offset: Offset
   
   constructor (offset: Offset = Offset.zero) {
     super()
-    this.offset = offset
+    this._offset = offset
   }
 
   applyTransform (
@@ -853,19 +856,19 @@ export class ShaderMaskLayer extends ContainerLayer {
     }
   }) public maskRect: Rect | null
 
-  @property<SkiaBlendMode>(function get (this, blendMode: SkiaBlendMode) {
+  @property<BlendMode>(function get (this, blendMode: BlendMode) {
     return blendMode
-  }, function set (this, blendMode: SkiaBlendMode, key) {
+  }, function set (this, blendMode: BlendMode, key) {
     if (blendMode !== this.blendMode) {
       this[key] = blendMode
       this.markNeedsAddToScene()
     }
-  }) public blendMode: SkiaBlendMode | null
+  }) public blendMode: BlendMode | null
 
   constructor (
     shader?: Shader | null,
     maskRect?: Rect | null,
-    blendMode?: SkiaBlendMode | null,
+    blendMode?: BlendMode | null,
   ) {
     super()
     this.shader = shader ?? null
@@ -891,31 +894,37 @@ export class ShaderMaskLayer extends ContainerLayer {
 }
 
 export class BackdropFilterLayer extends ContainerLayer {
-  @property<ImageFilter>(function get (this, filter: ImageFilter) {
-    return filter
-  }, function set (this, filter: ImageFilter, key) {
+  // === filter
+  public get filter () {
+    return this._filter
+  }
+  public set filter (filter: ImageFilter | null) {
     if (filter !== this.filter) {
-      this[key] = filter
+      this._filter = filter
       this.markNeedsAddToScene()
     }
-  }) public filter: ImageFilter | null
+  }
+  private _filter: ImageFilter | null
 
-  @property<SkiaBlendMode>(function get (this, blendMode: SkiaBlendMode) {
-    return blendMode
-  }, function set (this, blendMode: SkiaBlendMode, key) {
+  // === blendMode
+  public get blendMode () {
+    return this._blendMode
+  }
+  public set blendMode (blendMode: BlendMode) {
     if (blendMode !== this.blendMode) {
-      this[key] = blendMode
+      this._blendMode = blendMode
       this.markNeedsAddToScene()
     }
-  }) public blendMode: SkiaBlendMode
+  }
+  private _blendMode: BlendMode
 
   constructor (
     filter: ImageFilter,
-    blendMode: SkiaBlendMode = Skia.BlendMode.SrcOver,
+    blendMode: BlendMode = Skia.binding.BlendMode.SrcOver,
   ) {
     super()
-    this.filter = filter ?? null
-    this.blendMode = blendMode ?? null
+    this._filter = filter ?? null
+    this._blendMode = blendMode ?? null
   }
   
   addToScene (builder: LayerSceneBuilder) {

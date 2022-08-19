@@ -4,19 +4,23 @@
  */
 import jimp from 'jimp'
 import { resolve } from 'path'
-import { Skia, SkiaCanvas, SkiaTextDirection } from '@skia/Skia'
+import { ICanvas, TextDirection } from '@skia'
+import { Skia } from '@skia/binding'
 import { Border, BoxShape } from '@painting/BoxBorder'
 import { BorderStyle } from '@painting/BoxBorder'
 import { BorderRadius } from '@painting/BorderRadius'
 import { Canvas } from '@rendering/Canvas'
 import { Radius, Rect } from '@internal/Geometry'
 import { Color } from '@internal/Color'
+import { runApp } from '../src'
 
 
 test(`Skia`, async () => {
-  await Skia.malloc(resolve(__dirname, 'canvaskit.wasm'))
-  const surface = Skia.MakeSurface(513, 1207)
-  const canvas = Canvas.malloc(surface?.getCanvas() as SkiaCanvas)
+  await runApp({
+    baseURI: resolve(__dirname, 'canvaskit.wasm')
+  })
+  const surface = Skia.binding.MakeSurface(513, 1207)
+  const canvas = new Canvas(surface?.getCanvas() as ICanvas)
 
   const border = Border.all(
     new Color(0xff00ff00),
@@ -28,7 +32,7 @@ test(`Skia`, async () => {
   border.paint(
     canvas,
     new Rect(206.5, 723.6984375, 306.5, 823.6984375),
-    Skia.TextDirection.LTR,
+    Skia.binding.TextDirection.LTR,
     BoxShape.Rectangle,
     BorderRadius.only(
       Radius.circular(10.0),

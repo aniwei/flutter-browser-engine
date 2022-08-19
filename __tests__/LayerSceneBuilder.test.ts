@@ -4,12 +4,14 @@
  */
 import jimp from 'jimp'
 import { resolve } from 'path'
-import { Skia } from '@skia/Skia'
 import { LayerSceneBuilder } from '@rendering/LayerSceneBuilder'
+import { runApp } from '../src'
 
 
 test(`LayerSceneBuilder`, async () => {
-  await Skia.malloc(resolve(__dirname, 'canvaskit.wasm'))
+  await runApp({
+    baseURI: resolve(__dirname, 'canvaskit.wasm')
+  })
 
   const builder = new LayerSceneBuilder()
 

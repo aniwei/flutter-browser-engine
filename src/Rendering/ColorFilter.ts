@@ -4,6 +4,8 @@ import { ManagedSkiaObject } from '@skia/ManagedSkiaObject'
 import { IColorFilter, ImageFilter, BlendMode } from '@skia'
 import { ColorFilterImageFilter } from './ImageFilter'
 import { listEquals } from '@helper/listEquals'
+import { toMatrix32FromMatrix64 } from '@helper/skia'
+
 import type { Color } from '@internal/Color'
 
 export abstract class ColorFilter {
@@ -148,7 +150,7 @@ export class MatrixColorFilter extends ColorFilter {
   initRawColorFilter () {
     invariant(this.matrix.length === 20, 'Color Matrix must have 20 entries.')
 
-    return Skia.binding.ColorFilter.MakeMatrix(this.matrix)
+    return Skia.binding.ColorFilter.MakeMatrix(toMatrix32FromMatrix64(this.matrix))
   }
 
   /**
@@ -228,8 +230,8 @@ export class ComposeColorFilter extends ColorFilter {
    */
   initRawColorFilter () {
     return Skia.binding.ColorFilter.MakeCompose(
-      this.outer?.skia,
-      this.inner.skia
+      this.outer?.skia!,
+      this.inner.skia!
     )
   }
 

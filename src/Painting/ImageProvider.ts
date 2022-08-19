@@ -8,7 +8,7 @@ import { PaintingBinding } from './PaintingBinding'
 import { ImageCacheStatus } from './ImageCache'
 
 import type { Codec } from '@basic/Painting'
-import type { SkiaTextDirection } from '@skia/Skia'
+import type { TextDirection } from '@skia'
 import type { TargetPlatform } from '@basic/Platform'
 
 export type KeyAndErrorHandlerCallback<T> = { (key: T, handleError: ImageErrorListener): void }
@@ -26,7 +26,7 @@ export type ImageConfigurationInitOptions = {
   bundle?: AssetBundle | null,
   devicePixelRatio?: number | null,
   locale?: Locale | null,
-  textDirection?: SkiaTextDirection | null,
+  textDirection?: TextDirection | null,
   size?: Size | null,
   platform?: TargetPlatform | null,
 }
@@ -38,7 +38,7 @@ export class ImageConfiguration {
   public bundle: AssetBundle | null = null
   public devicePixelRatio: number | null = null
   public locale: Locale | null = null
-  public textDirection: SkiaTextDirection | null = null
+  public textDirection: TextDirection | null = null
   public size: Size | null = null
   public platform: TargetPlatform | null = null
   

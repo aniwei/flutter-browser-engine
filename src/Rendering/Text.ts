@@ -843,9 +843,9 @@ export class Paragraph {
         this.maxIntrinsicWidth = paragraph.getMaxIntrinsicWidth()
         this.minIntrinsicWidth = paragraph.getMinIntrinsicWidth()
         this.width = paragraph.getMaxWidth()
-        this.boxesForPlaceholders = this.skiaRectsToTextBoxes(paragraph.getRectsForPlaceholders())
+        this.boxesForPlaceholders = this.skiaRectsToTextBoxes(paragraph.getRectsForPlaceholders() as unknown as Float32Array[])
       } catch (e) {
-        throw new Error(`CanvasKit threw an exception while laying out the paragraph. The font was "${this.paragraphStyle.fontFamily}". `)
+        throw new Error(`CanvasKit threw an exception while laying out the paragraph. The font was "${this.paragraphStyle?.fontFamily}". `)
       }
     }
 
@@ -892,26 +892,26 @@ export class Paragraph {
     }
 
     const paragraph = this.ensureInitialized(this.lastLayoutConstraints!)
-    const rects: Float32Array = paragraph.getRectsForRange(
+    const rects: Float32Array[] = paragraph.getRectsForRange(
       start,
       end,
       boxHeightStyle,
       boxWidthStyle,
-    )
+    ) as unknown as Float32Array[]
 
     return this.skiaRectsToTextBoxes(rects)
   }
 
   /**
    * @description: 
-   * @param {number} rects
+   * @param {Float32Array} rects
    * @return {*}
    */
-  skiaRectsToTextBoxes (rects: number[][]): TextBox[] {
+  skiaRectsToTextBoxes (rects: Float32Array[]): TextBox[] {
     const result: TextBox[] = []
 
     for (let i = 0; i < rects.length; i++) {
-      const rect: number[] = rects[i] as number[]
+      const rect: Float32Array = rects[i]
       result.push(TextBox.fromLTRBD(
         rect[0],
         rect[1],
@@ -1181,12 +1181,12 @@ export class ParagraphBuilder {
   }
 
   static get defaultTextForeground () {
-    return this._defaultTextForeground ?? (this._defaultTextForeground = Skia.binding.Paint())
+    return this._defaultTextForeground ?? (this._defaultTextForeground = new Skia.binding.Paint())
   }
 
   static get defaultTextBackground () {
     return this._defaultTextBackground ?? (
-      this._defaultTextBackground = Skia.binding.Paint(),
+      this._defaultTextBackground = new Skia.binding.Paint(),
       this._defaultTextBackground.setColorInt(0x00000000),
       this._defaultTextBackground
     )

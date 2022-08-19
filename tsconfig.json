@@ -27,8 +27,8 @@
     "outDir": "dist",
     "paths": {
       "@ui/*": ["src/UI/*.ts"],
-      "@skia": ["src/Skia/index.ts"],
       "@skia/*": ["src/Skia/*.ts"],
+      "@skia": ["src/Skia/index.ts"],
       "@math/*": ["./src/Math/*.ts"],
       "@helper/*": ["src/Helper/*.ts"],
       "@basic/*": ["src/Basic/*.ts"],

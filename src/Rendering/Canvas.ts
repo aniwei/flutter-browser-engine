@@ -4,7 +4,7 @@ import { ArgumentError } from '@internal/ArgumentError'
 import { RRect, Rect, Offset  } from '@internal/Geometry'
 import { FilterQuality, kShadowFlags } from '@skia'
 import { offsetIsValid, rectIsValid, rrectIsValid } from '@helper/validators'
-import { makeFreshSkiaColor, toMallocedSkiaPoints, toMatrix32 } from '@helper/skia'
+import { makeFreshSkiaColor, toMallocedSkiaPoints, toMatrix32FromMatrix64 } from '@helper/skia'
 
 import type { Color } from '@internal/Color'
 import type { ICanvas, ClipOp, PointMode, IPicture, IPictureRecorder,BlendMode  } from '@skia'
@@ -777,7 +777,7 @@ export class Canvas {
       throw new ArgumentError(`"matrix4" must have 16 entries.`)
     }
 
-    this.skia.concat(toMatrix32(matrix4))
+    this.skia.concat(toMatrix32FromMatrix64(matrix4))
   }
 
   /**

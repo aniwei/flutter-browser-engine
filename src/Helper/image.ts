@@ -3,11 +3,12 @@
  * @Date: 2022-07-04 12:10:21
  */
 import { HTTP } from '@platform/HTTP'
-import { kSupportsImageDecoder } from '@platform/Platform'
 import { URI } from '@internal/URI'
+import { kSupportsImageDecoder } from '@platform/Platform'
 import { AnimatedImage } from '@rendering/AnimatedImage'
 
-type WebOnlyImageCodecChunkCallback = { (cumulativeBytesLoaded: number, expectedTotalBytes: number): void } 
+export type WebOnlyImageCodecChunkCallback = { (cumulativeBytesLoaded: number, expectedTotalBytes: number): void } 
+
 
 export function fetchImage (
   url: string, 

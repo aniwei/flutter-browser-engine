@@ -1,27 +1,29 @@
+/*
+ * @Author: Aniwei
+ * @Date: 2022-06-13 09:47:07
+ */
 import invariant from 'ts-invariant'
 import { kSupportsFinalizationRegistry } from '@platform/Platform'
-import { SkiaFinalizationRegistry } from './SkiaFinalizationRegistry'
-import { RawSkia, SkiaObject } from './SkiaObject'
+import { ManagedSkiaFinalizationRegistry, SkiaObject } from './ManagedSkiaObject'
 
-export class SkiaObjectBox<R, T extends RawSkia<T>> extends SkiaObject<T> {
+export class SkiaObjectBox<R, T extends SkiaObject<T>> {
   public refCount = 0
   public referrers: Set<R> = new Set()
   public isDeletedPermanently = false
-  public rawSkia: T | null = null
+  public raw: T | null = null
 
   public get skia (): T {
-    return this.rawSkia as T
+    return this.raw as T
   }
 
   public set skia (skia: T | null) {
-    this.rawSkia = skia
+    this.raw = skia
   }
   
   constructor (skia: T) {
-    super()
     this.skia = skia
     invariant(kSupportsFinalizationRegistry)
-    SkiaFinalizationRegistry.registry(this, skia)
+    ManagedSkiaFinalizationRegistry.registry(this, skia)
   }
   
   ref (referrer: R) {
@@ -42,10 +44,9 @@ export class SkiaObjectBox<R, T extends RawSkia<T>> extends SkiaObject<T> {
     if (this.refCount === 0) {
       if (this.skia) {
         if (kSupportsFinalizationRegistry) {
-          SkiaFinalizationRegistry.collect(this.skia)
+          ManagedSkiaFinalizationRegistry.cleanup(this.skia)
         } else {
           this.delete
-          this.didDelete()
         }
       }
 

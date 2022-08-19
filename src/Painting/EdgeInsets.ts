@@ -2,8 +2,8 @@ import invariant from 'ts-invariant'
 import { Offset, Rect, Size } from '@internal/Geometry'
 import { clamp } from '@helper/clamp'
 import { lerpDouble } from '@helper/lerp'
-import { SkiaTextDirection } from '@skia/Skia'
-import { Skia } from '@skia/Skia'
+import { TextDirection } from '@skia'
+import { Skia } from '@skia/binding'
 import { Axis } from '@basic/Axis'
 
 
@@ -128,7 +128,7 @@ export abstract class EdgeInsetsGeometry {
   abstract multiply (other: number): EdgeInsetsGeometry
   abstract divide (other: number): EdgeInsetsGeometry
   abstract modulo (other: number): EdgeInsetsGeometry
-  abstract resolve (direction: SkiaTextDirection): EdgeInsets
+  abstract resolve (direction: TextDirection): EdgeInsets
 
   along (axis: Axis) {
     invariant(axis !== null)
@@ -411,7 +411,7 @@ export class EdgeInsets extends EdgeInsetsGeometry {
     )
   }
 
-  resolve (direction: SkiaTextDirection | null) {
+  resolve (direction: TextDirection | null) {
     return this
   }
 
@@ -591,10 +591,10 @@ export class EdgeInsetsDirectional extends EdgeInsetsGeometry {
     )
   }
 
-  resolve (direction: SkiaTextDirection | null): EdgeInsets {
+  resolve (direction: TextDirection | null): EdgeInsets {
     invariant(direction !== null)
 
-    if (direction === Skia.TextDirection.RTL) {
+    if (direction === Skia.binding.TextDirection.RTL) {
       return EdgeInsets.fromLTRB(
         this.end, 
         this.top, 
@@ -709,11 +709,11 @@ export class MixedEdgeInsets extends EdgeInsetsGeometry {
   }
 
   resolve (
-    direction: SkiaTextDirection | null
+    direction: TextDirection | null
   ): EdgeInsets {
     invariant(direction !== null)
 
-    if (direction === Skia.TextDirection.RTL) {
+    if (direction === Skia.binding.TextDirection.RTL) {
       return EdgeInsets.fromLTRB(
         this.end + this.left,
         this.top, 

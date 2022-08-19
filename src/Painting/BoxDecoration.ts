@@ -4,7 +4,7 @@
  */
 import { invariant } from 'ts-invariant'
 import { listEquals } from '@helper/listEquals'
-import { SkiaBlendMode, SkiaTextDirection } from '@skia/Skia'
+import { BlendMode, TextDirection } from '@skia'
 import { Offset, Rect, Size } from '@internal/Geometry'
 import { Color } from '@internal/Color'
 import { Path } from '@rendering/Path'
@@ -28,7 +28,7 @@ export type BoxDecorationInitOptions = {
   borderRadius?: BorderRadiusGeometry | null
   boxShadow?: BoxShadow[] | null
   gradient?: Gradient | null
-  backgroundBlendMode?: SkiaBlendMode | null
+  backgroundBlendMode?: BlendMode | null
   shape?: BoxShape | null
 }
 
@@ -74,7 +74,7 @@ export class BoxDecoration extends Decoration {
   public borderRadius: BorderRadiusGeometry | null
   public boxShadow: BoxShadow[] | null
   public gradient: Gradient | null
-  public backgroundBlendMode: SkiaBlendMode | null
+  public backgroundBlendMode: BlendMode | null
   public shape: BoxShape | null
 
   public get padding () : EdgeInsetsGeometry | null {
@@ -134,9 +134,9 @@ export class BoxDecoration extends Decoration {
 
   getClipPath (
     rect: Rect, 
-    textDirection: SkiaTextDirection
+    textDirection: TextDirection
   ): Path {
-    const path = Path.malloc()
+    const path = new Path()
     switch (this.shape) {
       case BoxShape.Circle: {
         const center = rect.center
@@ -211,7 +211,7 @@ export class BoxDecoration extends Decoration {
       other.image === this.image &&
       other.border === this.border &&
       other.borderRadius?.eq(this.borderRadius) &&
-      listEquals<BoxShadow>(other.boxShadow, this.boxShadow) &&
+      listEquals<BoxShadow[]>(other.boxShadow, this.boxShadow) &&
       other.gradient == this.gradient &&
       other.shape == this.shape
     )
@@ -220,7 +220,7 @@ export class BoxDecoration extends Decoration {
   hitTest (
     size: Size, 
     position: Offset , 
-    textDirection: SkiaTextDirection
+    textDirection: TextDirection
   ): boolean {
     invariant(this.shape !== null)
     invariant((Offset.zero.and(size)).contains(position))
@@ -263,7 +263,7 @@ export class BoxDecorationPainter extends BoxPainter {
   
   getBackgroundPaint (
     rect: Rect, 
-    textDirection: SkiaTextDirection | null
+    textDirection: TextDirection | null
   ): Paint {
     invariant(rect !== null)
     invariant(
@@ -278,7 +278,7 @@ export class BoxDecorationPainter extends BoxPainter {
         this.rectForCachedBackgroundPaint !== rect
       )
     ) {
-      const paint = Paint.malloc()
+      const paint = new Paint()
       if (this.decoration.backgroundBlendMode !== null) {
         paint.blendMode = this.decoration!.backgroundBlendMode!
       }
@@ -303,7 +303,7 @@ export class BoxDecorationPainter extends BoxPainter {
     canvas: Canvas, 
     rect: Rect , 
     paint: Paint, 
-    textDirection: SkiaTextDirection
+    textDirection: TextDirection
   ) {
     switch (this.decoration!.shape) {
       case BoxShape.Circle: {
@@ -328,7 +328,7 @@ export class BoxDecorationPainter extends BoxPainter {
   paintShadows (
     canvas: Canvas , 
     rect: Rect, 
-    textDirection: SkiaTextDirection | null
+    textDirection: TextDirection | null
   ) {
     if (this.decoration.boxShadow === null) {
       return
@@ -344,7 +344,7 @@ export class BoxDecorationPainter extends BoxPainter {
   paintBackgroundColor (
     canvas: Canvas, 
     rect: Rect, 
-    textDirection: SkiaTextDirection | null
+    textDirection: TextDirection | null
   ) {
     if (
       this.decoration.color !== null || 
@@ -370,14 +370,14 @@ export class BoxDecorationPainter extends BoxPainter {
         const center = rect.center
         const radius = rect.shortestSide / 2.0
         const square = Rect.fromCircle(center, radius)
-        clipPath = Path.malloc()
+        clipPath = new Path()
         clipPath.addOval(square)
         break
       }
 
       case BoxShape.Rectangle: {
         if (this.decoration.borderRadius !== null) {
-          clipPath = Path.malloc()
+          clipPath = new Path()
           clipPath.addRRect(this.decoration.borderRadius!.resolve(configuration.textDirection).toRRect(rect))
         }
         break

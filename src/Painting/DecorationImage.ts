@@ -1,7 +1,8 @@
 import { invariant } from 'ts-invariant'
 import { Color } from '@internal/Color'
 import { Paint } from '@rendering/Paint'
-import { Skia, SkiaFilterQuality } from '@skia/Skia'
+import { Skia } from '@skia/binding'
+import { FilterQuality } from '@skia'
 import { Offset, Rect, Size } from '@internal/Geometry'
 import { Alignment, AlignmentGeometry } from './Alignment'
 import { applyBoxFit, BoxFit } from './BoxFit'
@@ -32,7 +33,7 @@ export class DecorationImage {
   public matchTextDirection: boolean
   public scale: number
   public opacity: number
-  public filterQuality: SkiaFilterQuality
+  public filterQuality: FilterQuality
   public invertColors: boolean
   public isAntiAlias: boolean
   
@@ -47,7 +48,7 @@ export class DecorationImage {
     matchTextDirection: boolean = false,
     scale: number = 1.0,
     opacity: number = 1.0,
-    filterQuality: SkiaFilterQuality = SkiaFilterQuality.Low,
+    filterQuality: FilterQuality = FilterQuality.Low,
     invertColors: boolean = false,
     isAntiAlias: boolean = false,
   ) {
@@ -134,7 +135,7 @@ export class DecorationImagePainter {
 
     let flipHorizontally = false
     if (this.details.matchTextDirection) {
-      if (configuration.textDirection === Skia.TextDirection.RTL) {
+      if (configuration.textDirection === Skia.binding.TextDirection.RTL) {
         flipHorizontally = true
       }
     }
@@ -233,7 +234,7 @@ export function paintImage(
   repeat: ImageRepeat = ImageRepeat.NoRepeat,
   flipHorizontally: boolean = false,
   invertColors: boolean = false,
-  filterQuality: SkiaFilterQuality = SkiaFilterQuality.Low,
+  filterQuality: FilterQuality = FilterQuality.Low,
   isAntiAlias: boolean = false,
 ) {
   debugImageLabel = debugImageLabel ?? null
@@ -290,7 +291,7 @@ export function paintImage(
     repeat = ImageRepeat.NoRepeat
   }
   
-  const paint = Paint.malloc()
+  const paint = new Paint()
   paint.isAntiAlias = isAntiAlias
 
   if (colorFilter !== null) {

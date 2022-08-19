@@ -4,7 +4,8 @@
  */
 import jimp from 'jimp'
 import { resolve } from 'path'
-import { Skia, SkiaCanvas } from '@skia/Skia'
+import { ICanvas } from '@skia'
+import { Skia } from '@skia/binding'
 import { Canvas } from '@rendering/Canvas'
 import { Offset, Radius, Size } from '@internal/Geometry'
 import { Border } from '@painting/BoxBorder'
@@ -16,13 +17,17 @@ import { ImageConfiguration } from '@painting/ImageProvider'
 import { TargetPlatform } from '@basic/Platform'
 import { Colors } from '@internal/Colors'
 import { Color } from '@internal/Color'
+import { runApp } from '../src'
 
 
 test(`Skia`, async () => {
-  await Skia.malloc(resolve(__dirname, 'canvaskit.wasm'))
+  await runApp({
+    baseURI: resolve(__dirname, 'canvaskit.wasm')
+  })
+  
 
-  const surface = Skia.MakeSurface(513, 1207)
-  const canvas = Canvas.malloc(surface?.getCanvas() as SkiaCanvas)
+  const surface = Skia.binding.MakeSurface(513, 1207)
+  const canvas = new Canvas(surface?.getCanvas() as ICanvas)
 
   const box = new BoxDecoration({
     color: new Color(0xffff00ff),
@@ -51,7 +56,7 @@ test(`Skia`, async () => {
         Color.fromRGBO(209, 255, 221, 1)
       ],
       stops: [0.0, 1.0],
-      tileMode: Skia.TileMode.Mirror,
+      tileMode: Skia.binding.TileMode.Mirror,
       transform: null
     }),
     // backgroundBlendMode: Skia.BlendMode.Color,
@@ -64,7 +69,7 @@ test(`Skia`, async () => {
     new Offset(10, 10),
     new ImageConfiguration({
       devicePixelRatio: 2,
-      textDirection: Skia.TextDirection.LTR,
+      textDirection: Skia.binding.TextDirection.LTR,
       size: new Size(100, 100),
       platform: TargetPlatform.MacOS
     })

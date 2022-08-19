@@ -54,6 +54,10 @@ export class MaskFilter extends ManagedSkiaObject<MaskFilterSkiaObject> {
     )
   }
 
+  /**
+   * @description: 
+   * @return {void}
+   */  
   delete () {
     this.skia?.delete();
   }

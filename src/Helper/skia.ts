@@ -3,7 +3,8 @@
  * @Date: 2022-08-16 17:20:55
  */
 import { Skia } from '@skia/binding'
-import { FilterQuality, FontSlant, FontWeight as FontWeightSkiaObject } from '@skia'
+import { FilterQuality } from '@skia'
+
 import type { Offset } from '@internal/Geometry'
 import type { Color } from '@internal/Color'
 import type { TextHeightBehavior as TextHeightBehaviorSkiaObject } from '@skia'
@@ -132,7 +133,7 @@ export function makeFreshSkiaColor (color: Color): Float32Array {
  * @param {Float64Array} matrix64
  * @return {*}
  */
-export function toMatrix32 (matrix64: Float64Array) {
+export function toMatrix32FromMatrix64 (matrix64: Float64Array) {
   const matrix32: Float32Array  = new Float32Array(16)
   matrix32[15] = matrix64[15]
   matrix32[14] = matrix64[14]

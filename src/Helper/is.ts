@@ -1,6 +1,3 @@
-import { invariant } from 'ts-invariant'
-import type { Offset } from '@internal/Geometry'
-
 /*
  * @Author: Aniwei
  * @Date: 2022-08-12 10:25:11

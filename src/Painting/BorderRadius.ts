@@ -1,5 +1,6 @@
 import { invariant } from 'ts-invariant'
-import { Skia, SkiaTextDirection } from '@skia/Skia'
+import { Skia } from '@skia/binding'
+import { TextDirection } from '@skia'
 import { Radius, Rect, RRect } from '@internal/Geometry'
 
 export abstract class BorderRadiusGeometry {
@@ -79,7 +80,7 @@ export abstract class BorderRadiusGeometry {
   abstract multiply (other: number): BorderRadiusGeometry
   abstract divide (other: number): BorderRadiusGeometry
   abstract modulo (other: number): BorderRadiusGeometry
-  abstract resolve (direction: SkiaTextDirection | null): BorderRadius
+  abstract resolve (direction: TextDirection | null): BorderRadius
 
   eq (other: BorderRadiusGeometry | null) {
     if (other === null) {
@@ -287,7 +288,7 @@ export class BorderRadius extends BorderRadiusGeometry {
     )
   }
   
-  resolve (direction: SkiaTextDirection | null) {
+  resolve (direction: TextDirection | null) {
     return this
   }
 }
@@ -435,10 +436,10 @@ export class BorderRadiusDirectional extends BorderRadiusGeometry {
     )
   }
   
-  resolve (direction: SkiaTextDirection | null): BorderRadius {
+  resolve (direction: TextDirection | null): BorderRadius {
     invariant(direction !== null)
 
-    if (direction === Skia.TextDirection.RTL) {
+    if (direction === Skia.binding.TextDirection.RTL) {
       return BorderRadius.only(
         this.topEnd,
         this.topStart,
@@ -557,10 +558,10 @@ export class MixedBorderRadius extends BorderRadiusGeometry {
     )
   }
   
-  resolve (direction: SkiaTextDirection | null): BorderRadius {
+  resolve (direction: TextDirection | null): BorderRadius {
     invariant(direction !== null)
 
-    if (direction === Skia.TextDirection.RTL) {
+    if (direction === Skia.binding.TextDirection.RTL) {
       return BorderRadius.only(
         this.topLeft.add(this.topEnd),
         this.topRight.add(this.topStart),

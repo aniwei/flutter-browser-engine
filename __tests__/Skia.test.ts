@@ -1,18 +1,27 @@
+/*
+ * @Author: Aniwei
+ * @Date: 2022-06-13 09:47:07
+ */
 import jimp from 'jimp'
 import { resolve } from 'path'
-import { Skia, SkiaCanvas } from '@skia/Skia'
+import { Skia } from '@skia/binding'
+import { ICanvas } from '@skia'
 import { Paint } from '@rendering/Paint'
 import { Path } from '@rendering/Path'
 import { Canvas } from '@rendering/Canvas'
+import { runApp } from '../src'
 
 test(`Skia`, async () => {
-  await Skia.malloc(resolve(__dirname, 'canvaskit.wasm'))
+  await runApp({
+    baseURI: resolve(__dirname, 'canvaskit.wasm')
+  })
+  
 
-  const surface = Skia.MakeSurface(100, 100)
+  const surface = Skia.binding.MakeSurface(100, 100)
 
-  const path = Path.malloc()
-  const paint = Paint.malloc()
-  const canvas = Canvas.malloc(surface?.getCanvas() as SkiaCanvas)
+  const path = new Path()
+  const paint = new Paint()
+  const canvas = new Canvas(surface?.getCanvas() as ICanvas)
 
 
   path.moveTo(10, 10)
@@ -20,7 +29,7 @@ test(`Skia`, async () => {
   path.lineTo(20, 10)
   path.lineTo(10, 20)
 
-  paint.style = Skia.PaintStyle.Fill
+  paint.style = Skia.binding.PaintStyle.Fill
 
   canvas.drawPath(path, paint)
 

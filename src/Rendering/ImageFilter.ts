@@ -122,7 +122,7 @@ export class MatrixImageFilter extends ImageFilter {
   constructor (options: MatrixImageFilterOptions) {
     const skia = Skia.binding.ImageFilter.MakeMatrixTransform(
       toSkiaMatrix(options.matrix),
-      toSkiaFilterQuality(options.filterQuality),
+      toSkiaFilterQuality(options.filterQuality)!,
       null,
     )
 
@@ -135,7 +135,7 @@ export class MatrixImageFilter extends ImageFilter {
   resurrect (): IImageFilter {
     return Skia.binding.ImageFilter.MakeMatrixTransform(
       toSkiaMatrix(this.matrix),
-      toSkiaFilterQuality(this.filterQuality),
+      toSkiaFilterQuality(this.filterQuality)!,
       null,
     )
   }

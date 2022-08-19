@@ -7,7 +7,7 @@ import { Rect, RRect } from '@internal/Geometry'
 import { Canvas } from '@rendering/Canvas'
 import { Paint } from '@rendering/Paint'
 import { Path } from '@rendering/Path'
-import { Skia } from '@skia/Skia'
+import { Skia } from '@skia/binding'
 import { Clip } from '@basic/Painting'
 
 import type { VoidCallback } from '@basic/Platform'
@@ -34,7 +34,7 @@ export abstract class ClipContext {
         break
       case Clip.AntiAliasWithSaveLayer:
         canvasClipCall(true)
-        this.canvas?.saveLayer(bounds, Paint.malloc())
+        this.canvas?.saveLayer(bounds, new Paint())
         break
     }
     painter()
@@ -80,7 +80,7 @@ export abstract class ClipContext {
     painter: VoidCallback
   ) {
     this.clipAndPaint(
-      (doAntiAlias: boolean) => this.canvas?.clipRect(rect, Skia.ClipOp.Intersect, doAntiAlias), 
+      (doAntiAlias: boolean) => this.canvas?.clipRect(rect, Skia.binding.ClipOp.Intersect, doAntiAlias), 
       clipBehavior, 
       bounds, 
       painter
