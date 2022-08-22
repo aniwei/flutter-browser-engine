@@ -1,5 +1,11 @@
 import { Skia } from '@skia/binding'
+import { AssertionError } from '@internal/AssertionError'
+import { utf8 } from '@internal/Encoding'
+import { AssetManager } from '@internal/AssetManager'
 import type { Font, FontMgr, TypefaceFontProvider, Typeface } from '@skia'
+
+const kRobotoURL = 'https://fonts.gstatic.com/s/roboto/v20/KFOmCnqEu92Fr1Me5WZLCzYlKw.ttf'
+const kAhemURL = '/assets/fonts/ahem.ttf'
 
 export class FontCollection {
   public familyToFontMapping: Map<string, Font[]> = new Map()
@@ -76,7 +82,7 @@ export class FontCollection {
     
     if (typeface !== null) {
       this.registeredFonts.push(new RegisteredFont(
-        list, 
+        list,
         fontFamily, 
         typeface
       ))
@@ -89,51 +95,41 @@ export class FontCollection {
   }
 
   async registerFonts (assetManager: AssetManager) {
-    ByteData byteData;
+    let byteData
 
     try {
-      byteData = await assetManager.load('FontManifest.json');
-    } on AssetManagerException catch (e) {
-      if (e.httpStatus == 404) {
-        printWarning('Font manifest does not exist at `${e.url}` – ignoring.');
-        return;
+      byteData = await assetManager.load('FontManifest.json')
+    } catch (e: any) {
+      if (e.status === 404) {
+        console.warn('Font manifest does not exist at `${e.url}` – ignoring.')
+        return
       } else {
-        rethrow;
+        throw e
       }
     }
 
-    final List<dynamic>? fontManifest =
-        json.decode(utf8.decode(byteData.buffer.asUint8List())) as List<dynamic>?;
-    if (fontManifest == null) {
-      throw AssertionError(
-          'There was a problem trying to load FontManifest.json');
-    }
-
+    const fontManifest: [] | null = JSON.parse(utf8.decode(byteData.buffer.asUint8List()))
     
+    if (fontManifest === null) {
+      throw new AssertionError('There was a problem trying to load FontManifest.json')
+    }
 
-    for (final Map<String, dynamic> fontFamily
-        in fontManifest.cast<Map<String, dynamic>>()) {
-      final String family = fontFamily.readString('family');
-      final List<dynamic> fontAssets = fontFamily.readList('fonts');
+    for (const fontFamily of fontManifest) {
+      const family = fontFamily.readString('family');
+      const fontAssets = fontFamily.readList('fonts')
 
-      if (family == 'Roboto') {
-        registeredRoboto = true;
+      if (family === 'Roboto') {
+        this.registeredRoboto = true
       }
 
-      for (final dynamic fontAssetItem in fontAssets) {
-        final Map<String, dynamic> fontAsset = fontAssetItem as Map<String, dynamic>;
-        final String asset = fontAsset.readString('asset');
-        _unloadedFonts
-            .add(_registerFont(assetManager.getAssetUrl(asset), family));
+      for (const fontAsset of fontAssets) {
+        const asset = fontAsset.readString('asset')
+        this.unloadedFonts.push(this.registerFont(assetManager.getAssetURL(asset), family))
       }
     }
 
-    /// We need a default fallback font for CanvasKit, in order to
-    /// avoid crashing while laying out text with an unregistered font. We chose
-    /// Roboto to match Android.
-    if (!registeredRoboto) {
-      // Download Roboto and add it to the font buffers.
-      _unloadedFonts.add(_registerFont(_robotoUrl, 'Roboto'));
+    if (!this.registeredRoboto) {
+      this.unloadedFonts.push(this.registerFont(kRobotoURL, 'Roboto'))
     }
   }
 
@@ -144,17 +140,16 @@ export class FontCollection {
     let buffer: ArrayBuffer
 
     try {
-      buffer = await fetchFont(url).then(_getArrayBuffer);
+      buffer = await fetchFont(url).then(this.getArrayBuffer)
     } catch (e: any) {
       console.warn(`Failed to load font $family at ${url}`)
       console.warn(e)
       return null
     }
 
-    final Uint8List bytes = buffer.asUint8List();
-    final SkTypeface? typeface =
-        canvasKit.Typeface.MakeFreeTypeFaceFromData(bytes.buffer);
-    if (typeface != null) {
+    const bytes = buffer.asUint8List()
+    const typeface = Skia.binding.Typeface.MakeFreeTypeFaceFromData(bytes.buffer)
+    if (typeface !== null) {
       return new RegisteredFont(bytes, family, typeface)
     } else {
       console.warn(`Failed to load font ${family} at ${url}`)
@@ -164,20 +159,15 @@ export class FontCollection {
   }
 
   readActualFamilyName (bytes: Uint8Array): string {
-    final SkFontMgr tmpFontMgr =
-        canvasKit.FontMgr.FromData(<Uint8List>[bytes])!;
-    final String? actualFamily = tmpFontMgr.getFamilyName(0);
-    tmpFontMgr.delete();
-    return actualFamily;
+    const tmpFontMgr = Skia.binding.FontMgr.FromData([bytes])!
+    const actualFamily = tmpFontMgr.getFamilyName(0)
+    tmpFontMgr.delete()
+    return actualFamily
   }
 
   async getArrayBuffer (fetchResult) {
-    return fetchResult
-        .arrayBuffer()
-        .then<ByteBuffer>((dynamic x) => x as ByteBuffer);
+    return fetchResult.arrayBuffer().then(x => x)
   }
-
-  
 }
 
 
@@ -187,8 +177,8 @@ export class RegisteredFont {
   public typeface: Typeface
 
   constructor (
-    family: string,
     bytes: Uint8Array,
+    family: string,
     typeface: Typeface,
   ) {
     this.bytes = bytes 
