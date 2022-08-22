@@ -3,6 +3,7 @@
     "axios": "^0.27.2",
     "canvaskit-wasm": "^0.32.0",
     "events": "^3.3.0",
+    "formdata-polyfill": "^4.0.10",
     "ts-invariant": "^0.9.4"
   },
   "devDependencies": {

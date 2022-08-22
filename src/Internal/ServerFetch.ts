@@ -2,147 +2,131 @@
  * @Author: Aniwei
  * @Date: 2022-08-19 17:35:05
  */
-const INTERNALS = Symbol('Request internals')
+import Stream from 'stream'
+import types from 'util/types'
+import { FormData, formDataToBlob } from 'formdata-polyfill'
 
+type BodyInternal = {
+  body: URLSearchParams | FormData | Buffer | string | ArrayBuffer | null,
+  stream: Stream | null,
+  boundary : boolean | null
+  disturbed: boolean
+  error: FetchError | null
+}
 
 export class Body {
-	constructor (body, {
-		size = 0
-	} = {}) {
-		let boundary = null;
+  public url: string
+  public size: number
+  public headers: Headers
+  public internal: BodyInternal
+
+	constructor (
+    body: URLSearchParams | FormData | Buffer | string | ArrayBuffer | null, 
+    {
+		  size = 0
+	  } = {}
+  ) {
+		let boundary = null
 
 		if (body === null) {
-			// Body is undefined or null
-			body = null;
+			body = null
 		} else if (isURLSearchParameters(body)) {
-			// Body is a URLSearchParams
-			body = Buffer.from(body.toString());
+			body = Buffer.from(body.toString())
 		} else if (isBlob(body)) {
-			// Body is blob
 		} else if (Buffer.isBuffer(body)) {
-			// Body is Buffer
 		} else if (types.isAnyArrayBuffer(body)) {
-			// Body is ArrayBuffer
-			body = Buffer.from(body);
+			body = Buffer.from(body)
 		} else if (ArrayBuffer.isView(body)) {
-			// Body is ArrayBufferView
-			body = Buffer.from(body.buffer, body.byteOffset, body.byteLength);
+			body = Buffer.from(body.buffer, body.byteOffset, body.byteLength)
 		} else if (body instanceof Stream) {
-			// Body is stream
 		} else if (body instanceof FormData) {
-			// Body is FormData
-			body = formDataToBlob(body);
-			boundary = body.type.split('=')[1];
+			body = formDataToBlob(body)
+			boundary = body.type.split('=')[1]
 		} else {
-			// None of the above
-			// coerce to string then buffer
-			body = Buffer.from(String(body));
+			body = Buffer.from(String(body))
 		}
 
-		let stream = body;
+		let stream: unknown = body
 
 		if (Buffer.isBuffer(body)) {
-			stream = Stream.Readable.from(body);
+			stream = Stream.Readable.from(body)
 		} else if (isBlob(body)) {
-			stream = Stream.Readable.from(body.stream());
+			stream = Stream.Readable.from(body.stream())
 		}
 
-		this[INTERNALS] = {
+		this.internal = {
 			body,
 			stream,
 			boundary,
 			disturbed: false,
 			error: null
-		};
-		this.size = size;
+		}
+
+		this.size = size
 
 		if (body instanceof Stream) {
-			body.on('error', error_ => {
-				const error = error_ instanceof FetchBaseError ?
-					error_ :
-					new FetchError(`Invalid response body while trying to fetch ${this.url}: ${error_.message}`, 'system', error_);
-				this[INTERNALS].error = error;
-			});
+			body.on('error', (err: FetchBaseError | Error) => {
+				const error = err instanceof FetchBaseError ?
+					err:
+					new FetchError(`Invalid response body while trying to fetch ${this.url}: ${err.message}`, 'system', err);
+				this.internal.error = error
+			})
 		}
 	}
 
 	get body() {
-		return this[INTERNALS].stream;
+		return this.internal.stream
 	}
 
 	get bodyUsed() {
-		return this[INTERNALS].disturbed;
+		return this.internal.disturbed
 	}
 
-	/**
-	 * Decode response as ArrayBuffer
-	 *
-	 * @return  Promise
-	 */
-	async arrayBuffer() {
-		const {buffer, byteOffset, byteLength} = await consumeBody(this);
-		return buffer.slice(byteOffset, byteOffset + byteLength);
+	async arrayBuffer () {
+		const { buffer, byteOffset, byteLength } = await consumeBody(this)
+		return buffer.slice(byteOffset, byteOffset + byteLength)
 	}
 
 	async formData() {
-		const ct = this.headers.get('content-type');
+		const contentType = this.headers.get('content-type') as string
 
-		if (ct.startsWith('application/x-www-form-urlencoded')) {
-			const formData = new FormData();
-			const parameters = new URLSearchParams(await this.text());
+		if (contentType && contentType.startsWith('application/x-www-form-urlencoded')) {
+			const formData = new FormData()
+			const parameters = new URLSearchParams(await this.text())
 
 			for (const [name, value] of parameters) {
-				formData.append(name, value);
+				formData.append(name, value)
 			}
 
-			return formData;
+			return formData
 		}
 
-		const {toFormData} = await import('./utils/multipart-parser.js');
-		return toFormData(this.body, ct);
+    // TODO
+		// const { toFormData } = await import('./utils/multipart-parser.js')
+		// return toFormData(this.body, ct);
 	}
 
-	/**
-	 * Return raw response as Blob
-	 *
-	 * @return Promise
-	 */
-	async blob() {
-		const ct = (this.headers && this.headers.get('content-type')) || (this[INTERNALS].body && this[INTERNALS].body.type) || '';
-		const buf = await this.arrayBuffer();
+	async blob () {
+		const ct = (this.headers && this.headers.get('content-type')) || (this.internal.body && this.internal.body.type) || ''
+		const buf = await this.arrayBuffer()
 
 		return new Blob([buf], {
 			type: ct
-		});
+		})
 	}
 
-	/**
-	 * Decode response as json
-	 *
-	 * @return  Promise
-	 */
 	async json() {
-		const text = await this.text();
-		return JSON.parse(text);
+		const text = await this.text()
+		return JSON.parse(text)
 	}
 
-	/**
-	 * Decode response as text
-	 *
-	 * @return  Promise
-	 */
 	async text() {
-		const buffer = await consumeBody(this);
-		return new TextDecoder().decode(buffer);
+		const buffer = await consumeBody(this)
+		return new TextDecoder().decode(buffer)
 	}
 
-	/**
-	 * Decode response as buffer (non-spec api)
-	 *
-	 * @return  Promise
-	 */
 	buffer() {
-		return consumeBody(this);
+		return consumeBody(this)
 	}
 }
 
@@ -152,7 +136,7 @@ export type HeadersOptions = {
 
 export class Headers extends URLSearchParams {
 
-	constructor (options: HeadersOptions) {
+	constructor (options: HeadersOptions = {}) {
 		let result: [][] = []
 		if (options instanceof Headers) {
 			const raw = options.raw()
@@ -170,22 +154,22 @@ export class Headers extends URLSearchParams {
 				if (typeof method !== 'function') {
 					throw new TypeError('Header pairs must be iterable')
 				}
-
 				
 				result = [...options].map(pair => {
 						if (
-							typeof pair !== 'object' || types.isBoxedPrimitive(pair)
+              typeof pair !== 'object' || 
+              types.isBoxedPrimitive(pair)
 						) {
-							throw new TypeError('Each header pair must be an iterable object');
+							throw new TypeError('Each header pair must be an iterable object')
 						}
 
-						return [...pair];
+						return [...pair]
 					}).map(pair => {
 						if (pair.length !== 2) {
-							throw new TypeError('Each header pair must be a name/value tuple');
+							throw new TypeError('Each header pair must be a name/value tuple')
 						}
 
-						return [...pair];
+						return [...pair]
 					});
 			}
 		} else {
@@ -194,16 +178,14 @@ export class Headers extends URLSearchParams {
 
 		result = result.length > 0 ?
 				result.map(([name, value]) => {
-					validateHeaderName(name);
-					validateHeaderValue(name, String(value));
-					return [String(name).toLowerCase(), String(value)];
+					validateHeaderName(name)
+					validateHeaderValue(name, String(value))
+					return [String(name).toLowerCase(), String(value)]
 				}) :
 				undefined
 
 		super(result)
 
-		// Returning a Proxy that will lowercase key names, validate parameters and sort keys
-		// eslint-disable-next-line no-constructor-return
 		return new Proxy(this, {
 			get(target, p, receiver) {
 				switch (p) {
@@ -227,7 +209,7 @@ export class Headers extends URLSearchParams {
 							return URLSearchParams.prototype[p].call(
 								target,
 								String(name).toLowerCase()
-							);
+							)
 						};
 
 					case 'keys':
@@ -237,11 +219,10 @@ export class Headers extends URLSearchParams {
 						};
 
 					default:
-						return Reflect.get(target, p, receiver);
+						return Reflect.get(target,  p, receiver)
 				}
 			}
 		});
-		/* c8 ignore next */
 	}
 
 	get [Symbol.toStringTag]() {
@@ -278,9 +259,6 @@ export class Headers extends URLSearchParams {
 		}
 	}
 
-	/**
-	 * @type {() => IterableIterator<[string, string]>}
-	 */
 	* entries() {
 		for (const name of this.keys()) {
 			yield [name, this.get(name)];
@@ -329,54 +307,59 @@ export type RequestInput = {
   body?: unknown
 }
 
+export type RequestInternal = {
+  method: string,
+  referrer: string,
+  parsedURL: string,
+  referrerPolicy: string,
+  signal,
+  redirect,
+  headers: Headers
+}
+
 class Request extends Body {
+  public internal: RequestInternal
 
   get method() {
-		return this[INTERNALS].method;
+		return this.internal.method
 	}
 
-	/** @returns {string} */
-	get url() {
-		return formatUrl(this[INTERNALS].parsedURL);
+	get url () {
+		return formatUrl(this.internal.parsedURL);
 	}
 
-	/** @returns {Headers} */
 	get headers() {
-		return this[INTERNALS].headers;
+		return this.internal.headers;
 	}
 
 	get redirect() {
-		return this[INTERNALS].redirect;
+		return this.internal.redirect
 	}
 
-	/** @returns {AbortSignal} */
 	get signal() {
-		return this[INTERNALS].signal;
+		return this.internal.signal
 	}
 
-	// https://fetch.spec.whatwg.org/#dom-request-referrer
 	get referrer() {
-		if (this[INTERNALS].referrer === 'no-referrer') {
-			return '';
+		if (this.internal.referrer === 'no-referrer') {
+			return ''
 		}
 
-		if (this[INTERNALS].referrer === 'client') {
-			return 'about:client';
+		if (this.internal.referrer === 'client') {
+			return 'about:client'
 		}
 
-		if (this[INTERNALS].referrer) {
-			return this[INTERNALS].referrer.toString();
+		if (this.internal.referrer) {
+			return this.internal.referrer.toString()
 		}
-
-		return undefined;
 	}
 
 	get referrerPolicy() {
-		return this[INTERNALS].referrerPolicy;
+		return this.internal.referrerPolicy
 	}
 
 	set referrerPolicy(referrerPolicy) {
-		this[INTERNALS].referrerPolicy = validateReferrerPolicy(referrerPolicy);
+		this.internal.referrerPolicy = validateReferrerPolicy(referrerPolicy);
 	}
 
 	/**
@@ -385,7 +368,7 @@ class Request extends Body {
 	 * @return  Request
 	 */
 	clone() {
-		return new Request(this);
+		return new Request(this)
 	}
 
 	get [Symbol.toStringTag]() {
@@ -393,8 +376,8 @@ class Request extends Body {
 	}
 
   constructor (
-    input: string,  
-    init: RequestInit
+    input: string | Headers,  
+    init?: RequestInit
   )
 
   constructor (
@@ -486,7 +469,7 @@ class Request extends Body {
 			referrer = undefined;
 		}
 
-		this[INTERNALS] = {
+		this.internal = {
 			method,
 			redirect: init.redirect || input.redirect || 'follow',
 			headers,
@@ -514,16 +497,162 @@ export function fetch () {
   
 }
 
+class FetchBaseError extends Error {
+  public type : string
+	constructor (message, type) {
+		super(message)
+		
+		Error.captureStackTrace(this, this.constructor)
 
-/**
- * Check if `obj` is an instance of Request.
- *
- * @param  {*} object
- * @return {boolean}
- */
- function isRequest (req: Request) {
+		this.type = type
+	}
+
+	get name() {
+		return this.constructor.name
+	}
+
+	get [Symbol.toStringTag]() {
+		return this.constructor.name
+	}
+}
+
+type SystemError = Error & {
+  code: string
+  errno: string
+  syscall: string
+}
+
+class FetchError extends FetchBaseError {
+  public code: string | null = null
+	public errno: string | null = null
+  public syscall: string | null = null
+
+	constructor (
+    message: string, 
+    type: string, 
+    systemError: SystemError
+  ) {
+		super(message, type)
+		
+		if (systemError) {
+			// eslint-disable-next-line no-multi-assign
+			this.code = systemError.code
+      this.errno = systemError.code
+			this.syscall = systemError.syscall
+		}
+	}
+}
+
+async function consumeBody(data: Body) {
+	if (data.internal.disturbed) {
+		throw new TypeError(`body used already for: ${data.url}`)
+	}
+
+	data.internal.disturbed = true
+
+	if (data.internal.error) {
+		throw data.internal.error
+	}
+
+	const { body } = data
+
+	if (body === null) {
+		return Buffer.alloc(0)
+	}
+
+	if (!(body instanceof Stream)) {
+		return Buffer.alloc(0)
+	}
+
+	const accum = []
+	let accumBytes = 0
+
+	try {
+		for await (const chunk of body) {
+			if (data.size > 0 && accumBytes + chunk.length > data.size) {
+				const error = new FetchError(`content size at ${data.url} over limit: ${data.size}`, 'max-size');
+				body.destroy(error);
+				throw error;
+			}
+
+			accumBytes += chunk.length
+			accum.push(chunk)
+		}
+	} catch (err) {
+		const error_ = err instanceof FetchBaseError
+      ? err 
+      : new FetchError(`Invalid response body while trying to fetch ${data.url}: ${err.message}`, 'system', err)
+		throw error_;
+	}
+
+	if (
+    body.readableEnded === true || 
+    body._readableState.ended === true
+  ) {
+		try {
+			if (accum.every(c => typeof c === 'string')) {
+				return Buffer.from(accum.join(''));
+			}
+
+			return Buffer.concat(accum, accumBytes);
+		} catch (error) {
+			throw new FetchError(`Could not create Buffer from response body for ${data.url}: ${error.message}`, 'system', error);
+		}
+	} else {
+		throw new FetchError(`Premature close of server response while trying to fetch ${data.url}`)
+	}
+}
+
+function validateHeaderName (name: string) {
+  if (!/^[\^`\-\w!#$%&'*+.|~]+$/.test(name)) {
+    const error = new TypeError(`Header name must be a valid HTTP token [${name}]`)
+    Object.defineProperty(error, 'code', {
+      value: 'ERR_INVALID_HTTP_TOKEN'
+    })
+    
+    throw error
+  }
+}
+
+function validateHeaderValue (
+  name: string, 
+  value: string
+) {
+  if (/[^\t\u0020-\u007E\u0080-\u00FF]/.test(value)) {
+    const error = new TypeError(`Invalid character in header content ["${name}"]`);
+    Object.defineProperty(error, 'code', {value: 'ERR_INVALID_CHAR'})
+    throw error
+  }
+}
+
+
+function isBlob (object) {
+	return (
+		object &&
+		typeof object === 'object' &&
+		typeof object.arrayBuffer === 'function' &&
+		typeof object.type === 'string' &&
+		typeof object.stream === 'function' &&
+		typeof object.constructor === 'function'
+	)
+}
+
+function isURLSearchParameters (object: URLSearchParams) {
+	return (
+		typeof object === 'object' &&
+		typeof object.append === 'function' &&
+		typeof object.delete === 'function' &&
+		typeof object.get === 'function' &&
+		typeof object.getAll === 'function' &&
+		typeof object.has === 'function' &&
+		typeof object.set === 'function' &&
+		typeof object.sort === 'function'
+	)
+}
+
+function isRequest (req: Request) {
 	return (
 		typeof req === 'object' &&
-		typeof req[INTERNALS] === 'object'
+		typeof req.internal === 'object'
 	)
 }
