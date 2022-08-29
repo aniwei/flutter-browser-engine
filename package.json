@@ -4,6 +4,7 @@
     "canvaskit-wasm": "^0.32.0",
     "events": "^3.3.0",
     "formdata-polyfill": "^4.0.10",
+    "node-fetch": "^3.2.10",
     "ts-invariant": "^0.9.4"
   },
   "devDependencies": {
