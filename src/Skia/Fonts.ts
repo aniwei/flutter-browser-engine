@@ -1,32 +1,38 @@
+import fs from 'fs-extra'
 import { Skia } from '@skia/binding'
-import type { Font, FontMgr, TypefaceFontProvider, Typeface } from '@skia'
 import { utf8 } from '@internal/Encoding'
-import { AssertionError } from 'assert'
 import { fetch } from '@internal/fetch'
+import { AbstractAssetManager } from '@internal/AssetManager'
+import { isBrowser } from '@helper/is'
+import type { Font, FontMgr, TypefaceFontProvider, Typeface } from '@skia'
 
-export class FontCollection {
-  public familyToFontMapping: Map<string, Font[]> = new Map()
+const kRobotoURL = `https://fonts.gstatic.com/s/roboto/v20/KFOmCnqEu92Fr1Me5WZLCzYlKw.ttf`
 
+export abstract class AbstractFonts {
+  
   private unloadedFonts: Promise<RegisteredFont | null>[] = []
   private registeredFonts: RegisteredFont[] = []
-
-  public skFontMgr: FontMgr | null = null
-  public fontProvider: TypefaceFontProvider | null = null
+  
+  public fontMgr: FontMgr | null = null
   public registeredRoboto: boolean = false
+  public fontProvider: TypefaceFontProvider | null = null
+  public familyToFontMapping: Map<string, Font[]> = new Map()
+
+  abstract getFontByteData (uri: string): Promise<ArrayBuffer>
 
   /**
    * @description: 
    * @return {Promise<void>}
    */  
-  async ensureFontsLoaded () {
+   async ensureFontsLoaded () {
     await this.loadFonts()
 
     if (this.fontProvider !== null) {
       this.fontProvider!.delete()
-      this.fontProvider = null;
+      this.fontProvider = null
     }
+
     const fontProvider = Skia.binding.TypefaceFontProvider.Make()
-    
     this.familyToFontMapping.clear()
 
     for (const font of this.registeredFonts) {
@@ -62,6 +68,12 @@ export class FontCollection {
     this.unloadedFonts = []
   }
 
+  /**
+   * @description: 
+   * @param {Uint8Array} list
+   * @param {string} fontFamily
+   * @return {*}
+   */
   async loadFontFromList (
     list: Uint8Array, 
     fontFamily: string | null = null
@@ -79,8 +91,8 @@ export class FontCollection {
     
     if (typeface !== null) {
       this.registeredFonts.push(new RegisteredFont(
-        list, 
         fontFamily, 
+        list, 
         typeface
       ))
 
@@ -91,14 +103,19 @@ export class FontCollection {
     }
   }
 
-  async registerFonts (assetManager: AssetManager) {
+  /**
+   * @description: 
+   * @param {AbstractAssetManager} assetManager
+   * @return {*}
+   */
+  async registerFonts (assetManager: AbstractAssetManager) {
     let byte
 
     try {
       byte = await assetManager.load('FontManifest.json')
     } catch (error: any) {
       if (error.status === 404) {
-        console.warn('Font manifest does not exist at `${e.url}` – ignoring.')
+        console.warn(`Font manifest does not exist at "${error.url}" – ignoring.`)
         return
       } else {
         throw error
@@ -110,77 +127,98 @@ export class FontCollection {
       // throw new AssertionError('There was a problem trying to load FontManifest.json')
     }
 
-    
+    for (const fontFamily of fontManifest) {
+      const family: string = fontFamily.family
+      const fontAssets = fontFamily.fonts
 
-    for (final Map<String, dynamic> fontFamily
-        in fontManifest.cast<Map<String, dynamic>>()) {
-      final String family = fontFamily.readString('family');
-      final List<dynamic> fontAssets = fontFamily.readList('fonts');
-
-      if (family == 'Roboto') {
-        registeredRoboto = true;
+      if (family === 'Roboto') {
+        this.registeredRoboto = true
       }
 
-      for (final dynamic fontAssetItem in fontAssets) {
-        final Map<String, dynamic> fontAsset = fontAssetItem as Map<String, dynamic>;
-        final String asset = fontAsset.readString('asset');
-        _unloadedFonts
-            .add(_registerFont(assetManager.getAssetUrl(asset), family));
+      for (const fontAssetItem of fontAssets) {
+        const fontAsset = fontAssetItem 
+        const asset = fontAsset.asset
+        this.unloadedFonts.push(this.registerFont(assetManager.getAssetURI(asset), family))
       }
     }
 
-    /// We need a default fallback font for CanvasKit, in order to
-    /// avoid crashing while laying out text with an unregistered font. We chose
-    /// Roboto to match Android.
-    if (!registeredRoboto) {
-      // Download Roboto and add it to the font buffers.
-      _unloadedFonts.add(_registerFont(_robotoUrl, 'Roboto'));
-    }
+    // if (!this.registeredRoboto) {
+    //   this.unloadedFonts.push(this.registerFont(kRobotoURL, 'Roboto'))
+    // }
   }
 
-  async registerFont (
-    url: string, 
+  /**
+   * @description: 
+   * @param {string} url
+   * @param {string} family
+   * @return {*}
+   */
+   async registerFont (
+    uri: string, 
     family: string
   ): Promise<RegisteredFont | null> {
     let buffer: ArrayBuffer
 
     try {
-      buffer = await fetch(url, {
-        
-      }).then(result => {
-        return result.arrayBuffer()
-      })
+      buffer = await this.getFontByteData(uri)
     } catch (e: any) {
-      console.warn(`Failed to load font $family at ${url}`)
+      console.warn(`Failed to load font $family at ${uri}`)
       console.warn(e)
       return null
     }
 
+    const typeface = Skia.binding.Typeface.MakeFreeTypeFaceFromData(buffer)
     const bytes = new Uint8Array(buffer)
-    const typeface = Skia.binding.Typeface.MakeFreeTypeFaceFromData(bytes.buffer)
     if (typeface !== null) {
       return new RegisteredFont(family, bytes, typeface)
     } else {
-      console.warn(`Failed to load font ${family} at ${url}`)
-      console.warn(`Verify that ${url} contains a valid font.`)
+      console.warn(`Failed to load font ${family} at ${uri}`)
+      console.warn(`Verify that ${uri} contains a valid font.`)
       return null
     }
   }
 
-  readActualFamilyName (bytes: Uint8Array): string {
+  /**
+   * @description: 
+   * @param {Uint8Array} bytes
+   * @return {string | null}
+   */  
+   readActualFamilyName (bytes: Uint8Array): string | null {
     const fontMgr = Skia.binding.FontMgr.FromData(bytes)!
     const actualFamily = fontMgr.getFamilyName(0)
     fontMgr.delete()
+
     return actualFamily
   }  
 }
 
+export class LocalFonts extends AbstractFonts {
+  getFontByteData (uri: string) {
+    return fs.readFile(uri)
+  }
+}
+
+export class WebOnlyFonts extends AbstractFonts {
+  getFontByteData (uri: string) {
+    return fetch(uri).then(res => res.arrayBuffer())
+  }
+}
+
+export const Fonts = isBrowser ? WebOnlyFonts : LocalFonts 
 
 export class RegisteredFont {
   public family: string
   public bytes: Uint8Array
   public typeface: Typeface
 
+  
+  /**
+   * @description: 
+   * @param {string} family
+   * @param {Uint8Array} bytes
+   * @param {Typeface} typeface
+   * @return {*}
+   */
   constructor (
     family: string,
     bytes: Uint8Array,

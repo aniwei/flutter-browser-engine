@@ -8,7 +8,7 @@
       "name": "jest",
       "program": "${workspaceRoot}/node_modules/.bin/jest",
       "request": "launch",
-      "cwd": "${workspaceFolder}",
+      "cwd": "${workspaceFolder}/__tests__",
       "skipFiles": [
         "<node_internals>/**"
       ],

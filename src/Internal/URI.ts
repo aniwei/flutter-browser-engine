@@ -269,6 +269,11 @@ function property<T> (
   }
 }
 
+/**
+ * @description: 
+ * @param {number} char
+ * @return {*}
+ */
 function hexDigitValue (char: number) {
   invariant(char >= 0 && char <= 0xFFFF)
   const digit0 = 0x30
@@ -286,10 +291,21 @@ function hexDigitValue (char: number) {
   return -1
 }
 
+/**
+ * @description: 
+ * @param {string} s
+ * @return {*}
+ */
 function stringOrNullLength (s: string | null) {
   return (s === null) ? 0 : s.length
 }
 
+/**
+ * @description: 
+ * @param {string} key
+ * @param {string} list
+ * @return {*}
+ */
 function toUnmodifiableStringList (
   key: string, 
   list: string[]
@@ -297,6 +313,13 @@ function toUnmodifiableStringList (
   return Array.from(list)
 }
 
+/**
+ * @description: 
+ * @param {string} source
+ * @param {number} start
+ * @param {number} end
+ * @return {*}
+ */
 function skipPackageNameChars (
   source: string, 
   start: number, 
@@ -321,6 +344,12 @@ function skipPackageNameChars (
   return -1
 }
 
+/**
+ * @description: 
+ * @param {string} text
+ * @param {number} start
+ * @return {*}
+ */
 function startsWithData (
   text: string, 
   start: number

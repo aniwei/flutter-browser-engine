@@ -6,7 +6,7 @@ import CanvasKitInit from 'canvaskit-wasm'
 
 import type { AffinityEnumValues, AlphaTypeEnumValues, AnimatedImage, BlendModeEnumValues, BlurStyleEnumValues, CanvasKit, ClipOpEnumValues, ColorFilterFactory, ColorIntArray, ColorMatrixHelpers, ColorSpace, ColorSpaceEnumValues, ColorTypeEnumValues, ContourMeasureIterConstructor, DecorationStyleEnumValues, DefaultConstructor, EmbindEnumEntity, EmulatedCanvas2D, FillTypeEnumValues, FilterModeEnumValues, FontConstructor, FontEdgingEnumValues, FontHintingEnumValues, FontMgrFactory, FontSlantEnumValues, FontWeightEnumValues, FontWidthEnumValues, GlyphRunFlagValues, GrDirectContext, Image, ImageDataConstructor, ImageFilterFactory, ImageFormatEnumValues, ImageInfo, InputFlattenedPointArray, InputMatrix, InputRect, InputVector3, MallocObj, ManagedSkottieAnimation, MaskFilterFactory, Matrix3x3Helpers, Matrix4x4Helpers, MipmapModeEnumValues, Paint, PaintStyleEnumValues, ParagraphBuilderFactory, ParagraphStyleConstructor, PartialImageInfo, Particles, Path, PathConstructorAndFactory, PathEffectFactory, PathOpEnumValues, PictureRecorder, PlaceholderAlignmentEnumValues, PointModeEnumValues, RectHeightStyleEnumValues, RectWidthStyleEnumValues, RuntimeEffectFactory, ShaderFactory, SkottieAnimation, SkPicture, SoundMap, StrokeCapEnumValues, StrokeJoinEnumValues, Surface, TextAlignEnumValues, TextBaselineEnumValues, TextBlobFactory, TextDirectionEnumValues, TextHeightBehaviorEnumValues, TextStyleConstructor, TextureSource, TileModeEnumValues, TonalColorsInput, TonalColorsOutput, TypedArrayConstructor, TypefaceFactory, TypefaceFontProviderFactory, VectorHelpers, VertexModeEnumValues, Vertices, WebGLOptions } from 'canvaskit-wasm'
 import type { CanvasKitInitOptions } from 'canvaskit-wasm'
-import { FontCollection } from './FontCollection'
+import { AbstractFonts, Fonts } from './Fonts'
 
 export type SkiaOptions = {
   devicePixelRatio?: number
@@ -374,9 +374,9 @@ export class Skia implements CanvasKit {
   
   // === fontCollection
   public get fontCollection () {
-    return this._fontCollection ?? (this._fontCollection = new FontCollection())
+    return this._fontCollection ?? (this._fontCollection = new Fonts())
   }
-  private _fontCollection: FontCollection | null = null
+  private _fontCollection: AbstractFonts | null = null
 
   public raw: CanvasKit
   public devicePixelRatio: number

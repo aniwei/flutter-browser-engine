@@ -1050,9 +1050,9 @@ export class ParagraphBuilder {
     this.styleStack = []
      // TODO
     this.paragraphBuilder = Skia.binding.ParagraphBuilder.MakeFromFontProvider(
-      style.skia,
+      style.skia!,
       // TODO
-      // skiaFontCollection.fontProvider,
+      Skia.binding.fontProvider,
     ) 
     this.styleStack.push(this.style.getTextStyle())
   }
