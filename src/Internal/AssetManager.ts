@@ -1,13 +1,12 @@
-import fs from 'fs-extra'
-import path from 'path'
-import { fetch } from './fetch'
-import { isBrowser } from '@helper/is'
-
-
 /*
  * @Author: Aniwei
  * @Date: 2022-08-31 14:59:18
  */
+
+import fs from 'fs-extra'
+import path from 'path'
+import { fetch } from './fetch'
+import { isBrowser } from '@helper/is'
 
 const kDefaultAssetsDir = 'assets'
 
@@ -72,13 +71,9 @@ export class WebOnlyAssetManager extends AbstractAssetManager {
     try {
       return await fetch(uri).then(res => res.arrayBuffer())
     } catch (error: any) {
-      debugger
-
       throw error
     }
-
   }
 }
-
 
 export const AssetManager = isBrowser ? WebOnlyAssetManager : LocalAssetManager
